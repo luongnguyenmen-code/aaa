@@ -93,10 +93,10 @@ const Garage = {
           steamId: data.steamId,
           personaName: data.personaName,
           totalParked: data.totalParked || 0,
-          maxSlots: data.maxSlots || 2,
+          maxSlots: data.maxSlots || 3,
           roleKey: data.roleKey || 'default',
-          roleName: data.roleName || 'Thành viên (2 Slot)',
-          roleLimit: data.roleLimit || data.maxSlots || 2
+          roleName: data.roleName || '🦖 Thành Viên ST25 (3 Slots)',
+          roleLimit: data.roleLimit || data.maxSlots || 3
         };
         this.updateHeaderUI();
         return;

@@ -644,30 +644,38 @@ async function getPlayerGarageStatus(steamId) {
     discordRoleKey = "custom";
   }
 
-  // Tên hiển thị Role
+  // Tên hiển thị Role đồng bộ 100% IslePilot Dashboard ST25 Garage Rules
   const roleNameMap = {
     "admin": "👑 Quản Trị Viên (Admin)",
     ".": "👑 BQT Cấp Cao (.)",
     "mod": "🛡️ Điều Hành Viên (Mod)",
-    "booster": "🚀 Server Booster (Discord)",
+    "dev": "💻 DEV (Phát Triển)",
+    "long_khung_quang_cao": "📢 LONG KHỦNG (QUẢNG CÁO)",
+    "vien_gach_dau_tien": "🧱 Viên Gạch Đầu Tiên",
+    "long_dai_dia_chu": "🏰 LONG ĐẠI ĐỊA CHỦ",
+    "long_phu_nong": "🌾 LONG PHÚ NÔNG",
+    "long_ta_dien": "🌾 LONG TÁ ĐIỀN",
+    "long_chu": "🐲 LONG CHỦ",
+    "booster": "🚀 Máy chủ - Bộ khuếch đại",
+    "may_chu_bo_khuech_dai": "🚀 Máy chủ - Bộ khuếch đại",
     "streamer": "🎙️ Streamer",
-    "hoa_hau": "👑 Hoa Hậu ST25",
-    "long_dai_dia_chu": "🏰 Long Đại Địa Chủ",
-    "long_phu_nong": "🌾 Long Phú Nông",
-    "long_chu": "🐲 Long Chủ",
-    "long_ta_dien": "🌾 Long Tá Điền",
-    "vip3": "🌟 VIP 3 (Bảo Kê Đảo)",
-    "vip2": "💎 VIP 2 (Đại Gia)",
-    "vip1": "⭐ VIP 1 (Hỗ Trợ Server)",
-    "member": "🦖 Thành Viên ST25",
-    "khung_long_an_thit": "🦖 Khủng Long Ăn Thịt",
+    "bot": "🤖 BOT",
+    "may_chu_bot": "🤖 MÁY CHỦ BOT",
+    "hoa_hau": "👑 Hoa Hậu",
+    "khung_long_an_thit": "🦖 Khủng long ăn thịt",
+    "khung_long_an_co": "🌿 Khủng long ăn cỏ",
+    "bau_troi": "☁️ Bầu Trời",
+    "luat_su": "⚖️ Luật Sư",
+    "dam_lay": "🐊 Đầm Lầy",
+    "nguoi_moi": "🌱 Người mới",
+    "vai_tro_moi": "🏷️ vai trò mới",
     "default": "🦖 Thành Viên ST25",
     "custom": "✨ Slot Đặc Quyền Custom"
   };
   roleDisplayName = roleNameMap[discordRoleKey] || `Role: ${discordRoleKey.toUpperCase()}`;
 
   // 2. Tính toán maxSlots theo role_limits
-  let maxSlots = roleLimits[discordRoleKey] !== undefined ? Number(roleLimits[discordRoleKey]) : (garageCfg.default_slots || 2);
+  let maxSlots = roleLimits[discordRoleKey] !== undefined ? Number(roleLimits[discordRoleKey]) : (garageCfg.default_slots || 3);
 
   if (garageCfg.player_custom_slots && garageCfg.player_custom_slots[steamId] !== undefined) {
     maxSlots = Number(garageCfg.player_custom_slots[steamId]);
@@ -703,7 +711,7 @@ app.get('/api/player/garage', async (req, res) => {
   const steamId = getRequestSteamId(req);
   if (!steamId) {
     const cfg = getConfig();
-    const defSlots = (cfg.garage && cfg.garage.default_slots) || 2;
+    const defSlots = (cfg.garage && cfg.garage.default_slots) || 3;
     return res.json({
       active: null,
       slots: Array.from({ length: defSlots }, (_, idx) => ({ slot: idx + 1, empty: true })),
