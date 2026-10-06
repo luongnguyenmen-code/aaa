@@ -54,9 +54,12 @@
         </p>
       </div>
 
-      <div style="display: flex; gap: 10px; align-items: center;">
+      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <button onclick="Garage.refresh()" class="btn btn-secondary btn-sm" id="btn-refresh-garage">
           🔄 Đồng bộ lại dữ liệu
+        </button>
+        <button onclick="Garage.openAdminModal()" class="btn btn-primary btn-sm" id="btn-admin-manage" style="display: none; background: #fbbf24; color: #0f172a; font-weight: 800; border: none;">
+          👑 Phân Quyền Role (BQT)
         </button>
         <a href="noi-quy.html#dieu-12" class="btn btn-secondary btn-sm">Đọc luật Gara (Điều 8 & 12)</a>
       </div>
@@ -143,6 +146,53 @@
       <p>© 2026 ST25 — Hệ thống Gara lưu trữ Khủng Long tự động server ST25.</p>
     </div>
   </footer>
+
+  <!-- Admin Role Assignment Modal -->
+  <div id="admin-role-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 9999; justify-content: center; align-items: center; padding: 20px;">
+    <div style="background: #1e293b; border: 1px solid #f59e0b; border-radius: 12px; width: 100%; max-width: 520px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 12px;">
+        <h3 style="color: #fbbf24; margin: 0; font-size: 1.25rem; display: flex; align-items: center; gap: 8px;">
+          👑 Cấp Quyền & Điều Chỉnh Gara ST25
+        </h3>
+        <button onclick="Garage.closeAdminModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; color: #cbd5e1; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px;">Steam ID Người Chơi:</label>
+        <input type="text" id="admin-target-steamid" placeholder="VD: 76561198838095252" style="width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid #475569; border-radius: 8px; color: #fff; font-size: 0.95rem;">
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; color: #cbd5e1; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px;">Chọn Vai Trò (Role):</label>
+        <select id="admin-target-role" onchange="Garage.onAdminRoleChange()" style="width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid #475569; border-radius: 8px; color: #fff; font-size: 0.95rem;">
+          <option value=".">👑 BQT Cấp Cao (.) — 20 Slots</option>
+          <option value="admin">👑 Quản Trị Viên (Admin) — 20 Slots</option>
+          <option value="mod">🛡️ Điều Hành Viên (Mod) — 20 Slots</option>
+          <option value="long_dai_dia_chu">🏰 LONG ĐẠI ĐỊA CHỦ — 20 Slots</option>
+          <option value="long_phu_nong">🌾 LONG PHÚ NÔNG — 18 Slots</option>
+          <option value="long_ta_dien">🌾 LONG TÁ ĐIỀN — 12 Slots</option>
+          <option value="dev">💻 DEV (Phát Triển) — 10 Slots</option>
+          <option value="long_chu">🐲 LONG CHỦ — 8 Slots</option>
+          <option value="booster">🚀 Booster Server — 5 Slots</option>
+          <option value="streamer">🎙️ Streamer — 5 Slots</option>
+          <option value="default">🦖 Thành Viên Mặc Định — 3 Slots</option>
+          <option value="custom">✨ Slot Tùy Chỉnh Riêng Biệt (Custom)</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom: 24px;" id="admin-custom-slot-wrap">
+        <label style="display: block; color: #cbd5e1; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px;">Số Lượng Slot Gara (Tùy chỉnh):</label>
+        <input type="number" id="admin-target-slots" value="20" min="1" max="50" style="width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid #475569; border-radius: 8px; color: #fff; font-size: 0.95rem;">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button onclick="Garage.closeAdminModal()" class="btn btn-secondary btn-sm" style="padding: 10px 16px;">Hủy bỏ</button>
+        <button onclick="Garage.submitAdminRole()" class="btn btn-primary btn-sm" style="background: #f59e0b; color: #000; font-weight: 700; padding: 10px 20px;">
+          💾 Cập Nhật Quyền Hạn
+        </button>
+      </div>
+    </div>
+  </div>
 
   <script src="assets/js/app.js"></script>
   <script src="assets/js/gara.js"></script>

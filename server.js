@@ -2089,6 +2089,39 @@ app.get('/api/server/leaderboard', async (req, res) => {
   res.json(data || []);
 });
 
+// 15.7 Admin Manage Garage Roles & Slots
+app.post('/api/admin/set-garage-role', async (req, res) => {
+  const { steamId, role, slots } = req.body;
+  if (!steamId) {
+    return res.status(400).json({ error: "Vui lòng cung cấp steamId!" });
+  }
+
+  const cfg = getConfig();
+  if (!cfg.garage) cfg.garage = {};
+  if (!cfg.garage.user_roles) cfg.garage.user_roles = {};
+  if (!cfg.garage.player_custom_slots) cfg.garage.player_custom_slots = {};
+
+  if (role) {
+    cfg.garage.user_roles[steamId] = role.toLowerCase();
+  }
+  if (slots !== undefined) {
+    cfg.garage.player_custom_slots[steamId] = Number(slots);
+  }
+
+  const saved = saveConfig(cfg);
+  if (saved) {
+    return res.json({
+      success: true,
+      message: `Đã cập nhật role và slot thành công cho ${steamId}!`,
+      steamId,
+      role: cfg.garage.user_roles[steamId],
+      customSlots: cfg.garage.player_custom_slots[steamId]
+    });
+  }
+
+  res.status(500).json({ error: "Không thể lưu cấu hình!" });
+});
+
 // Start Server
 app.listen(PORT, () => {
   console.log(`=======================================================`);

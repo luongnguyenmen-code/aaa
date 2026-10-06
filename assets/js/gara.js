@@ -120,9 +120,18 @@ const Garage = {
     if (steamEl) steamEl.textContent = `Steam ID: ${this.playerInfo.steamId || 'Chưa đăng nhập'}`;
     if (countEl) countEl.textContent = `Đang lưu: ${this.playerInfo.totalParked} / ${this.playerInfo.maxSlots} Khủng Long`;
     if (capEl) capEl.textContent = `Sức chứa tối đa: ${this.playerInfo.maxSlots} khủng long (${this.playerInfo.roleName})`;
-    if (roleBadge) roleBadge.textContent = `${this.playerInfo.roleName} (${this.playerInfo.maxSlots} Slots)`;
     if (roleDesc) {
       roleDesc.innerHTML = `Bạn đang có quyền hạn: <strong style="color: #fbbf24;">${this.playerInfo.roleName}</strong> — Giới hạn lưu trữ: <strong style="color: #38bdf8;">${this.playerInfo.maxSlots} slot</strong> khủng long. Khi đầy Gara sẽ không thể cất thêm hoặc mua khủng long mới!`;
+    }
+
+    const adminBtn = document.getElementById('btn-admin-manage');
+    if (adminBtn) {
+      const key = (this.playerInfo.roleKey || '').toLowerCase();
+      if (['.', 'admin', 'mod', 'dev'].includes(key) || this.playerInfo.maxSlots >= 20) {
+        adminBtn.style.display = 'inline-flex';
+      } else {
+        adminBtn.style.display = 'none';
+      }
     }
   },
 
@@ -439,6 +448,67 @@ const Garage = {
       }
     } catch (e) {
       App.showToast('Lỗi mạng khi xoá thú!', 'error');
+    }
+  },
+
+  openAdminModal() {
+    const modal = document.getElementById('admin-role-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+      this.onAdminRoleChange();
+    }
+  },
+
+  closeAdminModal() {
+    const modal = document.getElementById('admin-role-modal');
+    if (modal) modal.style.display = 'none';
+  },
+
+  onAdminRoleChange() {
+    const roleSel = document.getElementById('admin-target-role');
+    const slotInput = document.getElementById('admin-target-slots');
+    if (!roleSel || !slotInput) return;
+
+    const defaultLimits = {
+      ".": 20, "admin": 20, "mod": 20, "long_dai_dia_chu": 20,
+      "long_phu_nong": 18, "long_ta_dien": 12, "dev": 10,
+      "long_chu": 8, "booster": 5, "streamer": 5, "default": 3
+    };
+
+    if (roleSel.value !== 'custom') {
+      slotInput.value = defaultLimits[roleSel.value] || 3;
+    }
+  },
+
+  async submitAdminRole() {
+    const steamId = (document.getElementById('admin-target-steamid').value || '').trim();
+    const role = document.getElementById('admin-target-role').value;
+    const slots = Number(document.getElementById('admin-target-slots').value) || 3;
+
+    if (!steamId || steamId.length < 10) {
+      App.showToast('Vui lòng nhập Steam ID hợp lệ (17 số)!', 'error');
+      return;
+    }
+
+    try {
+      App.showToast('Đang lưu quyền hạn lên hệ thống máy chủ...', 'info');
+      const res = await fetch('/api/admin/set-garage-role', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ steamId, role, slots })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        App.showToast(`Đã cấp quyền thành công cho [${steamId}]! Role: ${role.toUpperCase()} (${slots} slots)`, 'success');
+        this.closeAdminModal();
+        await this.fetchGarageData();
+        this.render();
+      } else {
+        App.showToast(data.error || 'Lỗi khi cấp quyền!', 'error');
+      }
+    } catch (e) {
+      console.error(e);
+      App.showToast('Lỗi mạng khi lưu quyền hạn!', 'error');
     }
   }
 };
