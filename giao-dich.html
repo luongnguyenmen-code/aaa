@@ -151,7 +151,7 @@
         <form id="transfer-form" onsubmit="handleTransfer(event)">
           <div class="form-group" style="margin-bottom: 14px;">
             <label class="form-label" for="receiver-steamid">SteamID 64 người nhận:</label>
-            <input type="text" id="receiver-steamid" class="form-input" placeholder="Ví dụ: 76561198354289789" required>
+            <input type="text" id="receiver-steamid" class="form-input" placeholder="Nhập SteamID 64 (17 chữ số)..." required>
           </div>
 
           <div class="form-group" style="margin-bottom: 14px;">
@@ -240,7 +240,7 @@
 
   <script src="assets/js/app.js"></script>
   <script>
-    let mySteamId = "76561198636766540";
+    let mySteamId = null;
     let myLiveBalance = 0;
 
     async function loadMarketData() {
@@ -253,13 +253,13 @@
         const garageData = await garageRes.json();
 
         mySteamId = data.steamId;
-        myLiveBalance = data.balance;
+        myLiveBalance = data.balance || 0;
 
         // Update balance & account
-        document.getElementById('user-balance-val').textContent = data.balance.toLocaleString('vi-VN');
+        document.getElementById('user-balance-val').textContent = (data.balance || 0).toLocaleString('vi-VN');
         const accTag = document.getElementById('market-account-tag');
-        if (accTag && data.personaName) {
-          accTag.textContent = `Tài khoản: ${data.personaName} (${data.steamId})`;
+        if (accTag) {
+          accTag.textContent = data.steamId ? `Tài khoản: ${data.personaName} (${data.steamId})` : `Tài khoản: Khách (Chưa đăng nhập Steam)`;
         }
 
         // Update Garage dino select options
@@ -422,7 +422,11 @@
           App.showToast(result.message, 'success');
           loadMarketData();
         } else {
-          App.showToast(result.error || 'Mua thất bại!', 'error');
+          if (result.isFull || result.upgradeRequired) {
+            alert(`⚠️ GARA CỦA BẠN ĐÃ ĐẦY!\n\n${result.error}\n\n👉 Vui lòng liên hệ Admin qua Discord (https://discord.gg/3xCrA6VyY) để nâng cấp Gara!`);
+          } else {
+            App.showToast(result.error || 'Mua thất bại!', 'error');
+          }
         }
       } catch (err) {
         App.showToast('Lỗi mạng khi mua vật phẩm!', 'error');

@@ -22,5 +22,22 @@
     "api_key": "",
     "realm": "http://localhost:3000",
     "return_url": "http://localhost:3000/api/player/steam/callback"
+  },
+  "garage": {
+    "default_slots": 2,
+    "role_limits": {
+      "default": 2,
+      "member": 2,
+      "vip1": 5,
+      "vip2": 10,
+      "vip3": 15,
+      "booster": 15,
+      "admin": 20
+    },
+    "player_custom_slots": {
+      "76561198354289789": 20,
+      "76561198694488278": 20
+    },
+    "upgrade_discord_url": "https://discord.gg/3xCrA6VyY"
   }
 }

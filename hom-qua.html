@@ -547,7 +547,14 @@
       document.getElementById('modal-reward-name').textContent = result.reward.name;
 
       const garageBtn = document.getElementById('modal-garage-btn');
-      if (result.transferredToGarage || result.reward.type === 'dino') {
+      if (result.reward.compensated) {
+        document.getElementById('modal-reward-desc').innerHTML = `
+          ⚠️ <strong style="color: #ef4444;">GARA CỦA BẠN ĐÃ ĐẦY!</strong><br>
+          <span style="color: #cbd5e1; font-size: 0.9rem; display: block; margin: 6px 0;">${result.reward.note}</span>
+          <span style="color: #fbbf24; font-size: 0.85rem; display: block; margin-top: 6px;">Đã bảo lưu quyền lợi và cộng <strong>+${result.reward.compensationLua} Lúa 🌾</strong> vào ví của bạn.</span>
+        `;
+        if (garageBtn) garageBtn.style.display = 'none';
+      } else if (result.transferredToGarage || result.reward.type === 'dino') {
         document.getElementById('modal-reward-desc').innerHTML = `
           🦖 <strong style="color: #fbbf24;">Khủng long [${result.reward.name}]</strong> đã được tự động chuyển trực tiếp vào <strong>Gara</strong> của bạn!<br>
           <span style="color: #94a3b8; font-size: 0.85rem; display: block; margin-top: 6px;">Bạn có thể bấm nút bên dưới để mở Gara xuất kích ra đảo chơi ngay!</span>
