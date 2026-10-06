@@ -28,20 +28,32 @@
     "role_limits": {
       "default": 2,
       "member": 2,
+      "khung_long_an_thit": 2,
+      "long_ta_dien": 3,
+      "long_chu": 5,
+      "long_phu_nong": 8,
+      "long_dai_dia_chu": 12,
+      "hoa_hau": 15,
+      "streamer": 15,
+      "booster": 15,
       "vip1": 5,
       "vip2": 10,
       "vip3": 15,
-      "booster": 15,
+      "mod": 15,
+      ".": 20,
       "admin": 20
     },
     "player_custom_slots": {
       "76561198354289789": 20,
-      "76561198694488278": 20
+      "76561198694488278": 20,
+      "76561199194553823": 15
     },
     "user_roles": {
       "76561198354289789": "admin",
       "76561198694488278": "admin",
-      "76561198636766540": "vip1"
+      "76561198636766540": "vip1",
+      "76561199194553823": "mod",
+      "1125011824853647441": "mod"
     },
     "upgrade_discord_url": "https://discord.gg/3xCrA6VyY"
   }

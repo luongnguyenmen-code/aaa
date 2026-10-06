@@ -636,6 +636,8 @@ async function getPlayerGarageStatus(steamId) {
     discordRoleKey = userRolesConfig[steamId].toLowerCase();
   } else if (discordInfo && discordInfo.id && userRolesConfig[discordInfo.id]) {
     discordRoleKey = userRolesConfig[discordInfo.id].toLowerCase();
+  } else if (discordInfo && discordInfo.username && userRolesConfig[discordInfo.username]) {
+    discordRoleKey = userRolesConfig[discordInfo.username].toLowerCase();
   } else if (portalRoles[steamId]) {
     discordRoleKey = portalRoles[steamId].toLowerCase();
   } else if (garageCfg.player_custom_slots && garageCfg.player_custom_slots[steamId] !== undefined) {
@@ -645,12 +647,21 @@ async function getPlayerGarageStatus(steamId) {
   // Tên hiển thị Role
   const roleNameMap = {
     "admin": "👑 Quản Trị Viên (Admin)",
+    ".": "👑 BQT Cấp Cao (.)",
+    "mod": "🛡️ Điều Hành Viên (Mod)",
     "booster": "🚀 Server Booster (Discord)",
+    "streamer": "🎙️ Streamer",
+    "hoa_hau": "👑 Hoa Hậu ST25",
+    "long_dai_dia_chu": "🏰 Long Đại Địa Chủ",
+    "long_phu_nong": "🌾 Long Phú Nông",
+    "long_chu": "🐲 Long Chủ",
+    "long_ta_dien": "🌾 Long Tá Điền",
     "vip3": "🌟 VIP 3 (Bảo Kê Đảo)",
     "vip2": "💎 VIP 2 (Đại Gia)",
     "vip1": "⭐ VIP 1 (Hỗ Trợ Server)",
     "member": "🦖 Thành Viên ST25",
-    "default": "🦖 Thành Viên (2 Slot)",
+    "khung_long_an_thit": "🦖 Khủng Long Ăn Thịt",
+    "default": "🦖 Thành Viên ST25",
     "custom": "✨ Slot Đặc Quyền Custom"
   };
   roleDisplayName = roleNameMap[discordRoleKey] || `Role: ${discordRoleKey.toUpperCase()}`;
