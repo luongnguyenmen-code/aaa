@@ -26,7 +26,7 @@ function getConfig() {
       enabled: true,
       api_base_url: "https://islepilot.eu/api/v1",
       server_id: "cmufraiwk7fnooa01vpdzdhm4",
-      api_token: "ipa_f1821c9935081db9070e8d4658984bcd71f57dd685c715ad"
+      api_token: "ipa_4c51bd355513813f26ea6e759d4e6fb0dd5d8bb7174799de"
     }
   };
 }
@@ -434,8 +434,8 @@ app.get('/api/player/quests', async (req, res) => {
     steamId,
     isLoggedIn: isCurrentLoggedIn || !!getRequestSteamId(req),
     player: playerDetails ? {
-      name: playerDetails.name || null || "Thành viên ST25",
-      avatar: playerDetails.avatar || null || "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg",
+      name: playerDetails.name || "Thành viên ST25",
+      avatar: playerDetails.avatar || "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg",
       species: playerDetails.species || "Chưa chọn loài",
       gender: playerDetails.female ? "Cái (Female)" : "Đực (Male)",
       growth: Math.round((playerDetails.growth || 0) * 100),
@@ -521,7 +521,7 @@ app.get('/api/player/map', async (req, res) => {
   res.json({
     online: isOnline,
     steamId: activePlayer ? activePlayer.steamId : reqSteamId,
-    name: (activePlayer && activePlayer.name) || null || "Người chơi",
+    name: (activePlayer && activePlayer.name) || "Người chơi",
     species: (activePlayer && activePlayer.species) || "Chưa chọn khủng long",
     gender: (activePlayer && activePlayer.female) ? "Cái (Female)" : "Đực (Male)",
     growth: activePlayer ? `${Math.round((activePlayer.growth || 0) * 100)}%` : "0%",
@@ -728,7 +728,7 @@ app.get('/api/player/garage', async (req, res) => {
     slots,
     tradeableDinos,
     steamId,
-    personaName: (pilotPlayer && pilotPlayer.name) || null || "Thành viên ST25",
+    personaName: (pilotPlayer && pilotPlayer.name) || "Thành viên ST25",
     totalParked: garageStatus.totalParked,
     maxSlots: garageStatus.maxSlots,
     isFull: garageStatus.isFull,
@@ -996,15 +996,21 @@ async function modifyLivePlayerBalance(steamId, amount, reason = "web_portal") {
   return { success: true, balance: newBal, applied: amount };
 }
 
-// 10. Chợ Giao Dịch & Ví Lúa (Linked Directly to IslePilot API)
 app.get('/api/market/data', async (req, res) => {
   const data = getPortalData();
   const steamId = getRequestSteamId(req);
   const userBalance = steamId ? await getLivePlayerBalance(steamId) : 0;
+  let personaName = "Khách (Chưa đăng nhập)";
+
+  if (steamId) {
+    const p = await callIslePilot(`/players/${steamId}`);
+    if (p && p.name) personaName = p.name;
+    else personaName = `Player_${steamId.slice(-4)}`;
+  }
 
   res.json({
     steamId: steamId || null,
-    personaName: null || "Khách (Chưa đăng nhập)",
+    personaName: personaName,
     balance: userBalance,
     listings: data.marketListings,
     inventory: steamId ? (data.userInventory[steamId] || []) : []
@@ -1150,7 +1156,11 @@ app.post('/api/market/list-dino', async (req, res) => {
     return res.status(404).json({ error: "Không tìm thấy khủng long này trong Gara của bạn!" });
   }
 
-  const sellerName = null || `Player_${steamId.slice(-4)}`;
+  let sellerName = `Player_${steamId.slice(-4)}`;
+  const pilotPlayer = await callIslePilot(`/players/${steamId}`);
+  if (pilotPlayer && pilotPlayer.name) {
+    sellerName = pilotPlayer.name;
+  }
 
   // Thêm vào danh sách Chợ
   const newListing = {
@@ -1495,7 +1505,7 @@ app.get('/api/skin/info', async (req, res) => {
 
   res.json({
     steamId,
-    personaName: (pilotPlayer && pilotPlayer.name) || null || "Thành viên ST25",
+    personaName: (pilotPlayer && pilotPlayer.name) || "Thành viên ST25",
     species: (pilotPlayer && pilotPlayer.species) || "Tyrannosaurus",
     growth: pilotPlayer ? Math.round((pilotPlayer.growth || 0) * 100) : 100,
     balance: liveBalance,
@@ -1669,7 +1679,11 @@ app.post('/api/carcass/order', async (req, res) => {
   // 1. Trừ Lúa trực tiếp từ tài khoản qua IslePilot API
   const deductRes = await modifyLivePlayerBalance(steamId, -carcass.price, `Thả xác tiếp tế ${carcass.name}`);
 
-  const playerName = null || `Player_${steamId.slice(-4)}`;
+  let playerName = `Player_${steamId.slice(-4)}`;
+  const pilotPlayer = await callIslePilot(`/players/${steamId}`);
+  if (pilotPlayer && pilotPlayer.name) {
+    playerName = pilotPlayer.name;
+  }
 
   // 2. KÍCH HOẠT LỆNH THẬT TRÊN MÁY CHỦ ISLEPILOT:
   // - 2.1 LỆNH RỚT XÁC VẬT LÝ THEO ĐÚNG LOÀI & GROWTH TRỰC TIẾP TẠI TỌA ĐỘ NGƯỜI CHƠI
