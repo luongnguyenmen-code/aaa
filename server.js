@@ -730,12 +730,16 @@ app.get('/api/player/garage', async (req, res) => {
     slots.push({
       slot: idx + 1,
       id: g.id,
+      name: g.name || null,
       species: g.species,
       gender: g.gender ? (g.gender === 'Female' ? 'Cái (Female)' : 'Đực (Male)') : 'Đực',
       growth: Math.round((g.growth || 0) * 100),
+      rawGrowth: g.growth || 0,
       health: Math.round((g.health || 0) * 100),
       hunger: Math.round((g.hunger || 0) * 100),
       thirst: Math.round((g.thirst || 0) * 100),
+      stamina: g.stamina !== null && g.stamina !== undefined ? Math.round(g.stamina * 100) : 100,
+      isPrimeElder: !!g.isPrimeElder,
       diet: ["S", "S", "D"],
       mutations: g.mutations || [],
       stored_at: g.parkedAt ? new Date(g.parkedAt).toLocaleString('vi-VN') : 'Đã lưu',
@@ -819,6 +823,8 @@ app.post('/api/player/garage/store', async (req, res) => {
 
   // Sau khi hết 30 giây: Thực hiện lệnh cất thú chính thức
   await callIslePilot(`/players/${steamId}/garage/park`, 'POST', {});
+  apiCache.delete(`/players/${steamId}/garage`);
+  apiCache.delete(`/players/${steamId}`);
 
   // Gửi thông báo in-game hoàn tất
   await callIslePilot('/commands', 'POST', {
@@ -849,7 +855,14 @@ app.post('/api/player/garage/load', async (req, res) => {
   // Cho phép con nhỏ dưới 25% (kể cả 5%, 10%, 15%, 20%) vẫn lấy ra được bình thường!
   if (targetGrowth < 0.05) targetGrowth = 0.05;
 
-  // 1. Thực hiện lệnh SWAP trực tiếp vào game server qua IslePilot commands:
+  // 1. Thử gọi lệnh restore chính thức trên IslePilot trước nếu có id
+  if (id) {
+    try {
+      await callIslePilot(`/players/${steamId}/garage/${id}/restore`, 'POST', {});
+    } catch (_) {}
+  }
+
+  // 2. Thực hiện lệnh SWAP trực tiếp vào game server qua IslePilot commands:
   // Lệnh swap này sẽ biến đổi nhân vật trong game thành con dino mới, và con cũ MẤT LUÔN (không lưu vào kho)
   await callIslePilot('/commands', 'POST', {
     action: 'swap',
@@ -858,7 +871,7 @@ app.post('/api/player/garage/load', async (req, res) => {
     growth: targetGrowth
   });
 
-  // 2. Rút con thú đó ra khỏi Gara vĩnh viễn (để không bị trùng lặp / nhân đôi)
+  // 3. Rút con thú đó ra khỏi Gara vĩnh viễn (để không bị trùng lặp / nhân đôi)
   if (id) {
     if (!data.withdrawnDinos[steamId].includes(id)) {
       data.withdrawnDinos[steamId].push(id);
@@ -870,13 +883,11 @@ app.post('/api/player/garage/load', async (req, res) => {
       }
     }
     savePortalData(data);
-
-    // Thử giải phóng trên IslePilot Cloud
-    await callIslePilot(`/players/${steamId}/garage/${id}/restore`, 'POST', {});
-    await callIslePilot(`/players/${steamId}/garage/${id}/sell`, 'POST', {});
+    apiCache.delete(`/players/${steamId}/garage`);
+    apiCache.delete(`/players/${steamId}`);
   }
 
-  // 3. Thông báo in-game toàn server
+  // 4. Thông báo in-game toàn server
   await callIslePilot('/commands', 'POST', {
     action: 'announce',
     message: `ST25 GARA: Đã xuất xưởng [${targetSpecies}] (${Math.round(targetGrowth * 100)}% Growth) ra đảo! Con cũ đã được thay thế.`,

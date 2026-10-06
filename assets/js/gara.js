@@ -224,11 +224,14 @@ const Garage = {
       }
 
       return `
-        <div class="garage-slot-card" style="display: flex; flex-direction: column; justify-content: space-between; border-color: rgba(16, 185, 129, 0.3);">
+        <div class="garage-slot-card" style="display: flex; flex-direction: column; justify-content: space-between; border-color: ${s.isPrimeElder ? 'rgba(251, 191, 36, 0.4)' : 'rgba(16, 185, 129, 0.3)'};">
           <div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <span style="font-weight: 800; color: #fff;">Ô #${idx + 1}</span>
-              <span class="rule-badge badge-allow" style="font-weight: 700;">${s.growth}% lớn</span>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                ${s.isPrimeElder ? '<span class="rule-badge badge-warn" style="font-size: 0.7rem; font-weight: 700; background: rgba(245, 158, 11, 0.15); border-color: #f59e0b; color: #fbbf24;">⭐ Prime Elder</span>' : ''}
+                <span class="rule-badge badge-allow" style="font-weight: 700;">${s.growth}% lớn</span>
+              </div>
             </div>
 
             <div>
@@ -236,13 +239,37 @@ const Garage = {
               <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 6px;">
                 ${s.gender} • Cất: <span style="color: #cbd5e1;">${s.stored_at || 'Đã lưu'}</span>
               </p>
+
+              <!-- Live Stats Mini Bars (IslePilot Cloud Sync) -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 10px 0; font-size: 0.72rem;">
+                <div style="background: rgba(0,0,0,0.25); padding: 4px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
+                  <span style="color: #94a3b8;">Máu:</span> <strong style="color: #ef4444;">${s.health !== undefined ? s.health : 100}%</strong>
+                </div>
+                <div style="background: rgba(0,0,0,0.25); padding: 4px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
+                  <span style="color: #94a3b8;">Đói:</span> <strong style="color: #f59e0b;">${s.hunger !== undefined ? s.hunger : 100}%</strong>
+                </div>
+                <div style="background: rgba(0,0,0,0.25); padding: 4px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
+                  <span style="color: #94a3b8;">Khát:</span> <strong style="color: #38bdf8;">${s.thirst !== undefined ? s.thirst : 100}%</strong>
+                </div>
+                <div style="background: rgba(0,0,0,0.25); padding: 4px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
+                  <span style="color: #94a3b8;">Thể lực:</span> <strong style="color: #10b981;">${s.stamina !== undefined ? s.stamina : 100}%</strong>
+                </div>
+              </div>
+
+              <!-- Mutations List -->
+              ${s.mutations && s.mutations.filter(m => m && m !== 'None').length > 0 ? `
+                <div style="margin: 8px 0; font-size: 0.72rem; color: #a7f3d0; background: rgba(16, 185, 129, 0.08); padding: 5px 8px; border-radius: 4px;">
+                  🧬 <b>Đột biến:</b> ${s.mutations.filter(m => m && m !== 'None').join(', ')}
+                </div>
+              ` : ''}
+
               <div style="font-size: 0.75rem; color: var(--text-muted);">
                 Nguồn: <span style="color: #38bdf8;">${s.source || 'IslePilot Cloud'}</span>
               </div>
             </div>
           </div>
 
-          <div style="display: flex; gap: 8px; margin-top: 16px;">
+          <div style="display: flex; gap: 8px; margin-top: 14px;">
             <button onclick="Garage.restoreDino('${s.id}', ${s.slot}, '${s.species}', ${s.growth})" class="btn btn-primary btn-sm" style="flex: 1; font-weight: 800;">
               🚀 Lấy Ra Chơi (30s)
             </button>
