@@ -1,0 +1,351 @@
+{
+  "userWallets": {
+    "76561198636766540": 29,
+    "76561198354289789": 10467
+  },
+  "userInventory": {
+    "76561198636766540": [
+      {
+        "id": "inv-1",
+        "name": "Thẻ Hồi Sinh Bảo Hộ",
+        "icon": "🛡️",
+        "desc": "Bảo lưu 100% Growth nếu rớt vực",
+        "type": "item"
+      },
+      {
+        "id": "inv-2",
+        "name": "Skin Thần Thoại T-Rex Hắc Long",
+        "icon": "🦖",
+        "desc": "Mã phối màu dạ quang độc quyền",
+        "type": "skin"
+      }
+    ],
+    "76561198354289789": [
+      {
+        "id": "inv-1791277033305",
+        "name": "Skin Rừng Nhiệt Đới 🌿",
+        "icon": "🦖",
+        "desc": "Rút thăm may mắn từ Hòm Tre Làng ST25",
+        "type": "skin"
+      },
+      {
+        "id": "inv-1791277039021",
+        "name": "Skin Kim Giáp Dạ Quang Vàng 🌟",
+        "icon": "✨",
+        "desc": "Rút thăm may mắn từ Hòm Vàng ST25 Thần Tốc",
+        "type": "skin"
+      },
+      {
+        "id": "inv-1791277917263",
+        "name": "T-Rex Đực 100% Full Dinh Dưỡng S-S-D",
+        "icon": "🦖",
+        "desc": "Mua từ chợ với giá 120 Lúa 🌾",
+        "type": "dino_voucher"
+      },
+      {
+        "id": "skin-1791277998465",
+        "name": "Skin Triceratops Đã Áp Dụng",
+        "icon": "🎨",
+        "desc": "Mã Evrima: [Tyrannosaurus_Skin_v1:B=1e293b:P=fbbf24:U=f59e0b:E=ef4444]",
+        "type": "skin"
+      },
+      {
+        "id": "inv-1791278061200",
+        "name": "Skin Thần Long Hắc Ám T-Rex 🐉",
+        "icon": "🐉",
+        "desc": "Rút thăm may mắn từ Hòm Kim Cương Thần Thú",
+        "type": "skin"
+      },
+      {
+        "id": "inv-1791278215510",
+        "name": "Deinosuchus Cái 95% Prime Ready",
+        "icon": "🐊",
+        "desc": "Mua từ chợ với giá 90 Lúa 🌾",
+        "type": "dino_voucher"
+      },
+      {
+        "id": "inv-1791280269965",
+        "name": "Thẻ Hồi Sinh Bảo Hộ Vĩnh Cửu 🛡️",
+        "icon": "🛡️",
+        "desc": "Rút thăm may mắn từ Hòm Kim Cương Thần Thú",
+        "type": "item"
+      },
+      {
+        "id": "skin-1791285366838",
+        "name": "Skin Tyrannosaurus Đã Áp Dụng",
+        "icon": "🎨",
+        "desc": "Mã Evrima: [Tyrannosaurus_Skin_v1:B=090d16:P=1e293b:U=334155:E=06b6d4]",
+        "type": "skin"
+      }
+    ]
+  },
+  "marketListings": [
+    {
+      "id": "mkt-1",
+      "seller": "Trùm Khủng Long ST25",
+      "sellerSteamId": "76561198000000001",
+      "title": "T-Rex Bạo Chúa 100% Full Dinh Dưỡng S-S-D",
+      "species": "Tyrannosaurus",
+      "gender": "Đực (Male)",
+      "price": 120,
+      "growth": 100,
+      "diet": "S-S-D",
+      "icon": "🦖"
+    },
+    {
+      "id": "mkt-2",
+      "seller": "Sát Thủ Đầm Lầy",
+      "sellerSteamId": "76561198000000002",
+      "title": "Cá Sấu Deinosuchus Nữ Hoàng Prime 95%",
+      "species": "Deinosuchus",
+      "gender": "Cái (Female)",
+      "price": 90,
+      "growth": 95,
+      "diet": "S-S-D",
+      "icon": "🐊"
+    }
+  ],
+  "tickets": [
+    {
+      "id": "TK-3070",
+      "senderSteamId": "76561198354289789",
+      "targetPlayer": "Player_Suspicious",
+      "timeReport": "15:30 06/10",
+      "locationReport": "Rừng Dừa",
+      "videoUrl": "https://youtu.be/example",
+      "violationRule": "Điều 6: CAMP Vùng Cam",
+      "details": "Con lớn trên 50% cố tình lùa giết con non ở Rừng Dừa",
+      "status": "Đang Tiếp Nhận (BQT đang xem log)",
+      "createdAt": "15:56:12 6/10/2026"
+    }
+  ],
+  "referrals": {},
+  "carcassOrders": [
+    {
+      "id": "drop-1791283612330",
+      "steamId": "76561198354289789",
+      "carcassName": "Thịt Triceratops Khổng Lồ (100% Full)",
+      "price": 45,
+      "orderedAt": "17:46:52 6/10/2026",
+      "status": "Đã Rớt Xác Thành Công",
+      "note": "Đã thả xác vật lý rơi ngay vị trí của bạn trong game và hồi phục cơn đói khát!"
+    },
+    {
+      "id": "drop-1791283499403",
+      "steamId": "76561198354289789",
+      "carcassName": "Thịt Triceratops Khổng Lồ (100% Full)",
+      "price": 45,
+      "orderedAt": "17:44:59 6/10/2026",
+      "status": "Đã Rớt Xác Thành Công",
+      "note": "Đã thả xác vật lý rơi ngay vị trí của bạn trong game và hồi phục cơn đói khát!"
+    },
+    {
+      "id": "drop-1791283487086",
+      "steamId": "76561198354289789",
+      "carcassName": "Thịt Tenontosaurus Đại Tiệc (100% Full)",
+      "price": 40,
+      "orderedAt": "17:44:47 6/10/2026",
+      "status": "Đã Rớt Xác Thành Công",
+      "note": "Đã thả xác vật lý rơi ngay vị trí của bạn trong game và hồi phục cơn đói khát!"
+    },
+    {
+      "id": "drop-1791283472086",
+      "steamId": "76561198354289789",
+      "carcassName": "Thịt Triceratops (50% Con Non)",
+      "price": 25,
+      "orderedAt": "17:44:32 6/10/2026",
+      "status": "Đã Rớt Xác Thành Công",
+      "note": "Đã thả xác vật lý rơi ngay vị trí của bạn trong game và hồi phục cơn đói khát!"
+    },
+    {
+      "id": "drop-1791282955189",
+      "steamId": "76561198636766540",
+      "carcassName": "Thịt Triceratops Khổng Lồ (100% Full)",
+      "price": 45,
+      "orderedAt": "17:35:55 6/10/2026",
+      "status": "Đã Rớt Xác Thành Công",
+      "note": "Đã thả xác vật lý rơi ngay vị trí của bạn trong game và hồi phục cơn đói khát!"
+    },
+    {
+      "id": "drop-1791281973552",
+      "steamId": "76561198354289789",
+      "carcassName": "Cá Khổng Lồ Đầm Lầy (Big Fish)",
+      "price": 25,
+      "orderedAt": "17:19:33 6/10/2026",
+      "status": "Đã Rớt Xác Thành Công",
+      "note": "Đã thả xác vật lý rơi ngay vị trí của bạn trong game và hồi phục cơn đói khát!"
+    },
+    {
+      "id": "drop-1791281961107",
+      "steamId": "76561198354289789",
+      "carcassName": "Xác Hươu Đốm (Deer)",
+      "price": 30,
+      "orderedAt": "17:19:21 6/10/2026",
+      "status": "Đã Rớt Xác Thành Công",
+      "note": "Đã thả xác vật lý rơi ngay vị trí của bạn trong game và hồi phục cơn đói khát!"
+    },
+    {
+      "id": "drop-1791281955842",
+      "steamId": "76561198354289789",
+      "carcassName": "Xác Tenonto Khổng Lồ",
+      "price": 50,
+      "orderedAt": "17:19:15 6/10/2026",
+      "status": "Đã Rớt Xác Thành Công",
+      "note": "Đã thả xác vật lý rơi ngay vị trí của bạn trong game và hồi phục cơn đói khát!"
+    },
+    {
+      "id": "drop-1791281940621",
+      "steamId": "76561198354289789",
+      "carcassName": "Xác Heo Rừng (Wild Boar)",
+      "price": 15,
+      "orderedAt": "17:19:00 6/10/2026",
+      "status": "Đã Rớt Xác Thành Công",
+      "note": "Đã thả xác vật lý rơi ngay vị trí của bạn trong game và hồi phục cơn đói khát!"
+    },
+    {
+      "id": "drop-1791281918725",
+      "steamId": "76561198354289789",
+      "carcassName": "Xác Hươu Đốm (Deer)",
+      "price": 30,
+      "orderedAt": "17:18:38 6/10/2026",
+      "status": "Đã Rớt Xác Thành Công",
+      "note": "Đã thả xác vật lý rơi ngay vị trí của bạn trong game và hồi phục cơn đói khát!"
+    },
+    {
+      "id": "drop-1791281655860",
+      "steamId": "76561198636766540",
+      "carcassName": "Xác Heo Rừng (Wild Boar)",
+      "price": 15,
+      "orderedAt": "17:14:15 6/10/2026",
+      "status": "Đã Rớt Xác Thành Công",
+      "note": "Đã thả xác vật lý rơi ngay vị trí của bạn trong game và hồi phục cơn đói khát!"
+    },
+    {
+      "id": "drop-1791280778839",
+      "steamId": "76561198354289789",
+      "carcassName": "Cá Khổng Lồ Đầm Lầy (Big Fish)",
+      "price": 25,
+      "orderedAt": "16:59:38 6/10/2026",
+      "status": "Đã Thả Thành Công (Đã Cứu Đói Trong Game)",
+      "note": "Đã kích hoạt hồi phục đói khát & dinh dưỡng thành công trực tiếp vào nhân vật trong game!"
+    },
+    {
+      "id": "drop-1791280751669",
+      "steamId": "76561198354289789",
+      "carcassName": "Xác Hươu Đốm (Deer)",
+      "price": 30,
+      "orderedAt": "16:59:11 6/10/2026",
+      "status": "Đã Thả Thành Công (Đã Cứu Đói Trong Game)",
+      "note": "Đã kích hoạt hồi phục đói khát & dinh dưỡng thành công trực tiếp vào nhân vật trong game!"
+    },
+    {
+      "id": "drop-1791280728217",
+      "steamId": "76561198354289789",
+      "carcassName": "Xác Tenonto Khổng Lồ",
+      "price": 50,
+      "orderedAt": "16:58:48 6/10/2026",
+      "status": "Đã Thả Thành Công (Đã Cứu Đói Trong Game)",
+      "note": "Đã kích hoạt hồi phục đói khát & dinh dưỡng thành công trực tiếp vào nhân vật trong game!"
+    },
+    {
+      "id": "drop-1791280567991",
+      "steamId": "76561198354289789",
+      "carcassName": "Xác Tenonto Khổng Lồ",
+      "price": 50,
+      "orderedAt": "16:56:07 6/10/2026",
+      "status": "Đã Thả Thành Công (Đã Cứu Đói Trong Game)",
+      "note": "Đã kích hoạt hồi phục đói khát & dinh dưỡng thành công trực tiếp vào nhân vật trong game!"
+    },
+    {
+      "id": "drop-1791280539138",
+      "steamId": "76561198354289789",
+      "carcassName": "Xác Heo Rừng (Wild Boar)",
+      "price": 15,
+      "orderedAt": "16:55:39 6/10/2026",
+      "status": "Đã Thả Thành Công (Đã Cứu Đói Trong Game)",
+      "note": "Đã kích hoạt hồi phục đói khát & dinh dưỡng thành công trực tiếp vào nhân vật trong game!"
+    },
+    {
+      "id": "drop-1791279877491",
+      "steamId": "76561198636766540",
+      "carcassName": "Xác Heo Rừng (Wild Boar)",
+      "price": 15,
+      "orderedAt": "16:44:37 6/10/2026",
+      "status": "Đã Thả Thành Công (Đã Cứu Đói Trong Game)",
+      "note": "Đã kích hoạt hồi phục đói khát & dinh dưỡng thành công trực tiếp vào nhân vật trong game!"
+    },
+    {
+      "id": "drop-1791276972502",
+      "steamId": "76561198354289789",
+      "carcassName": "Xác Heo Rừng (Wild Boar)",
+      "price": 15,
+      "orderedAt": "15:56:12 6/10/2026",
+      "status": "Đã Thả Thành Công",
+      "note": "Đã kích hoạt thả tại toạ độ vị trí hiện tại của bạn trên Gateway!"
+    }
+  ],
+  "userGarage": {
+    "76561198636766540": [
+      {
+        "id": "dino-1791280118789-557",
+        "species": "Triceratops",
+        "gender": "Đực (Male)",
+        "growth": 100,
+        "health": 100,
+        "hunger": 100,
+        "thirst": 100,
+        "diet": [
+          "100% Dinh Dưỡng"
+        ],
+        "mutations": [],
+        "stored_at": "16:48:38 6/10/2026",
+        "source": "Mua từ Chợ Giao Dịch (Bảo Kê Rừng Dừa)",
+        "isLocal": true
+      },
+      {
+        "id": "dino-1791283967260-994",
+        "species": "Tyrannosaurus",
+        "gender": "Đực (Male)",
+        "growth": 40,
+        "health": 100,
+        "hunger": 100,
+        "thirst": 100,
+        "diet": [
+          "S",
+          "S",
+          "D"
+        ],
+        "mutations": [],
+        "stored_at": "17:52:47 6/10/2026",
+        "source": "Trúng thưởng từ Hòm Halloween Huyền Bí 🎃",
+        "isLocal": true
+      }
+    ],
+    "76561198354289789": [
+      {
+        "id": "dino-1791288903157-422",
+        "species": "Omniraptor",
+        "gender": "Đực (Male)",
+        "growth": 100,
+        "health": 100,
+        "hunger": 100,
+        "thirst": 100,
+        "diet": [
+          "S",
+          "S",
+          "D"
+        ],
+        "mutations": [],
+        "stored_at": "19:15:03 6/10/2026",
+        "source": "Mua từ Chợ Giao Dịch (Raptor Tốc Độ)",
+        "isLocal": true
+      }
+    ]
+  },
+  "withdrawnDinos": {
+    "76561198354289789": [
+      "cmuwjve0y00axp7015omvmy62",
+      "cmuwkxsoo09qjrz01nz42tye5"
+    ]
+  }
+}

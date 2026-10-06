@@ -1,0 +1,14 @@
+{
+  "name": "the-isle-vietnam-portal",
+  "version": "1.0.0",
+  "description": "Cổng thông tin The Isle Evrima - Nội quy, Bản đồ trực tiếp, Gara khủng long & IslePilot API Integration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.22.3"
+  }
+}

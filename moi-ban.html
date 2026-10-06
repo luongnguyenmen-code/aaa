@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mời Bạn Bè Nhận Lúa — ST25 VIETNAM</title>
+  <meta name="description" content="Chương trình giới thiệu bạn bè tham gia server ST25 The Isle: Evrima. Nhận ngay 50 Lúa 🌾 cho cả bạn và đồng đội!">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="assets/map/gateway.webp">
+  <style>
+    .referral-banner {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.95));
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: var(--radius-lg);
+      padding: 30px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    .code-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 2px dashed #fbbf24;
+      padding: 12px 24px;
+      border-radius: var(--radius-md);
+      margin: 15px 0;
+    }
+    .code-text {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #fbbf24;
+      font-family: monospace;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Site Header -->
+  <header class="site-header">
+    <div class="container nav-container">
+      <a href="index.html" class="brand-logo">
+        <span class="brand-text">🌾 ST25 <span class="brand-accent">VIETNAM</span> 🦖</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="index.html" class="nav-link">🌾 Trang chủ</a></li>
+        <li><a href="bando.html" class="nav-link">🗺️ Bản đồ</a></li>
+        <li><a href="nhiem-vu.html" class="nav-link">🌾 Kho Lúa & Quests</a></li>
+        <li><a href="giao-dich.html" class="nav-link">⚖️ Giao Dịch</a></li>
+        <li><a href="hom-qua.html" class="nav-link">🎁 Hòm May Mắn</a></li>
+        <li><a href="gara.html" class="nav-link">🦖 Gara</a></li>
+        <li><a href="skin.html" class="nav-link">🎨 Skin</a></li>
+        <li><a href="tha-xac.html" class="nav-link">🥩 Thả Xác</a></li>
+        <li><a href="moi-ban.html" class="nav-link active">👥 Mời Bạn</a></li>
+        <li><a href="ho-tro.html" class="nav-link">🆘 Hỗ Trợ</a></li>
+        <li><a href="noi-quy.html" class="nav-link">📜 Nội quy</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="lien-ket-steam.html" class="btn btn-secondary btn-sm">🎮 Steam Profile</a>
+        <a href="tai-hud.html" class="btn btn-hud btn-sm">Tải IsleLiveMap</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container" style="padding-top: 30px; padding-bottom: 60px;">
+    
+    <!-- Hero Referral Banner -->
+    <div class="referral-banner">
+      <span class="rule-badge badge-allow" style="font-size: 0.85rem;">🌾 CHƯƠNG TRÌNH ĐỒNG ĐỘI ST25 🦖</span>
+      <h1 style="color: #fff; font-size: 2.2rem; margin: 12px 0 6px;">MỜI BẠN CÙNG CHƠI — NHẬN NGAY +50 LÚA 🌾</h1>
+      <p style="color: var(--text-secondary); max-width: 650px; margin: 0 auto 15px; font-size: 0.95rem;">
+        Chia sẻ mã giới thiệu cho bạn bè. Khi bạn bè liên kết tài khoản Steam và nhập mã, cả <strong>Bạn</strong> và <strong>Bạn Bè</strong> đều nhận ngay <strong>50 Lúa 🌾</strong> vào ví sinh tồn!
+      </p>
+
+      <div class="code-box">
+        <span class="code-text" id="my-ref-code">ST25-XXXXX</span>
+        <button onclick="copyRefCode()" class="btn btn-primary btn-sm" id="btn-copy-code">
+          📋 Sao Chép Mã
+        </button>
+      </div>
+
+      <div>
+        <button onclick="copyShareLink()" class="btn btn-secondary btn-sm" id="btn-copy-link">
+          🔗 Sao Chép Link Giới Thiệu Nhanh
+        </button>
+      </div>
+    </div>
+
+    <!-- Referral Stats Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 35px;">
+      <div class="stat-card">
+        <span style="font-size: 2rem;">👥</span>
+        <div style="font-size: 1.8rem; font-weight: 800; color: #fff; margin: 4px 0;" id="stat-count">0</div>
+        <small style="color: var(--text-muted); text-transform: uppercase;">Bạn bè đã mời</small>
+      </div>
+
+      <div class="stat-card">
+        <span style="font-size: 2rem;">🌾</span>
+        <div style="font-size: 1.8rem; font-weight: 800; color: #fbbf24; margin: 4px 0;" id="stat-earned">0 Lúa</div>
+        <small style="color: var(--text-muted); text-transform: uppercase;">Tổng Lúa nhận được</small>
+      </div>
+
+      <div class="stat-card">
+        <span style="font-size: 2rem;">🎁</span>
+        <div style="font-size: 1.8rem; font-weight: 800; color: #10b981; margin: 4px 0;">+50 Lúa</div>
+        <small style="color: var(--text-muted); text-transform: uppercase;">Thưởng mỗi lượt mời</small>
+      </div>
+
+      <div class="stat-card">
+        <span style="font-size: 2rem;">🏆</span>
+        <div style="font-size: 1.8rem; font-weight: 800; color: #38bdf8; margin: 4px 0;">Không Giới Hạn</div>
+        <small style="color: var(--text-muted); text-transform: uppercase;">Số lượng bạn bè</small>
+      </div>
+    </div>
+
+    <!-- 2 Column: Claim Code & Leaderboard -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px;">
+      
+      <!-- Input Friend Code -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 22px;">
+        <h3 style="color: #fff; font-size: 1.2rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+          <span>🎁 Bạn Là Người Mới? Nhập Mã Bạn Bè</span>
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
+          Nếu bạn được một người chơi khác giới thiệu vào ST25, hãy nhập mã của họ bên dưới để nhận ngay <strong>+50 Lúa 🌾</strong> quà tân thủ!
+        </p>
+
+        <form id="claim-code-form" onsubmit="handleClaimCode(event)">
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" for="friend-code">Mã giới thiệu của bạn bè:</label>
+            <input type="text" id="friend-code" class="form-input" placeholder="Ví dụ: ST25-88278" required style="text-transform: uppercase; font-weight: 700;">
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%;">
+            🌾 Nhận Ngay +50 Lúa Khởi Nghiệp 🚀
+          </button>
+        </form>
+      </div>
+
+      <!-- Top Referrers -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 22px;">
+        <h3 style="color: #fff; font-size: 1.2rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+          <span>👑 Bảng Vinh Danh Đại Sứ Làng ST25</span>
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
+          Những nông dân chăm chỉ xây dựng cộng đồng vững mạnh nhất.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(15, 23, 42, 0.6); border-radius: 6px; font-size: 0.88rem;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 1.2rem;">🥇</span>
+              <strong style="color: #fff;">Chủ Trại Gà ST25</strong>
+            </div>
+            <span style="color: #fbbf24; font-weight: 700;">28 bạn (+1,400 Lúa 🌾)</span>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(15, 23, 42, 0.6); border-radius: 6px; font-size: 0.88rem;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 1.2rem;">🥈</span>
+              <strong style="color: #fff;">Trùm Rừng Dừa</strong>
+            </div>
+            <span style="color: #fbbf24; font-weight: 700;">19 bạn (+950 Lúa 🌾)</span>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(15, 23, 42, 0.6); border-radius: 6px; font-size: 0.88rem;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 1.2rem;">🥉</span>
+              <strong style="color: #fff;">Thích Thì Var</strong>
+            </div>
+            <span style="color: #fbbf24; font-weight: 700;">14 bạn (+700 Lúa 🌾)</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container" style="text-align: center;">
+      <p>© 2026 ST25 — Chương Trình Mời Bạn Bè máy chủ The Isle: Evrima Việt Nam.</p>
+    </div>
+  </footer>
+
+  <script src="assets/js/app.js"></script>
+  <script>
+    let myCode = 'ST25-66540';
+
+    async function loadReferralData() {
+      try {
+        const res = await fetch('/api/referral/me');
+        const data = await res.json();
+
+        myCode = data.referralCode;
+        document.getElementById('my-ref-code').textContent = myCode;
+        document.getElementById('stat-count').textContent = data.invitedCount;
+        document.getElementById('stat-earned').textContent = `${data.earnedLua} Lúa 🌾`;
+
+        if (data.invitedBy) {
+          const formBox = document.getElementById('claim-code-form');
+          formBox.innerHTML = `
+            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; padding: 14px; border-radius: 6px; color: #10b981; font-weight: 600;">
+              ✅ Bạn đã kích hoạt mã giới thiệu [${data.invitedBy}] và đã nhận +50 Lúa 🌾!
+            </div>
+          `;
+        }
+
+      } catch (e) {
+        console.error('Error loading referral info:', e);
+      }
+    }
+
+    function copyRefCode() {
+      navigator.clipboard.writeText(myCode).then(() => {
+        App.showToast('Đã sao chép mã giới thiệu vào bộ nhớ tạm!', 'success');
+        const btn = document.getElementById('btn-copy-code');
+        btn.textContent = '✅ Đã Chép!';
+        setTimeout(() => btn.textContent = '📋 Sao Chép Mã', 2000);
+      });
+    }
+
+    function copyShareLink() {
+      const link = `${window.location.origin}/lien-ket-steam.html?ref=${myCode}`;
+      navigator.clipboard.writeText(link).then(() => {
+        App.showToast('Đã sao chép link mời nhanh vào bộ nhớ tạm!', 'success');
+        const btn = document.getElementById('btn-copy-link');
+        btn.textContent = '✅ Đã Chép Link!';
+        setTimeout(() => btn.textContent = '🔗 Sao Chép Link Giới Thiệu Nhanh', 2000);
+      });
+    }
+
+    async function handleClaimCode(e) {
+      e.preventDefault();
+      const code = document.getElementById('friend-code').value.trim();
+
+      try {
+        const res = await fetch('/api/referral/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code })
+        });
+        const result = await res.json();
+        if (res.ok) {
+          App.showToast(result.message, 'success');
+          loadReferralData();
+        } else {
+          App.showToast(result.error || 'Kích hoạt mã thất bại!', 'error');
+        }
+      } catch (e) {
+        App.showToast('Lỗi mạng khi kích hoạt mã!', 'error');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadReferralData);
+  </script>
+</body>
+</html>

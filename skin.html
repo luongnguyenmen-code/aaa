@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chỉnh Sửa Skin Khủng Long — ST25 VIETNAM</title>
+  <meta name="description" content="Trình thiết kế và phối màu Skin khủng long Evrima trực quan của server ST25. Áp dụng skin bằng Lúa 🌾 trực tiếp vào tài khoản game.">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="assets/map/gateway.webp">
+  <style>
+    .editor-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 25px;
+    }
+    @media (max-width: 900px) {
+      .editor-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    .preview-box {
+      background: radial-gradient(circle at center, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.98));
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 420px;
+      position: relative;
+    }
+    .color-picker-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .color-swatch-input {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      width: 44px;
+      height: 44px;
+      border: 2px solid #fbbf24;
+      border-radius: 50%;
+      cursor: pointer;
+      background: transparent;
+      padding: 0;
+      overflow: hidden;
+    }
+    .color-swatch-input::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+    .color-swatch-input::-webkit-color-swatch {
+      border: none;
+      border-radius: 50%;
+    }
+    .preset-pill {
+      display: inline-block;
+      padding: 6px 12px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin: 3px;
+    }
+    .preset-pill:hover, .preset-pill.active {
+      border-color: #fbbf24;
+      color: #fbbf24;
+      background: rgba(245, 158, 11, 0.12);
+    }
+    .dino-avatar-svg {
+      width: 280px;
+      height: 280px;
+      filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
+      transition: all 0.3s ease;
+    }
+    .skin-shop-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .skin-shop-card:hover {
+      border-color: #fbbf24;
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.15);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Site Header -->
+  <header class="site-header">
+    <div class="container nav-container">
+      <a href="index.html" class="brand-logo">
+        <span class="brand-text">🌾 ST25 <span class="brand-accent">VIETNAM</span> 🦖</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="index.html" class="nav-link">🌾 Trang chủ</a></li>
+        <li><a href="bando.html" class="nav-link">🗺️ Bản đồ</a></li>
+        <li><a href="nhiem-vu.html" class="nav-link">🌾 Kho Lúa & Quests</a></li>
+        <li><a href="giao-dich.html" class="nav-link">⚖️ Giao Dịch</a></li>
+        <li><a href="hom-qua.html" class="nav-link">🎁 Hòm May Mắn</a></li>
+        <li><a href="gara.html" class="nav-link">🦖 Gara</a></li>
+        <li><a href="skin.html" class="nav-link active">🎨 Skin</a></li>
+        <li><a href="tha-xac.html" class="nav-link">🥩 Thả Xác</a></li>
+        <li><a href="moi-ban.html" class="nav-link">👥 Mời Bạn</a></li>
+        <li><a href="ho-tro.html" class="nav-link">🆘 Hỗ Trợ</a></li>
+        <li><a href="noi-quy.html" class="nav-link">📜 Nội quy</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="lien-ket-steam.html" class="btn btn-secondary btn-sm">🎮 Steam Profile</a>
+        <a href="tai-hud.html" class="btn btn-hud btn-sm">Tải IsleLiveMap</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container" style="padding-top: 30px; padding-bottom: 60px;">
+    
+    <!-- Account & Balance Status Banner (Live API Synced) -->
+    <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: var(--radius-md); padding: 20px 24px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <span class="rule-badge badge-allow" style="font-size: 0.8rem;">Đồng Bộ Tài Khoản Game</span>
+          <span style="color: #cbd5e1; font-size: 0.85rem;" id="player-status-tag">SteamID: 76561198636766540</span>
+        </div>
+        <h1 style="color: #fff; font-size: 1.8rem; margin: 0 0 4px;">CHỈNH SỬA & ĐỔI SKIN KHỦNG LONG 🦖</h1>
+        <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">
+          Khủng long đang chơi: <strong style="color: #38bdf8;" id="my-dino-species">Tyrannosaurus</strong> (<span id="my-dino-growth">25%</span> Growth).
+        </p>
+      </div>
+
+      <div style="text-align: right; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-sm); padding: 12px 20px;">
+        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Số Dư Lúa Trong Tài Khoản</span>
+        <div style="font-size: 1.6rem; font-weight: 900; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
+          <span id="skin-balance-val">---</span>
+          <span>Lúa 🌾</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Presets Quick Bar -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 20px; margin-bottom: 25px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+      <strong style="color: #fbbf24; font-size: 0.9rem; margin-right: 8px;">🌾 Mẫu Skin Gợi Ý ST25:</strong>
+      <span class="preset-pill active" onclick="applyPreset('golden_rice')">🌾 Hoàng Kim ST25 (Vàng Lúa)</span>
+      <span class="preset-pill" onclick="applyPreset('shadow')">🌑 Hắc Long Bóng Đêm</span>
+      <span class="preset-pill" onclick="applyPreset('jungle')">🌿 Rừng Dừa Xanh Mướt</span>
+      <span class="preset-pill" onclick="applyPreset('volcano')">🌋 Nham Thạch Núi Lửa</span>
+      <span class="preset-pill" onclick="applyPreset('albino')">❄️ Bạch Tạng Albino Hiếm</span>
+    </div>
+
+    <!-- 2 Column: Preview & Controls -->
+    <div class="editor-layout">
+      
+      <!-- Visual Preview Box -->
+      <div class="preview-box">
+        <div style="position: absolute; top: 16px; left: 20px;">
+          <span class="rule-badge badge-allow" id="selected-species-badge">Tyrannosaurus Rex</span>
+        </div>
+
+        <!-- Dynamic SVG Dinosaur Silhouette Representation -->
+        <svg class="dino-avatar-svg" viewBox="0 0 200 200" id="dino-svg">
+          <!-- Background Glow Effect -->
+          <circle cx="100" cy="100" r="85" id="svg-glow" fill="#f59e0b" opacity="0.1" />
+
+          <!-- Body Silhouette Base -->
+          <path id="svg-body" d="M30,130 C40,90 60,60 90,40 C120,20 150,25 170,45 C185,60 170,90 140,110 C120,125 110,140 100,165 C85,160 70,175 60,170 C45,160 35,150 30,130 Z" fill="#2d3748" />
+
+          <!-- Pattern Lines / Stripes -->
+          <path id="svg-pattern" d="M75,55 Q95,75 80,95 M105,40 Q125,65 110,95 M135,35 Q150,60 135,90" stroke="#f59e0b" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.9" />
+
+          <!-- Underbelly / Jaw -->
+          <path id="svg-belly" d="M60,120 C80,105 105,115 125,120 C110,145 90,150 60,120 Z" fill="#e2e8f0" opacity="0.85" />
+
+          <!-- Eye Detail -->
+          <circle id="svg-eye" cx="150" cy="55" r="5" fill="#ef4444" />
+          <circle cx="151" cy="54" r="2" fill="#fff" />
+        </svg>
+
+        <div style="text-align: center; margin-top: 20px;">
+          <h3 style="color: #fff; font-size: 1.2rem; margin-bottom: 4px;" id="dino-display-name">Tyrannosaurus</h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Mã màu đã tối ưu theo bảng hệ màu chuẩn Evrima Gateway.</p>
+        </div>
+      </div>
+
+      <!-- Controls Panel -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 22px;">
+        <h3 style="color: #fff; font-size: 1.2rem; margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
+          <span>⚙️ Bảng Phối Màu Lớp Da</span>
+        </h3>
+
+        <!-- Chọn Loài -->
+        <div class="form-group" style="margin-bottom: 18px;">
+          <label class="form-label" for="dino-species-select">Chọn loài khủng long:</label>
+          <select id="dino-species-select" class="form-input" onchange="changeSpecies(this.value)">
+            <option value="Tyrannosaurus">Tyrannosaurus (T-Rex)</option>
+            <option value="Deinosuchus">Deinosuchus (Cá sấu khổng lồ)</option>
+            <option value="Carnotaurus">Carnotaurus (Bò tót tốc độ)</option>
+            <option value="Ceratosaurus">Ceratosaurus (Bạo chúa đầm lầy)</option>
+            <option value="Omniraptor">Omniraptor (Raptor săn mồi)</option>
+            <option value="Dilophosaurus">Dilophosaurus (Thằn lằn ảo giác)</option>
+            <option value="Triceratops">Triceratops (Khủng long ba sừng)</option>
+            <option value="Stegosaurus">Stegosaurus (Khủng long gai đuôi)</option>
+            <option value="Gallimimus">Gallimimus (Đà điểu nhanh nhẹn)</option>
+            <option value="Pteranodon">Pteranodon (Dực long bay lượn)</option>
+          </select>
+        </div>
+
+        <!-- Lớp Màu 1: Base -->
+        <div class="color-picker-row">
+          <div>
+            <strong style="color: #fff; display: block; font-size: 0.95rem;">Màu Nền Thân (Base)</strong>
+            <small style="color: var(--text-muted); font-size: 0.8rem;">Sắc tố da chủ đạo</small>
+          </div>
+          <input type="color" id="color-base" class="color-swatch-input" value="#2d3748" oninput="updateColors()">
+        </div>
+
+        <!-- Lớp Màu 2: Pattern -->
+        <div class="color-picker-row">
+          <div>
+            <strong style="color: #fff; display: block; font-size: 0.95rem;">Màu Sọc Vằn (Pattern)</strong>
+            <small style="color: var(--text-muted); font-size: 0.8rem;">Hoa văn lưng & vảy đuôi</small>
+          </div>
+          <input type="color" id="color-pattern" class="color-swatch-input" value="#f59e0b" oninput="updateColors()">
+        </div>
+
+        <!-- Lớp Màu 3: Underbelly -->
+        <div class="color-picker-row">
+          <div>
+            <strong style="color: #fff; display: block; font-size: 0.95rem;">Màu Bụng & Cổ (Belly)</strong>
+            <small style="color: var(--text-muted); font-size: 0.8rem;">Vùng ngực dưới và hàm</small>
+          </div>
+          <input type="color" id="color-belly" class="color-swatch-input" value="#e2e8f0" oninput="updateColors()">
+        </div>
+
+        <!-- Lớp Màu 4: Eye -->
+        <div class="color-picker-row" style="border-bottom: none; margin-bottom: 20px;">
+          <div>
+            <strong style="color: #fff; display: block; font-size: 0.95rem;">Màu Mắt & Đồng Tử (Eye)</strong>
+            <small style="color: var(--text-muted); font-size: 0.8rem;">Ánh nhìn đe dọa</small>
+          </div>
+          <input type="color" id="color-eye" class="color-swatch-input" value="#ef4444" oninput="updateColors()">
+        </div>
+
+        <!-- Action Button 1: Apply using Lúa via API -->
+        <button onclick="handleApplySkinWithLua()" class="btn btn-primary" style="width: 100%; margin-bottom: 10px; font-weight: 700;">
+          🌾 Áp Dụng Skin Lên Dino (10 Lúa 🌾) 🚀
+        </button>
+
+        <!-- Action Button 2: Export code free -->
+        <button onclick="exportSkinCode()" class="btn btn-secondary btn-sm" style="width: 100%;">
+          📋 Xuất Mã Evrima (Miễn Phí)
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Export Code Section -->
+    <div id="export-box" style="display: none; margin-top: 30px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 22px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+        <h3 style="color: #fff; font-size: 1.15rem; margin: 0;">📜 Mã Skin Code The Isle: Evrima Đã Tạo</h3>
+        <button onclick="copySkinCode()" class="btn btn-secondary btn-sm" id="btn-copy-skin">
+          📑 Sao Chép 1-Click
+        </button>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 14px;">
+        Mở game The Isle &gt; vào Character Customization &gt; bấm nút <strong>Paste Skin Code</strong> để nạp bộ màu này vào nhân vật của bạn!
+      </p>
+      <textarea id="skin-code-output" style="width: 100%; height: 90px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 6px; color: #fbbf24; font-family: monospace; font-size: 0.85rem; padding: 12px; resize: none;" readonly></textarea>
+    </div>
+
+    <!-- Skin Shop Section (Linked Directly to IslePilot API) -->
+    <div style="margin-top: 45px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h2 style="color: #fff; font-size: 1.4rem; margin: 0 0 4px;">✨ Cửa Hàng Skin Độc Quyền ST25 (Dùng Lúa 🌾)</h2>
+          <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem;">Các mẫu skin dạ quang và sự kiện đặc biệt mua trực tiếp bằng Lúa trong tài khoản.</p>
+        </div>
+        <span class="rule-badge badge-warn" id="shop-skin-count">Đang tải...</span>
+      </div>
+
+      <div id="skin-shop-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px;">
+        <!-- Injected by JS -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container" style="text-align: center;">
+      <p>© 2026 ST25 — Trình tạo & Quản lý Skin khủng long máy chủ The Isle: Evrima Việt Nam.</p>
+    </div>
+  </footer>
+
+  <script src="assets/js/app.js"></script>
+  <script>
+    let myLiveBalance = 0;
+    let currentSpecies = "Tyrannosaurus";
+
+    const PRESETS = {
+      golden_rice: { base: "#1e293b", pattern: "#fbbf24", belly: "#f59e0b", eye: "#ef4444" },
+      shadow: { base: "#090d16", pattern: "#1e293b", belly: "#334155", eye: "#06b6d4" },
+      jungle: { base: "#14532d", pattern: "#84cc16", belly: "#dcfce7", eye: "#eab308" },
+      volcano: { base: "#450a0a", pattern: "#ea580c", belly: "#f97316", eye: "#facc15" },
+      albino: { base: "#f8fafc", pattern: "#e2e8f0", belly: "#cbd5e1", eye: "#ec4899" }
+    };
+
+    async function loadSkinPageData() {
+      try {
+        const res = await fetch('/api/skin/info');
+        const data = await res.json();
+
+        myLiveBalance = data.balance;
+        document.getElementById('skin-balance-val').textContent = myLiveBalance.toLocaleString('vi-VN');
+        document.getElementById('player-status-tag').textContent = `Tài khoản: ${data.personaName} (${data.steamId})`;
+
+        if (data.species) {
+          currentSpecies = data.species;
+          document.getElementById('my-dino-species').textContent = data.species;
+          document.getElementById('my-dino-growth').textContent = `${data.growth}%`;
+          const sel = document.getElementById('dino-species-select');
+          if (sel) sel.value = data.species;
+          changeSpecies(data.species);
+        }
+
+        // Render Skin Shop
+        const shopGrid = document.getElementById('skin-shop-grid');
+        const shopCount = document.getElementById('shop-skin-count');
+        const skins = data.shopSkins || [];
+        shopCount.textContent = `${skins.length} mẫu skin`;
+
+        shopGrid.innerHTML = skins.map(s => `
+          <div class="skin-shop-card">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 2rem;">${s.icon || '🦖'}</span>
+                <span class="rule-badge badge-allow" style="font-weight: 700; color: #fbbf24;">
+                  ${s.price} Lúa 🌾
+                </span>
+              </div>
+              <h4 style="color: #fff; font-size: 1.05rem; margin-bottom: 4px;">${s.name}</h4>
+              <p style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 12px;">Dành riêng cho loài <strong>${s.species || 'Tất cả'}</strong></p>
+            </div>
+            <button onclick="handleBuySkin('${s.id}', '${s.name}', ${s.price})" class="btn btn-primary btn-sm" style="width: 100%;">
+              🌾 Mua Bằng Lúa (${s.price} Lúa)
+            </button>
+          </div>
+        `).join('');
+
+      } catch (e) {
+        console.error('Error loading skin data:', e);
+      }
+    }
+
+    function updateColors() {
+      const base = document.getElementById('color-base').value;
+      const pattern = document.getElementById('color-pattern').value;
+      const belly = document.getElementById('color-belly').value;
+      const eye = document.getElementById('color-eye').value;
+
+      document.getElementById('svg-body').setAttribute('fill', base);
+      document.getElementById('svg-pattern').setAttribute('stroke', pattern);
+      document.getElementById('svg-belly').setAttribute('fill', belly);
+      document.getElementById('svg-eye').setAttribute('fill', eye);
+      document.getElementById('svg-glow').setAttribute('fill', pattern);
+    }
+
+    function changeSpecies(name) {
+      currentSpecies = name;
+      document.getElementById('selected-species-badge').textContent = name;
+      document.getElementById('dino-display-name').textContent = name;
+    }
+
+    function applyPreset(presetKey) {
+      document.querySelectorAll('.preset-pill').forEach(p => p.classList.remove('active'));
+      event.target.classList.add('active');
+
+      const p = PRESETS[presetKey];
+      if (!p) return;
+
+      document.getElementById('color-base').value = p.base;
+      document.getElementById('color-pattern').value = p.pattern;
+      document.getElementById('color-belly').value = p.belly;
+      document.getElementById('color-eye').value = p.eye;
+
+      updateColors();
+    }
+
+    function generateEvrimaCode() {
+      const species = document.getElementById('dino-species-select').value;
+      const base = document.getElementById('color-base').value;
+      const pattern = document.getElementById('color-pattern').value;
+      const belly = document.getElementById('color-belly').value;
+      const eye = document.getElementById('color-eye').value;
+
+      return `[${species}_Skin_v1:B=${base.replace('#','')}:P=${pattern.replace('#','')}:U=${belly.replace('#','')}:E=${eye.replace('#','')}]`;
+    }
+
+    function exportSkinCode() {
+      const code = generateEvrimaCode();
+      const outBox = document.getElementById('export-box');
+      const outText = document.getElementById('skin-code-output');
+      outText.value = code;
+      outBox.style.display = 'block';
+      outBox.scrollIntoView({ behavior: 'smooth' });
+      App.showToast('Đã xuất mã Skin Evrima thành công! Hãy sao chép để dán vào game.', 'success');
+    }
+
+    function copySkinCode() {
+      const text = document.getElementById('skin-code-output').value;
+      navigator.clipboard.writeText(text).then(() => {
+        App.showToast('Đã sao chép mã Skin vào bộ nhớ tạm!', 'success');
+        const btn = document.getElementById('btn-copy-skin');
+        btn.textContent = '✅ Đã Sao Chép!';
+        setTimeout(() => btn.textContent = '📑 Sao Chép 1-Click', 2000);
+      });
+    }
+
+    async function handleApplySkinWithLua() {
+      if (myLiveBalance < 10) {
+        App.showToast(`Tài khoản của bạn không đủ Lúa! Cần 10 Lúa 🌾 để áp dụng skin (Hiện có: ${myLiveBalance}).`, 'error');
+        return;
+      }
+
+      if (!confirm(`Xác nhận dùng 10 Lúa 🌾 trong tài khoản để áp dụng bộ skin này cho ${currentSpecies} trên máy chủ?`)) return;
+
+      const code = generateEvrimaCode();
+      const colors = {
+        base: document.getElementById('color-base').value,
+        pattern: document.getElementById('color-pattern').value,
+        belly: document.getElementById('color-belly').value,
+        eye: document.getElementById('color-eye').value
+      };
+
+      try {
+        const res = await fetch('/api/skin/apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ species: currentSpecies, colors, skinCode: code })
+        });
+        const result = await res.json();
+        if (res.ok) {
+          App.showToast(result.message, 'success');
+          myLiveBalance = result.newBalance;
+          document.getElementById('skin-balance-val').textContent = myLiveBalance.toLocaleString('vi-VN');
+          exportSkinCode();
+        } else {
+          App.showToast(result.error || 'Áp dụng skin thất bại!', 'error');
+        }
+      } catch (e) {
+        App.showToast('Lỗi mạng khi kết nối máy chủ!', 'error');
+      }
+    }
+
+    async function handleBuySkin(skinId, skinName, price) {
+      if (myLiveBalance < price) {
+        App.showToast(`Tài khoản của bạn không đủ Lúa! Cần ${price} Lúa 🌾 (Hiện có: ${myLiveBalance}).`, 'error');
+        return;
+      }
+
+      if (!confirm(`Xác nhận dùng ${price} Lúa 🌾 trong tài khoản để mua skin [${skinName}]?`)) return;
+
+      try {
+        const res = await fetch('/api/skin/buy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ skinId, skinName, price })
+        });
+        const result = await res.json();
+        if (res.ok) {
+          App.showToast(result.message, 'success');
+          myLiveBalance = result.newBalance;
+          document.getElementById('skin-balance-val').textContent = myLiveBalance.toLocaleString('vi-VN');
+        } else {
+          App.showToast(result.error || 'Mua skin thất bại!', 'error');
+        }
+      } catch (e) {
+        App.showToast('Lỗi mạng khi kết nối máy chủ!', 'error');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateColors();
+      loadSkinPageData();
+    });
+  </script>
+</body>
+</html>

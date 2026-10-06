@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nhiệm Vụ Cá Nhân — ST25 VIETNAM</title>
+  <meta name="description" content="Danh sách nhiệm vụ cá nhân, tiến độ Prime Elder và số dư Lúa của riêng bạn trên server ST25 The Isle Evrima. Đồng bộ tự động theo thời gian thực.">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="assets/map/gateway.webp">
+  <style>
+    .personal-profile-banner {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85));
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .profile-left {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+    .profile-avatar-wrap {
+      position: relative;
+    }
+    .profile-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 3px solid var(--accent-emerald);
+      object-fit: cover;
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.35);
+    }
+    .profile-info h2 {
+      margin: 0 0 4px;
+      font-size: 1.35rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .profile-steam-id {
+      font-family: monospace;
+      font-size: 0.825rem;
+      color: var(--text-muted);
+    }
+    .profile-dino-badges {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .wallet-box {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: var(--radius-sm);
+      padding: 16px 24px;
+      text-align: right;
+      min-width: 200px;
+    }
+    .wallet-title {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .wallet-amount {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--accent-amber);
+      display: block;
+      margin-top: 2px;
+      text-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+    }
+    .unlinked-alert {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .prime-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s ease;
+    }
+    .prime-card.completed {
+      border-color: rgba(52, 211, 153, 0.35);
+      background: rgba(16, 185, 129, 0.06);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a href="index.html" class="brand">
+        <span style="color: #fbbf24;">🌾 ST25</span>
+        <span class="brand-tag">🦖 NHIỆM VỤ</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="index.html" class="nav-link">🌾 Trang chủ</a></li>
+        <li><a href="bando.html" class="nav-link">🗺️ Bản đồ</a></li>
+        <li><a href="nhiem-vu.html" class="nav-link active">🌾 Kho Lúa</a></li>
+        <li><a href="giao-dich.html" class="nav-link">⚖️ Giao Dịch</a></li>
+        <li><a href="hom-qua.html" class="nav-link">🎁 Mở Hòm</a></li>
+        <li><a href="gara.html" class="nav-link">🦖 Gara</a></li>
+        <li><a href="skin.html" class="nav-link">🎨 Skin</a></li>
+        <li><a href="tha-xac.html" class="nav-link">🥩 Thả Xác</a></li>
+        <li><a href="moi-ban.html" class="nav-link">👥 Mời Bạn</a></li>
+        <li><a href="ho-tro.html" class="nav-link">🆘 Hỗ Trợ</a></li>
+        <li><a href="noi-quy.html" class="nav-link">📜 Nội quy</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="lien-ket-steam.html" class="btn btn-secondary btn-sm" id="nav-btn-user">Tài Khoản Của Tôi</a>
+        <a href="https://discord.gg/3xCrA6VyY" target="_blank" class="btn btn-primary btn-sm">Discord ST25</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="container" style="padding: 40px 20px; max-width: 1060px;">
+    
+    <!-- Page Title -->
+    <div style="margin-bottom: 25px;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <span class="rule-badge badge-allow">🌾 Hệ Thống Nhiệm Vụ & Lúa ST25</span>
+        <span class="rule-badge badge-warn" id="privacy-badge">Bảo Mật Cá Nhân</span>
+      </div>
+      <h1 style="font-size: 2.2rem; font-weight: 800; color: #fff; margin: 0 0 8px;">
+        🌾 NHIỆM VỤ CÁ NHÂN & KHO LÚA ST25 🦖
+      </h1>
+      <p style="color: var(--text-secondary); line-height: 1.6; max-width: 750px;">
+        Hệ thống hiển thị độc quyền nhiệm vụ sinh tồn và số dư <strong>Lúa</strong> của riêng tài khoản Steam bạn liên kết. Hoàn thành thử thách để tích lũy Lúa ST25 đổi quà và bảo hộ trên đảo Gateway.
+      </p>
+    </div>
+
+    <!-- Personal Profile Dashboard Banner -->
+    <div id="personal-profile-banner" class="personal-profile-banner" style="border-color: rgba(245, 158, 11, 0.35); background: linear-gradient(135deg, rgba(20, 26, 21, 0.95), rgba(35, 42, 30, 0.9));">
+      <div class="profile-left">
+        <div class="profile-avatar-wrap">
+          <img id="player-avatar" src="https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg" alt="Avatar" class="profile-avatar" style="border-color: #fbbf24; box-shadow: 0 0 15px rgba(245, 158, 11, 0.45);">
+        </div>
+        <div class="profile-info">
+          <h2>
+            <span id="player-name">Đang tải tài khoản...</span>
+            <span class="rule-badge badge-allow" id="badge-account-status">Đã Kết Nối</span>
+          </h2>
+          <div class="profile-steam-id">
+            SteamID64: <span id="player-steam-id" style="color: #cbd5e1;">---</span>
+          </div>
+          <div class="profile-dino-badges">
+            <span class="rule-badge badge-blue" id="player-dino-species">Khủng long: Đang tải...</span>
+            <span class="rule-badge badge-warn" id="player-dino-growth">Độ lớn: ---%</span>
+            <span class="rule-badge badge-allow" id="player-dino-online">Trực tuyến</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+        <!-- Wallet Balance (Lúa ST25) -->
+        <div class="wallet-box" style="background: rgba(245, 158, 11, 0.14); border: 1.5px solid rgba(251, 191, 36, 0.45); box-shadow: 0 4px 16px rgba(245, 158, 11, 0.2);">
+          <span class="wallet-title" style="color: #fef08a; font-weight: 700;">🌾 SỐ DƯ LÚA TRONG VÍ</span>
+          <span class="wallet-amount" id="player-coins-amount" style="color: #fbbf24; text-shadow: 0 0 14px rgba(245, 158, 11, 0.5);">🌾 0 Lúa</span>
+        </div>
+
+        <!-- Action Links -->
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <a id="btn-view-on-map" href="bando.html" class="btn btn-primary btn-sm" style="text-align: center;">
+            📍 Xem Vị Trí Trên Map
+          </a>
+          <a href="gara.html" class="btn btn-secondary btn-sm" style="text-align: center;">
+            🦖 Vào Gara Cá Nhân
+          </a>
+          <a href="lien-ket-steam.html" class="btn btn-secondary btn-sm" style="text-align: center; font-size: 0.75rem; padding: 4px 8px;">
+            Đổi Tài Khoản Steam
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Unlinked Steam Warning (Hidden by default, shown if not logged in) -->
+    <div id="unlinked-alert" class="unlinked-alert" style="display: none; border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.08);">
+      <h3 style="color: #fbbf24; font-size: 1.25rem; margin-bottom: 8px;">🌾 Bạn chưa liên kết tài khoản Steam!</h3>
+      <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 18px; line-height: 1.5;">
+        Server ST25 bảo mật dữ liệu sinh tồn tuyệt đối cho từng thành viên. Vui lòng liên kết tài khoản Steam của bạn để kiểm tra nhiệm vụ, nhận thưởng <strong>Lúa 🌾</strong> và theo dõi tiến độ Prime Elder.
+      </p>
+      <a href="lien-ket-steam.html" class="btn btn-primary">Liên Kết Tài Khoản Steam Ngay</a>
+    </div>
+
+    <!-- Section 1: Server Quests (Daily & Weekly) -->
+    <section style="margin-bottom: 45px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div>
+          <h2 style="color: #fff; font-size: 1.35rem; margin-bottom: 4px;">Nhiệm Vụ Hằng Ngày & Hằng Tuần (Server Quests)</h2>
+          <p style="font-size: 0.85rem; color: var(--text-secondary);">Hoàn thành để nhận Coins thưởng cộng trực tiếp vào ví người chơi.</p>
+        </div>
+        <span class="rule-badge badge-warn" id="server-quest-count">0 Nhiệm vụ</span>
+      </div>
+
+      <div id="server-quests-grid" class="cards-grid" style="margin: 0;">
+        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted); background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          Đang đồng bộ dữ liệu nhiệm vụ cá nhân của bạn từ máy chủ ST25...
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Prime Elder Evolution Quests -->
+    <section>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h2 style="color: #fff; font-size: 1.35rem; margin-bottom: 4px;">10 Thử Thách Tiến Hóa Prime Elder</h2>
+          <p style="font-size: 0.85rem; color: var(--text-secondary);">
+            Tiến hóa thành Prime Elder để nhận kích thước khổng lồ và sức mạnh tối thượng trong The Isle: Evrima.
+          </p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 0.85rem; color: var(--text-muted);">Điều kiện đạt được:</span>
+          <span class="rule-badge badge-allow" id="prime-quest-status" style="font-size: 0.85rem; padding: 4px 10px;">0 / 10 Đã Đạt</span>
+        </div>
+      </div>
+
+      <!-- Prime Elder Status Banner -->
+      <div id="prime-summary-banner" style="background: rgba(16, 185, 129, 0.08); border-left: 3px solid var(--accent-emerald); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 20px; font-size: 0.875rem; color: #cbd5e1; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <strong style="color: #fff;">Quy chuẩn Evrima:</strong> Bạn cần hoàn thành tối thiểu <strong>5 / 10</strong> điều kiện để có cơ hội trở thành Prime Elder khi đạt 100% Growth.
+        </div>
+        <div id="prime-eligibility-badge" class="rule-badge badge-warn">Chưa đủ điều kiện</div>
+      </div>
+
+      <div id="prime-quests-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px;">
+        <!-- Injected by JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container" style="text-align: center;">
+      <p>© 2026 ST25 — Hệ thống Nhiệm Vụ sinh tồn server ST25.</p>
+    </div>
+  </footer>
+
+  <script src="assets/js/app.js"></script>
+  <script>
+    let currentSteamId = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Check current logged in user from localStorage or API session
+      try {
+        const stored = localStorage.getItem('st25_steam_user');
+        if (stored) {
+          const u = JSON.parse(stored);
+          if (u && u.steam_id) currentSteamId = u.steam_id;
+        }
+      } catch (e) {}
+
+      // Check URL param if provided
+      const params = new URLSearchParams(window.location.search);
+      const urlSteamId = params.get('steamId');
+      if (urlSteamId) {
+        currentSteamId = urlSteamId;
+      }
+
+      await loadPersonalQuests(currentSteamId);
+    });
+
+    async function loadPersonalQuests(steamId) {
+      try {
+        let url = '/api/player/quests';
+        if (steamId) {
+          url += `?steamId=${encodeURIComponent(steamId)}`;
+        }
+        
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          renderPersonalDashboard(data);
+          renderQuests(data);
+        } else {
+          showUnlinkedState();
+        }
+      } catch (e) {
+        console.error('Failed to load personal quests:', e);
+        showUnlinkedState();
+      }
+    }
+
+    function showUnlinkedState() {
+      const banner = document.getElementById('personal-profile-banner');
+      const unlinkedAlert = document.getElementById('unlinked-alert');
+      if (unlinkedAlert) unlinkedAlert.style.display = 'block';
+    }
+
+    function renderPersonalDashboard(data) {
+      if (!data) return;
+
+      const player = data.player;
+      const steamId = data.steamId;
+
+      if (player) {
+        document.getElementById('player-name').textContent = player.name || 'Người chơi ST25';
+        document.getElementById('player-avatar').src = player.avatar || 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg';
+        document.getElementById('player-steam-id').textContent = steamId || '---';
+
+        const speciesEl = document.getElementById('player-dino-species');
+        if (speciesEl) speciesEl.textContent = `Loài: ${player.species || 'Chưa chọn'} (${player.gender || 'Đực'})`;
+
+        const growthEl = document.getElementById('player-dino-growth');
+        if (growthEl) growthEl.textContent = `Độ lớn: ${player.growth}%`;
+
+        const onlineEl = document.getElementById('player-dino-online');
+        if (onlineEl) {
+          onlineEl.textContent = player.online ? 'Đang trực tuyến' : 'Ngoại tuyến';
+          onlineEl.className = `rule-badge ${player.online ? 'badge-allow' : 'badge-orange'}`;
+        }
+
+        const mapBtn = document.getElementById('btn-view-on-map');
+        if (mapBtn && steamId) {
+          mapBtn.href = `bando.html?steamId=${encodeURIComponent(steamId)}`;
+        }
+
+        const navBtn = document.getElementById('nav-btn-user');
+        if (navBtn) {
+          navBtn.textContent = player.name;
+        }
+      } else {
+        document.getElementById('player-steam-id').textContent = steamId || '---';
+      }
+
+      // Lúa display (ST25 Golden Rice)
+      const luaAmount = (data.coins || 0).toLocaleString();
+      document.getElementById('player-coins-amount').innerHTML = `🌾 ${luaAmount} <span style="font-size: 1.1rem; color: #fef08a;">Lúa</span>`;
+    }
+
+    function renderQuests(data) {
+      // 1. Server Quests (Daily & Weekly)
+      const sGrid = document.getElementById('server-quests-grid');
+      const countBadge = document.getElementById('server-quest-count');
+
+      if (data.serverQuests && data.serverQuests.length > 0) {
+        if (countBadge) countBadge.textContent = `${data.serverQuests.length} Nhiệm vụ`;
+
+        sGrid.innerHTML = data.serverQuests.map(q => {
+          const isDone = q.completed || q.claimed;
+          const rewardText = q.rewards && q.rewards.length 
+            ? q.rewards.map(r => `+${r.amount} ${r.kind.includes('Lúa') ? r.kind : r.kind + ' 🌾'}`).join(', ') 
+            : `+${q.xp || 50} XP`;
+          const periodLabel = q.period === 'daily' ? 'Hằng Ngày' : (q.period === 'weekly' ? 'Hằng Tuần' : 'Hằng Tháng');
+
+          let progressStr = '';
+          let progressPercent = isDone ? 100 : 0;
+          if (q.config && q.config.km) {
+            const currentKm = (q.progress / 1000).toFixed(1);
+            progressStr = `${currentKm} / ${q.config.km} km`;
+            progressPercent = Math.min(100, Math.round(((q.progress / 1000) / q.config.km) * 100));
+          } else if (q.config && q.config.days) {
+            progressStr = `${q.progress} / ${q.config.days} ngày đăng nhập`;
+            progressPercent = Math.min(100, Math.round((q.progress / q.config.days) * 100));
+          } else if (isDone) {
+            progressPercent = 100;
+          }
+
+          return `
+            <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <div class="card-header" style="margin-bottom: 10px;">
+                  <span class="rule-badge ${q.period === 'daily' ? 'badge-allow' : 'badge-blue'}">${periodLabel}</span>
+                  <span class="rule-badge ${isDone ? 'badge-allow' : 'badge-orange'}">${isDone ? 'ĐÃ HOÀN THÀNH' : 'ĐANG THỰC HIỆN'}</span>
+                </div>
+                <h3 class="card-title" style="font-size: 1.1rem; margin-bottom: 8px;">${q.name}</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">${q.description}</p>
+              </div>
+
+              <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; margin-top: 12px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px;">
+                  <span style="color: var(--text-muted);">Tiến độ: <strong>${progressStr || (isDone ? '100%' : 'Chưa hoàn thành')}</strong></span>
+                  <strong style="color: var(--accent-amber); font-size: 0.9rem;">${rewardText}</strong>
+                </div>
+
+                <!-- Progress Bar -->
+                <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
+                  <div style="width: ${progressPercent}%; height: 100%; background: ${isDone ? 'var(--accent-emerald)' : 'var(--accent-amber)'}; border-radius: 3px;"></div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem;">
+                  ${q.claimed 
+                    ? '<span style="color: var(--accent-emerald-light);">✓ Đã nhận thưởng về ví</span>' 
+                    : (isDone 
+                        ? '<span style="color: var(--accent-amber); font-weight: 700;">🎁 Đủ điều kiện nhận thưởng</span>' 
+                        : '<span style="color: var(--text-muted);">Tiếp tục sinh tồn để hoàn tất</span>')}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        sGrid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: var(--text-muted); background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            Hiện tại chưa có nhiệm vụ máy chủ mới cho ngày hôm nay. Hãy tiếp tục sinh tồn và quay lại sau!
+          </div>
+        `;
+      }
+
+      // 2. Prime Elder Evolution Quests
+      const pGrid = document.getElementById('prime-quests-grid');
+      const primeStatus = document.getElementById('prime-quest-status');
+      const primeEligible = document.getElementById('prime-eligibility-badge');
+
+      if (data.primeQuests && data.primeQuests.length > 0) {
+        const completedCount = data.primeQuests.filter(pq => pq.done).length;
+        if (primeStatus) primeStatus.textContent = `${completedCount} / ${data.primeQuests.length} Đã Đạt`;
+
+        if (primeEligible) {
+          if (completedCount >= 5) {
+            primeEligible.textContent = `Đủ điều kiện (${completedCount}/5)`;
+            primeEligible.className = 'rule-badge badge-allow';
+          } else {
+            primeEligible.textContent = `Cần thêm ${5 - completedCount} điều kiện`;
+            primeEligible.className = 'rule-badge badge-warn';
+          }
+        }
+
+        pGrid.innerHTML = data.primeQuests.map(pq => `
+          <div class="prime-card ${pq.done ? 'completed' : ''}">
+            <div style="display: flex; flex-direction: column; gap: 4px; padding-right: 12px;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-weight: 700; color: #fff; font-size: 0.9rem;">#${pq.index}. ${pq.name}</span>
+              </div>
+              <span style="font-size: 0.775rem; color: var(--text-secondary); line-height: 1.4;">${pq.desc || pq.originalName}</span>
+            </div>
+            <span class="rule-badge ${pq.done ? 'badge-allow' : 'badge-orange'}" style="font-size: 0.75rem; padding: 4px 8px; flex-shrink: 0;">
+              ${pq.done ? '✓ ĐẠT' : 'CHƯA ĐẠT'}
+            </span>
+          </div>
+        `).join('');
+      } else {
+        pGrid.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem; grid-column: 1 / -1;">Chưa có thông tin Prime Quests cho loài khủng long này.</p>';
+      }
+    }
+  </script>
+</body>
+</html>

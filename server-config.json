@@ -1,0 +1,26 @@
+{
+  "server": {
+    "name": "ST25 VIETNAM",
+    "short_name": "ST25",
+    "server_id": "cmufraiwk7fnooa01vpdzdhm4",
+    "ip": "127.0.0.1",
+    "port": 7777,
+    "max_players": 100,
+    "map": "Gateway v0.21.7",
+    "discord_url": "https://discord.gg/3xCrA6VyY",
+    "hud_download_url": "https://drive.google.com/drive/folders/1lt_7g8rYuyqvrqZJidq8O1o0az1u-EtS?usp=drive_link",
+    "hud_direct_download_url": "https://drive.google.com/uc?export=download&id=1ZDrKQPffJ51AkPXsEGk3SCK6RUl8jof5"
+  },
+  "islepilot": {
+    "dashboard_url": "https://islepilot.eu/dashboard/servers/cmufraiwk7fnooa01vpdzdhm4/api",
+    "api_base_url": "https://islepilot.eu/api/v1",
+    "server_id": "cmufraiwk7fnooa01vpdzdhm4",
+    "api_token": "ipa_baefab9e952dd3f17a4bf8edc62da5b1ad4482e52bc0c6d4",
+    "enabled": true
+  },
+  "steam": {
+    "api_key": "",
+    "realm": "http://localhost:3000",
+    "return_url": "http://localhost:3000/api/player/steam/callback"
+  }
+}

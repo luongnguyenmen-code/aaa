@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gara Khủng Long — ST25</title>
+  <meta name="description" content="Hệ thống Gara lưu trữ khủng long server ST25 The Isle Evrima: Cất và khôi phục Dino giữ nguyên chỉ số, màu da và đột biến. Tuân thủ Điều 8 & Điều 12.">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="assets/map/gateway.webp">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a href="index.html" class="brand">
+        <span style="color: #fbbf24;">🌾 ST25</span>
+        <span class="brand-tag">🦖 GARA</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="index.html" class="nav-link">🌾 Trang chủ</a></li>
+        <li><a href="bando.html" class="nav-link">🗺️ Bản đồ</a></li>
+        <li><a href="nhiem-vu.html" class="nav-link">🌾 Kho Lúa</a></li>
+        <li><a href="giao-dich.html" class="nav-link">⚖️ Giao Dịch</a></li>
+        <li><a href="hom-qua.html" class="nav-link">🎁 Mở Hòm</a></li>
+        <li><a href="gara.html" class="nav-link active">🦖 Gara</a></li>
+        <li><a href="skin.html" class="nav-link">🎨 Skin</a></li>
+        <li><a href="tha-xac.html" class="nav-link">🥩 Thả Xác</a></li>
+        <li><a href="moi-ban.html" class="nav-link">👥 Mời Bạn</a></li>
+        <li><a href="ho-tro.html" class="nav-link">🆘 Hỗ Trợ</a></li>
+        <li><a href="noi-quy.html" class="nav-link">📜 Nội quy</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <!-- Cooldown Warning Badge -->
+        <span id="cooldown-badge" class="rule-badge badge-warn" style="display: none; padding: 6px 12px; font-size: 0.85rem;">
+          Chờ sẵn sàng: <strong id="cooldown-timer-text">00:30</strong>
+        </span>
+
+        <a href="lien-ket-steam.html" class="btn btn-secondary btn-sm">Xem Đàn Của Bạn</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="container" style="padding: 40px 20px;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
+      <div>
+        <h1 style="font-size: 2.2rem; font-weight: 800; color: #fff;">GARA CỦA BẠN</h1>
+        <p style="color: var(--text-secondary);">
+          Lưu giữ khủng long khi muốn tạm nghỉ hoặc đổi loài. Giữ nguyên màu sắc, mức tăng trưởng và đột biến.
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <button onclick="Garage.refresh()" class="btn btn-secondary btn-sm" id="btn-refresh-garage">
+          🔄 Đồng bộ lại dữ liệu
+        </button>
+        <a href="noi-quy.html#dieu-12" class="btn btn-secondary btn-sm">Đọc luật Gara (Điều 8 & 12)</a>
+      </div>
+    </div>
+
+    <!-- Live Account Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-color); padding: 12px 20px; border-radius: var(--radius-md); margin-bottom: 25px; flex-wrap: wrap; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.4rem;">🦖</span>
+        <div>
+          <span style="color: #cbd5e1; font-weight: 700;" id="garage-player-name">Đang tải tài khoản...</span>
+          <small style="color: var(--text-muted); display: block;" id="garage-player-steamid">SteamID: ---</small>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <span class="rule-badge badge-allow" style="background: rgba(16, 185, 129, 0.15); border-color: #10b981; color: #6ee7b7;" id="garage-sync-badge">
+          ✅ ĐÃ ĐỒNG BỘ ISLEPILOT & IN-GAME
+        </span>
+        <span style="color: #fbbf24; font-weight: 700; font-size: 0.95rem;" id="garage-count-badge">
+          Đang lưu: 0 / 20 Khủng Long
+        </span>
+      </div>
+    </div>
+
+    <!-- Active Dinosaur Panel -->
+    <section>
+      <h3 style="color: #fff; font-size: 1.15rem; margin-bottom: 12px;">
+        Khủng Long Đang Trong Game (Active Dino)
+      </h3>
+      <div id="active-dino-content" class="active-dino-panel">
+        <div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: var(--text-muted);">
+          Đang tải thông tin khủng long từ server ST25...
+        </div>
+      </div>
+    </section>
+
+    <!-- Important Rules Warning Banner -->
+    <div style="margin: 24px 0 32px; padding: 18px 24px; background: rgba(234, 88, 12, 0.1); border-left: 4px solid var(--accent-orange); border-radius: var(--radius-sm);">
+      <h4 style="color: #fb923c; margin-bottom: 6px; font-weight: 700;">NGUYÊN TẮC QUAN TRỌNG KHI DÙNG GARA</h4>
+      <p style="font-size: 0.875rem; color: #cbd5e1; line-height: 1.6;">
+        • <strong>Điều 8 (Cấm Combat Log):</strong> Tuyệt đối không cất Dino khi đang bị truy đuổi hoặc đang combat để trốn chết.<br>
+        • <strong>Điều 11 (Cấm Revenge Kill):</strong> Nếu chết, cấm lấy con khác trong 15 phút quay lại trả thù kẻ đã giết mình.<br>
+        • <strong>Quy định Gara (Chờ 30 giây):</strong> Sau khi lấy Dino ra, <strong>chờ 30 giây</strong> để hệ thống đồng bộ nhân vật và sẵn sàng xuất chiến.<br>
+    </div>
+
+    <!-- Garage Slots -->
+    <section>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="color: #fff; font-size: 1.15rem;">
+          Danh Sách Khủng Long Trong Gara (Đồng Bộ Cloud IslePilot)
+        </h3>
+        <span style="font-size: 0.85rem; color: var(--text-muted);" id="garage-capacity-text">Sức chứa tối đa 20 khủng long</span>
+      </div>
+
+      <div id="garage-slots-grid" class="slots-grid">
+        <!-- Injected by gara.js -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container" style="text-align: center;">
+      <p>© 2026 ST25 — Hệ thống Gara lưu trữ Khủng Long tự động server ST25.</p>
+    </div>
+  </footer>
+
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/gara.js"></script>
+</body>
+</html>
