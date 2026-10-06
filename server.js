@@ -1615,3 +1615,5 @@ app.listen(PORT, () => {
   console.log(`Hỗ Trợ:        http://localhost:${PORT}/ho-tro.html`);
   console.log(`=======================================================`);
 });
+
+module.exports = app;
