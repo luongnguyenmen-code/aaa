@@ -243,23 +243,42 @@
     let mySteamId = null;
     let myLiveBalance = 0;
 
+    function getActiveSteamId() {
+      if (mySteamId) return mySteamId;
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const qId = urlParams.get('steamId');
+        if (qId) return qId;
+        const stored = localStorage.getItem('st25_steam_user');
+        if (stored) {
+          const u = JSON.parse(stored);
+          if (u && u.steam_id) return u.steam_id;
+        }
+      } catch (_) {}
+      return null;
+    }
+
     async function loadMarketData() {
       try {
+        const activeSid = getActiveSteamId();
+        const marketUrl = activeSid ? `/api/market/data?steamId=${encodeURIComponent(activeSid)}` : '/api/market/data';
+        const garageUrl = activeSid ? `/api/player/garage?steamId=${encodeURIComponent(activeSid)}` : '/api/player/garage';
+
         const [marketRes, garageRes] = await Promise.all([
-          fetch('/api/market/data'),
-          fetch('/api/player/garage')
+          fetch(marketUrl, { headers: activeSid ? { 'x-steam-id': activeSid } : {} }),
+          fetch(garageUrl, { headers: activeSid ? { 'x-steam-id': activeSid } : {} })
         ]);
         const data = await marketRes.json();
         const garageData = await garageRes.json();
 
-        mySteamId = data.steamId;
+        mySteamId = data.steamId || activeSid;
         myLiveBalance = data.balance || 0;
 
         // Update balance & account
         document.getElementById('user-balance-val').textContent = (data.balance || 0).toLocaleString('vi-VN');
         const accTag = document.getElementById('market-account-tag');
         if (accTag) {
-          accTag.textContent = data.steamId ? `Tài khoản: ${data.personaName} (${data.steamId})` : `Tài khoản: Khách (Chưa đăng nhập Steam)`;
+          accTag.textContent = mySteamId ? `Tài khoản: ${data.personaName} (${mySteamId})` : `Tài khoản: Khách (Chưa đăng nhập Steam)`;
         }
 
         // Update Garage dino select options
@@ -411,11 +430,15 @@
     async function handleBuyItem(itemId, price, title) {
       if (!confirm(`Xác nhận dùng ${price} Lúa 🌾 trong tài khoản để mua [${title}]? Khủng long sẽ được chuyển thẳng vào Gara của bạn!`)) return;
 
+      const activeSid = getActiveSteamId();
       try {
         const res = await fetch('/api/market/buy', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ itemId })
+          headers: {
+            'Content-Type': 'application/json',
+            ...(activeSid ? { 'x-steam-id': activeSid } : {})
+          },
+          body: JSON.stringify({ itemId, steamId: activeSid })
         });
         const result = await res.json();
         if (res.ok) {
@@ -445,11 +468,25 @@
         return;
       }
 
+      const activeSid = getActiveSteamId();
+      if (!activeSid) {
+        App.showToast('Vui lòng đăng nhập Steam để đăng bán khủng long lên chợ!', 'error');
+        return;
+      }
+
       try {
         const res = await fetch('/api/market/list-dino', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ dinoId, price, customTitle: title })
+          headers: {
+            'Content-Type': 'application/json',
+            'x-steam-id': activeSid
+          },
+          body: JSON.stringify({
+            dinoId,
+            price,
+            customTitle: title,
+            steamId: activeSid
+          })
         });
         const result = await res.json();
         if (res.ok) {
@@ -468,11 +505,15 @@
     async function handleCancelListing(listingId) {
       if (!confirm('Bạn có chắc chắn muốn thu hồi bài bán này về lại Gara của bạn?')) return;
 
+      const activeSid = getActiveSteamId();
       try {
         const res = await fetch('/api/market/cancel-listing', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ listingId })
+          headers: {
+            'Content-Type': 'application/json',
+            ...(activeSid ? { 'x-steam-id': activeSid } : {})
+          },
+          body: JSON.stringify({ listingId, steamId: activeSid })
         });
         const result = await res.json();
         if (res.ok) {

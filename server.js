@@ -601,14 +601,62 @@ app.get('/api/player/team', async (req, res) => {
   });
 });
 
-// Helper: Lấy thông tin trạng thái và sức chứa Gara của người chơi (đồng bộ theo Role Discord / IslePilot)
+// Helper: Lấy thông tin Role Discord và trạng thái sức chứa Gara của người chơi
 async function getPlayerGarageStatus(steamId) {
   const cfg = getConfig();
   const data = getPortalData();
   const garageCfg = cfg.garage || {};
+  const roleLimits = garageCfg.role_limits || {
+    "default": 2,
+    "member": 2,
+    "vip1": 5,
+    "vip2": 10,
+    "vip3": 15,
+    "booster": 15,
+    "admin": 20
+  };
 
-  // 1. Tính toán maxSlots theo cấu hình Role Discord hoặc Custom slot người chơi
-  let maxSlots = garageCfg.default_slots || 2;
+  // Tra cứu thông tin người chơi từ IslePilot để lấy Discord ID / Role
+  let discordInfo = null;
+  let discordRoleKey = "default";
+  let roleDisplayName = "Thành viên (Mặc định)";
+
+  try {
+    const pilotPlayer = await callIslePilot(`/players/${steamId}`);
+    if (pilotPlayer && pilotPlayer.discord) {
+      discordInfo = pilotPlayer.discord;
+    }
+  } catch (_) {}
+
+  // 1. Kiểm tra cấu hình Role từ server-config.json (user_roles) hoặc portal-data.json
+  const userRolesConfig = garageCfg.user_roles || {};
+  const portalRoles = data.playerRoles || {};
+
+  if (userRolesConfig[steamId]) {
+    discordRoleKey = userRolesConfig[steamId].toLowerCase();
+  } else if (discordInfo && discordInfo.id && userRolesConfig[discordInfo.id]) {
+    discordRoleKey = userRolesConfig[discordInfo.id].toLowerCase();
+  } else if (portalRoles[steamId]) {
+    discordRoleKey = portalRoles[steamId].toLowerCase();
+  } else if (garageCfg.player_custom_slots && garageCfg.player_custom_slots[steamId] !== undefined) {
+    discordRoleKey = "custom";
+  }
+
+  // Tên hiển thị Role
+  const roleNameMap = {
+    "admin": "👑 Quản Trị Viên (Admin)",
+    "booster": "🚀 Server Booster (Discord)",
+    "vip3": "🌟 VIP 3 (Bảo Kê Đảo)",
+    "vip2": "💎 VIP 2 (Đại Gia)",
+    "vip1": "⭐ VIP 1 (Hỗ Trợ Server)",
+    "member": "🦖 Thành Viên ST25",
+    "default": "🦖 Thành Viên (2 Slot)",
+    "custom": "✨ Slot Đặc Quyền Custom"
+  };
+  roleDisplayName = roleNameMap[discordRoleKey] || `Role: ${discordRoleKey.toUpperCase()}`;
+
+  // 2. Tính toán maxSlots theo role_limits
+  let maxSlots = roleLimits[discordRoleKey] !== undefined ? Number(roleLimits[discordRoleKey]) : (garageCfg.default_slots || 2);
 
   if (garageCfg.player_custom_slots && garageCfg.player_custom_slots[steamId] !== undefined) {
     maxSlots = Number(garageCfg.player_custom_slots[steamId]);
@@ -616,7 +664,7 @@ async function getPlayerGarageStatus(steamId) {
     maxSlots = Number(data.playerGarageSlots[steamId]);
   }
 
-  // 2. Lấy số lượng Dino hiện có
+  // 3. Lấy số lượng Dino hiện có
   const pilotGarage = await callIslePilot(`/players/${steamId}/garage`);
   const withdrawn = (data.withdrawnDinos && data.withdrawnDinos[steamId]) || [];
   const validPilotDinos = (pilotGarage && pilotGarage.garage && Array.isArray(pilotGarage.garage))
@@ -625,16 +673,14 @@ async function getPlayerGarageStatus(steamId) {
   const localDinos = (data.userGarage && data.userGarage[steamId]) || [];
   const totalParked = validPilotDinos.length + localDinos.length;
 
-  // Đảm bảo maxSlots ít nhất bằng số dino thực tế họ đang có sẵn trên IslePilot để không gây lỗi hiển thị
-  if (totalParked > maxSlots) {
-    maxSlots = totalParked;
-  }
-
   const isFull = totalParked >= maxSlots;
 
   return {
     totalParked,
     maxSlots,
+    roleLimit: maxSlots,
+    roleKey: discordRoleKey,
+    roleName: roleDisplayName,
     isFull,
     validPilotDinos,
     localDinos
@@ -731,6 +777,9 @@ app.get('/api/player/garage', async (req, res) => {
     personaName: (pilotPlayer && pilotPlayer.name) || "Thành viên ST25",
     totalParked: garageStatus.totalParked,
     maxSlots: garageStatus.maxSlots,
+    roleKey: garageStatus.roleKey,
+    roleName: garageStatus.roleName,
+    roleLimit: garageStatus.roleLimit,
     isFull: garageStatus.isFull,
     upgradeDiscordUrl: "https://discord.gg/3xCrA6VyY"
   });

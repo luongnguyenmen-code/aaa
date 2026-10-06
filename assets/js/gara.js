@@ -66,9 +66,25 @@ const Garage = {
     }
   },
 
+  getActiveSteamId() {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const qId = urlParams.get('steamId');
+      if (qId) return qId;
+      const stored = localStorage.getItem('st25_steam_user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u && u.steam_id) return u.steam_id;
+      }
+    } catch (_) {}
+    return null;
+  },
+
   async fetchGarageData() {
     try {
-      const res = await fetch('/api/player/garage');
+      const sid = this.getActiveSteamId();
+      const url = sid ? `/api/player/garage?steamId=${encodeURIComponent(sid)}` : '/api/player/garage';
+      const res = await fetch(url, { headers: sid ? { 'x-steam-id': sid } : {} });
       if (res.ok) {
         const data = await res.json();
         this.activeDino = data.active;
@@ -77,7 +93,10 @@ const Garage = {
           steamId: data.steamId,
           personaName: data.personaName,
           totalParked: data.totalParked || 0,
-          maxSlots: data.maxSlots || 20
+          maxSlots: data.maxSlots || 2,
+          roleKey: data.roleKey || 'default',
+          roleName: data.roleName || 'Thành viên (2 Slot)',
+          roleLimit: data.roleLimit || data.maxSlots || 2
         };
         this.updateHeaderUI();
         return;
@@ -94,11 +113,17 @@ const Garage = {
     const steamEl = document.getElementById('garage-player-steamid');
     const countEl = document.getElementById('garage-count-badge');
     const capEl = document.getElementById('garage-capacity-text');
+    const roleBadge = document.getElementById('garage-role-badge');
+    const roleDesc = document.getElementById('garage-role-desc');
 
     if (nameEl) nameEl.textContent = `Tài khoản: ${this.playerInfo.personaName}`;
-    if (steamEl) steamEl.textContent = `Steam ID: ${this.playerInfo.steamId}`;
+    if (steamEl) steamEl.textContent = `Steam ID: ${this.playerInfo.steamId || 'Chưa đăng nhập'}`;
     if (countEl) countEl.textContent = `Đang lưu: ${this.playerInfo.totalParked} / ${this.playerInfo.maxSlots} Khủng Long`;
-    if (capEl) capEl.textContent = `Sức chứa tối đa: ${this.playerInfo.maxSlots} khủng long (Theo luật server)`;
+    if (capEl) capEl.textContent = `Sức chứa tối đa: ${this.playerInfo.maxSlots} khủng long (${this.playerInfo.roleName})`;
+    if (roleBadge) roleBadge.textContent = `${this.playerInfo.roleName} (${this.playerInfo.maxSlots} Slots)`;
+    if (roleDesc) {
+      roleDesc.innerHTML = `Bạn đang có quyền hạn: <strong style="color: #fbbf24;">${this.playerInfo.roleName}</strong> — Giới hạn lưu trữ: <strong style="color: #38bdf8;">${this.playerInfo.maxSlots} slot</strong> khủng long. Khi đầy Gara sẽ không thể cất thêm hoặc mua khủng long mới!`;
+    }
   },
 
   render() {
