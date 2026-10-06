@@ -182,6 +182,9 @@
 
         <!-- Action Links -->
         <div style="display: flex; flex-direction: column; gap: 8px;">
+          <button id="btn-claim-daily" onclick="claimDailyReward()" class="btn btn-primary btn-sm" style="text-align: center; background: #eab308; border-color: #ca8a04; color: #000; font-weight: 700;">
+            🎁 Điểm Danh Nhận Lúa
+          </button>
           <a id="btn-view-on-map" href="bando.html" class="btn btn-primary btn-sm" style="text-align: center;">
             📍 Xem Vị Trí Trên Map
           </a>
@@ -453,6 +456,40 @@
         `).join('');
       } else {
         pGrid.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem; grid-column: 1 / -1;">Chưa có thông tin Prime Quests cho loài khủng long này.</p>';
+      }
+    }
+
+    async function claimDailyReward() {
+      const btn = document.getElementById('btn-claim-daily');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Đang nhận...';
+      }
+
+      try {
+        const res = await fetch('/api/player/daily', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ steamId: currentSteamId })
+        });
+        const result = await res.json();
+
+        if (res.ok) {
+          if (typeof App !== 'undefined') App.showToast(result.message || 'Điểm danh thành công! Đã cộng Lúa 🌾 vào ví.', 'success');
+          setTimeout(() => location.reload(), 1200);
+        } else {
+          if (typeof App !== 'undefined') App.showToast(result.error || 'Không thể điểm danh hôm nay!', 'error');
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = '🎁 Điểm Danh Nhận Lúa';
+          }
+        }
+      } catch (err) {
+        if (typeof App !== 'undefined') App.showToast('Lỗi mạng khi điểm danh nhận thưởng!', 'error');
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '🎁 Điểm Danh Nhận Lúa';
+        }
       }
     }
   </script>

@@ -237,15 +237,49 @@
     // 2. Load Current Authenticated Session from Steam OpenID
     async function loadCurrentSession() {
       try {
-        const res = await fetch('/api/player/me');
+        const urlParams = new URLSearchParams(window.location.search);
+        const querySteamId = urlParams.get('steamId');
+        let endpoint = '/api/player/me';
+        if (querySteamId) {
+          endpoint = `/api/player/me?steamId=${encodeURIComponent(querySteamId)}`;
+        }
+
+        const res = await fetch(endpoint);
         if (res.ok) {
           const user = await res.json();
           if (user && user.linked) {
             localStorage.setItem('st25_steam_user', JSON.stringify(user));
             updateProfileCard(user);
+
+            if (urlParams.get('login') === 'success') {
+              if (typeof App !== 'undefined' && App.showToast) {
+                App.showToast(`Chào mừng ${user.persona_name}! Đã đồng bộ tài khoản Steam thành công.`, 'success');
+              }
+              // Clean URL without reload
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            return;
           }
         }
-      } catch (e) {}
+
+        // Fallback to localStorage if cookie hasn't loaded yet
+        const stored = localStorage.getItem('st25_steam_user');
+        if (stored) {
+          const u = JSON.parse(stored);
+          if (u && u.steam_id) {
+            const fallbackRes = await fetch(`/api/player/me?steamId=${u.steam_id}`);
+            if (fallbackRes.ok) {
+              const fresh = await fallbackRes.json();
+              if (fresh && fresh.linked) {
+                localStorage.setItem('st25_steam_user', JSON.stringify(fresh));
+                updateProfileCard(fresh);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error loading session:', e);
+      }
     }
 
     function updateProfileCard(user) {

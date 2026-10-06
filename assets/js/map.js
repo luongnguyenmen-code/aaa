@@ -473,6 +473,68 @@ const IsleMap = {
         }
       });
     }
+
+    // Load IslePilot Teleport Destinations & Bind Execute Button
+    this.initTeleportControls();
+  },
+
+  async initTeleportControls() {
+    const selectDest = document.getElementById('select-teleport-dest');
+    const btnExecute = document.getElementById('btn-execute-teleport');
+    const badgeStatus = document.getElementById('tp-status-badge');
+    if (!selectDest || !btnExecute) return;
+
+    try {
+      const res = await fetch('/api/teleport/destinations');
+      if (res.ok) {
+        const locations = await res.json();
+        if (Array.isArray(locations) && locations.length > 0) {
+          selectDest.innerHTML = '<option value="">-- Chọn điểm đến --</option>' + 
+            locations.map(loc => `<option value="${loc.id}">${loc.name} (${loc.cost > 0 ? loc.cost + ' Lúa' : 'Miễn phí'})</option>`).join('');
+        } else {
+          selectDest.innerHTML = '<option value="">-- Chưa có điểm TP --</option>';
+        }
+      } else {
+        selectDest.innerHTML = '<option value="">-- Quyền TP bị khoá --</option>';
+        if (badgeStatus) badgeStatus.textContent = 'Thiếu scope';
+      }
+    } catch (e) {
+      selectDest.innerHTML = '<option value="">-- Lỗi tải TP --</option>';
+    }
+
+    btnExecute.addEventListener('click', async () => {
+      const locationId = selectDest.value;
+      if (!locationId) {
+        if (typeof App !== 'undefined') App.showToast('Vui lòng chọn địa điểm muốn dịch chuyển!', 'warning');
+        return;
+      }
+
+      if (!confirm('Bạn có chắc chắn muốn dịch chuyển nhân vật đến địa điểm này?')) return;
+
+      btnExecute.disabled = true;
+      btnExecute.textContent = 'Đang TP...';
+
+      try {
+        const tpRes = await fetch('/api/teleport/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ locationId, steamId: this.selectedSteamId })
+        });
+        const tpData = await tpRes.json();
+
+        if (tpRes.ok) {
+          if (typeof App !== 'undefined') App.showToast(tpData.message || 'Dịch chuyển thành công!', 'success');
+          setTimeout(() => this.updatePlayerData(), 1500);
+        } else {
+          if (typeof App !== 'undefined') App.showToast(tpData.error || 'Dịch chuyển thất bại!', 'error');
+        }
+      } catch (err) {
+        if (typeof App !== 'undefined') App.showToast('Lỗi mạng khi dịch chuyển!', 'error');
+      } finally {
+        btnExecute.disabled = false;
+        btnExecute.textContent = 'Đi 🚀';
+      }
+    });
   }
 };
 
