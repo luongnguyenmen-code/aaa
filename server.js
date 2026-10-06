@@ -57,7 +57,7 @@ const CACHE_TTL_MS = {
 // Helper: Call live IslePilot API with caching and scope awareness
 async function callIslePilot(endpoint, method = 'GET', body = null, bypassCache = false) {
   const cfg = getConfig();
-  const token = (cfg.islepilot && cfg.islepilot.api_token) || 'ipa_2d49fed3361a1f8b5a884046dfd60a85174c4065783371d4';
+  const token = (cfg.islepilot && cfg.islepilot.api_token) || 'ipa_4c51bd355513813f26ea6e759d4e6fb0dd5d8bb7174799de';
   const base = (cfg.islepilot && cfg.islepilot.api_base_url) || 'https://islepilot.eu/api/v1';
   const cleanBase = base.replace(/\/$/, '');
   const url = `${cleanBase}${endpoint}`;
@@ -89,7 +89,7 @@ async function callIslePilot(endpoint, method = 'GET', body = null, bypassCache 
     let json = null;
     try {
       json = await res.json();
-    } catch (_) {}
+    } catch (_) { }
 
     if (res.ok) {
       if (method === 'GET' && json) {
@@ -549,7 +549,7 @@ app.get('/api/map/zones', (req, res) => {
     try {
       const data = JSON.parse(fs.readFileSync(zonesPath, 'utf8'));
       return res.json(data);
-    } catch (e) {}
+    } catch (e) { }
   }
   res.json({ pois: [], categories: [] });
 });
@@ -606,10 +606,10 @@ async function getPlayerGarageStatus(steamId) {
   const cfg = getConfig();
   const data = getPortalData();
   const garageCfg = cfg.garage || {};
-  
+
   // 1. Tính toán maxSlots theo cấu hình Role Discord hoặc Custom slot người chơi
   let maxSlots = garageCfg.default_slots || 2;
-  
+
   if (garageCfg.player_custom_slots && garageCfg.player_custom_slots[steamId] !== undefined) {
     maxSlots = Number(garageCfg.player_custom_slots[steamId]);
   } else if (data.playerGarageSlots && data.playerGarageSlots[steamId] !== undefined) {
@@ -1474,7 +1474,7 @@ app.get('/api/skin/info', async (req, res) => {
         }
       });
     }
-  } catch (_) {}
+  } catch (_) { }
 
   if (!steamId) {
     return res.json({
@@ -1523,7 +1523,7 @@ app.post('/api/skin/apply', async (req, res) => {
     await callIslePilot(`/players/${steamId}/skin/apply`, 'POST', {
       payload: { species, skinCode, colors }
     });
-  } catch (e) {}
+  } catch (e) { }
 
   const data = getPortalData();
   if (!data.userInventory[steamId]) data.userInventory[steamId] = [];
@@ -1558,7 +1558,7 @@ app.post('/api/skin/buy', async (req, res) => {
 
   try {
     await callIslePilot(`/players/${steamId}/skins`, 'POST', { shopSkinId: skinId });
-  } catch (e) {}
+  } catch (e) { }
 
   const data = getPortalData();
   if (!data.userInventory[steamId]) data.userInventory[steamId] = [];
