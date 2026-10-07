@@ -138,7 +138,10 @@ const Garage = {
 
   async fetchGarageData() {
     try {
-      const sid = this.getActiveSteamId();
+      const urlParams = new URLSearchParams(window.location.search);
+      const qId = urlParams.get('steamId');
+      const sid = (qId && /^\d{17}$/.test(qId.trim())) ? qId.trim() : null;
+
       const storedUser = (() => {
         try {
           const s = localStorage.getItem('st25_steam_user');
@@ -147,7 +150,6 @@ const Garage = {
       })();
 
       const hdrs = {};
-      if (sid) hdrs['x-steam-id'] = sid;
       if (storedUser && storedUser.isAdmin && storedUser.steam_id) {
         hdrs['x-admin-steam-id'] = storedUser.steam_id;
       }
@@ -159,21 +161,42 @@ const Garage = {
         
         // NẾU CHƯA ĐĂNG NHẬP (Chưa liên kết tài khoản Steam)
         if (!data.isLoggedIn || !data.steamId) {
-          this.playerInfo = null;
+          this.playerInfo = {
+            steamId: null,
+            personaName: 'Chưa đăng nhập Steam',
+            totalParked: 0,
+            maxSlots: data.maxSlots || 3,
+            roleKey: 'default',
+            roleName: 'Chưa liên kết',
+            roleLimit: data.maxSlots || 3,
+            isAdmin: false,
+            isSuperAdmin: false,
+            isViewingOther: false
+          };
           this.activeDino = null;
-          this.slots = [];
+          this.slots = [
+            { slot: 1, empty: true },
+            { slot: 2, empty: true },
+            { slot: 3, empty: true }
+          ];
           
-          // Dọn dẹp localStorage nếu trước đó bị lưu đè sai
+          // Dọn dẹp localStorage để tránh dính tài khoản cũ
           localStorage.removeItem('st25_steam_user');
 
-          // Hiển thị màn hình Login và Ẩn Gara
+          // Hiển thị khung mời đăng nhập và LUÔN GIỮ HIỂN THỊ GARA
           const loginPanel = document.getElementById('login-required-panel');
           const garagePanel = document.getElementById('garage-authenticated-content');
           if (loginPanel) loginPanel.style.display = 'block';
-          if (garagePanel) garagePanel.style.display = 'none';
+          if (garagePanel) garagePanel.style.display = 'block';
+
+          // Để trắng ô nhập Steam ID
+          const manualInp = document.getElementById('manual-login-steamid');
+          if (manualInp) manualInp.value = '';
 
           // Ẩn tất cả công cụ và liên kết Admin
           this.setAdminVisibility(false);
+          this.updateHeaderUI();
+          this.render();
           return;
         }
 
@@ -217,6 +240,7 @@ const Garage = {
         this.setAdminVisibility(!!data.isAdmin);
 
         this.updateHeaderUI();
+        this.render();
         return;
       }
     } catch (e) {
@@ -238,13 +262,26 @@ const Garage = {
   },
 
   updateHeaderUI() {
-    if (!this.playerInfo) return;
     const nameEl = document.getElementById('garage-player-name');
     const steamEl = document.getElementById('garage-player-steamid');
     const countEl = document.getElementById('garage-count-badge');
     const roleBadge = document.getElementById('garage-role-badge');
     const noticeEl = document.getElementById('garage-capacity-notice');
     const summaryBadge = document.getElementById('slots-capacity-summary');
+
+    if (!this.playerInfo || !this.playerInfo.steamId) {
+      if (nameEl) nameEl.textContent = 'Chưa đăng nhập Steam';
+      if (steamEl) steamEl.textContent = 'Steam ID: (Để trống)';
+      if (countEl) countEl.textContent = 'Đang lưu: 0 / 3 Khủng Long';
+      if (roleBadge) roleBadge.textContent = 'Chưa liên kết';
+      if (noticeEl) {
+        noticeEl.innerHTML = `Vui lòng đăng nhập hoặc nhập Steam ID 64 để đồng bộ khủng long riêng biệt của bạn trên ST25 Gara Cloud.`;
+      }
+      if (summaryBadge) {
+        summaryBadge.textContent = '0 / 3 Slots';
+      }
+      return;
+    }
 
     if (nameEl) nameEl.textContent = `Tài khoản: ${this.playerInfo.personaName}`;
     if (steamEl) steamEl.textContent = `Steam ID: ${this.playerInfo.steamId || 'Chưa đăng nhập'}`;
@@ -268,13 +305,29 @@ const Garage = {
     const panel = document.getElementById('active-dino-content');
     if (!panel) return;
 
+    if (!this.playerInfo || !this.playerInfo.steamId) {
+      panel.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+          <span style="font-size: 2.5rem; display: block; margin-bottom: 12px;">🦖</span>
+          <h3 style="color: #fff; margin-bottom: 6px;">Chưa Đăng Nhập Tài Khoản Steam</h3>
+          <p style="color: #94a3b8; max-width: 520px; margin: 0 auto 16px; line-height: 1.6;">
+            Hãy đăng nhập bằng Steam chính chủ hoặc nhập nhanh Steam ID 64 ở ô phía trên để hiển thị khủng long đang sống in-game của bạn!
+          </p>
+          <a href="/api/player/steam/login?redirect=/gara.html" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); border: none;">
+            🎮 Đăng Nhập Steam Ngay
+          </a>
+        </div>
+      `;
+      return;
+    }
+
     if (!this.activeDino) {
       panel.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
           <span style="font-size: 2.5rem; display: block; margin-bottom: 12px;">🦖</span>
           <h3 style="color: #fff; margin-bottom: 6px;">Bạn hiện không có khủng long nào đang chơi trong game</h3>
           <p style="color: #94a3b8; max-width: 500px; margin: 0 auto;">
-            Hãy vào game spawn khủng long mới hoặc chọn một con từ Gara bên dưới bấm <strong>"Đưa Ra Đảo (Restore)"</strong> để hồi phục vào server!
+            Hãy vào game spawn khủng long mới hoặc chọn một con từ Gara bên dưới bấm <strong>"Đưa Ra Đảo (Restore 30s)"</strong> để hồi phục vào server!
           </p>
         </div>
       `;
@@ -331,6 +384,18 @@ const Garage = {
   renderSlots() {
     const grid = document.getElementById('garage-slots-grid');
     if (!grid) return;
+
+    if (!this.playerInfo || !this.playerInfo.steamId) {
+      grid.innerHTML = [1, 2, 3].map(slotNum => `
+        <div class="slot-card empty-slot">
+          <span class="slot-badge-num">Ô #${slotNum}</span>
+          <div style="font-size: 2rem; margin-bottom: 8px; opacity: 0.4;">📦</div>
+          <h4 style="color: #64748b; margin-bottom: 4px; font-size: 1.05rem;">Ô Trống #${slotNum}</h4>
+          <p style="font-size: 0.8rem; margin: 0; color: #475569;">Đăng nhập Steam để nạp khủng long trong Gara Cloud</p>
+        </div>
+      `).join('');
+      return;
+    }
 
     if (this.slots.length === 0) {
       grid.innerHTML = `
@@ -544,7 +609,6 @@ const Garage = {
     } finally {
       this.pendingRestoreDino = null;
     }
-  },
   },
 
   showActionAlert(title, message, type = 'error') {
