@@ -3329,46 +3329,125 @@ app.get('/api/server/leaderboard', async (req, res) => {
 // ==========================================
 
 // ==========================================
-// 11. ISLEPILOT GACHA SYSTEM (st25.islepilot.eu/cases)
+// 11. ISLEPILOT CASES & GACHA SYSTEM (st25.islepilot.eu/cases)
+// Đồng bộ trực tiếp thời gian thực từ IslePilot Cloud Control Panel
 // ==========================================
 
-// Danh mục Hòm Gacha duy nhất: Gacha Halloween 8 Lúa chuẩn IslePilot
-const GACHA_HALLOWEEN = {
-  id: "halloween",
+// Danh mục Hòm Gacha dự phòng khi mất kết nối mạng
+const GACHA_HALLOWEEN_FALLBACK = {
+  id: "cmuvclx96082iml01bson72ak",
   name: "Hòm Halloween Huyền Bí 🎃",
   price: 8,
+  cost: 8,
   icon: "🎃",
   theme: "halloween",
   badge: "GACHA ISLEPILOT (8 LÚA)",
-  desc: "Vòng quay Gacha Halloween chính thức từ IslePilot. Trúng T-Rex 80% Prime Cổ Đại, Trike 80%, Allo 60% & 100 Lúa Nổ Hũ!",
+  desc: "Vòng quay Gacha Halloween chính thức đồng bộ từ IslePilot Cloud. Trúng T-Rex 80% Prime Cổ Đại, Trike 80%, Allo 60% & 100 Lúa Nổ Hũ!",
   color: "#6600ff",
   isGachaRoll: true,
   rewards: [
-    { name: "Tyrannosaurus 80% (Cổ Đại) 🦖", rarity: "ancient", weight: 5, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 80, gender: "Đực (Male)", isPrimeElder: true }, rarityLabel: "CỔ ĐẠI", rarityColor: "#ef4444" },
-    { name: "Triceratops 80% (Thần Thoại) 🦏", rarity: "mythical", weight: 6, type: "dino", icon: "🐾", dinoData: { species: "Triceratops", growth: 80, gender: "Đực (Male)", isPrimeElder: true }, rarityLabel: "THẦN THOẠI", rarityColor: "#ec4899" },
-    { name: "Tyrannosaurus 60% (Hiếm) 🦖", rarity: "uncommon", weight: 10, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 60, gender: "Đực (Male)" }, rarityLabel: "HIẾM", rarityColor: "#a855f7" },
-    { name: "Allosaurus 60% (Hiếm) 🦖", rarity: "uncommon", weight: 30, type: "dino", icon: "🐾", dinoData: { species: "Allosaurus", growth: 60, gender: "Đực (Male)" }, rarityLabel: "HIẾM", rarityColor: "#a855f7" },
-    { name: "Tyrannosaurus 40% (Thường) 🦖", rarity: "common", weight: 10, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 40, gender: "Đực (Male)" }, rarityLabel: "THƯỜNG", rarityColor: "#38bdf8" },
-    { name: "100 LÚA 🌾 Nổ Hũ!", rarity: "exceptional", weight: 1, type: "lua", amount: 100, icon: "🪙", rarityLabel: "NGOẠI HẠNG", rarityColor: "#fbbf24" },
-    { name: "2 LÚA 🌾 May Mắn", rarity: "common", weight: 10, type: "lua", amount: 2, icon: "🪙", rarityLabel: "THƯỜNG", rarityColor: "#fbbf24" },
-    { name: "Skin T-rex Halloween (Ngoại Hạng) 🎃", rarity: "exceptional", weight: 1, type: "skin", icon: "🎨", shopSkinId: "cmuvdy3510ehdqq0190p5cmyd", rarityLabel: "NGOẠI HẠNG", rarityColor: "#eab308" },
-    { name: "🙅 Chúc May Mắn Lần Sau", rarity: "common", weight: 27, type: "nothing", icon: "🙅", rarityLabel: "THƯỜNG", rarityColor: "#64748b" }
+    { name: "Tyrannosaurus 80% (Cổ Đại) 🦖", rarity: "ancient", weight: 5, type: "dino", prizeKind: "dino", icon: "🐾", growth: 80, isPrimeElder: true, dinoData: { species: "Tyrannosaurus", growth: 80, gender: "Đực (Male)", isPrimeElder: true }, rarityLabel: "CỔ ĐẠI", rarityColor: "#ef4444" },
+    { name: "Triceratops 80% (Thần Thoại) 🦏", rarity: "mythical", weight: 6, type: "dino", prizeKind: "dino", icon: "🐾", growth: 80, isPrimeElder: true, dinoData: { species: "Triceratops", growth: 80, gender: "Đực (Male)", isPrimeElder: true }, rarityLabel: "THẦN THOẠI", rarityColor: "#ec4899" },
+    { name: "Tyrannosaurus 60% (Hiếm) 🦖", rarity: "uncommon", weight: 10, type: "dino", prizeKind: "dino", icon: "🐾", growth: 60, dinoData: { species: "Tyrannosaurus", growth: 60, gender: "Đực (Male)" }, rarityLabel: "HIẾM", rarityColor: "#a855f7" },
+    { name: "Allosaurus 60% (Hiếm) 🦖", rarity: "uncommon", weight: 30, type: "dino", prizeKind: "dino", icon: "🐾", growth: 60, dinoData: { species: "Allosaurus", growth: 60, gender: "Đực (Male)" }, rarityLabel: "HIẾM", rarityColor: "#a855f7" },
+    { name: "Tyrannosaurus 40% (Thường) 🦖", rarity: "common", weight: 10, type: "dino", prizeKind: "dino", icon: "🐾", growth: 40, dinoData: { species: "Tyrannosaurus", growth: 40, gender: "Đực (Male)" }, rarityLabel: "THƯỜNG", rarityColor: "#38bdf8" },
+    { name: "100 LÚA 🌾 Nổ Hũ!", rarity: "exceptional", weight: 1, type: "lua", prizeKind: "coins", amount: 100, coins: 100, icon: "🪙", rarityLabel: "NGOẠI HẠNG", rarityColor: "#fbbf24" },
+    { name: "2 LÚA 🌾 May Mắn", rarity: "common", weight: 10, type: "lua", prizeKind: "coins", amount: 2, coins: 2, icon: "🪙", rarityLabel: "THƯỜNG", rarityColor: "#fbbf24" },
+    { name: "Skin T-rex Halloween (Ngoại Hạng) 🎃", rarity: "exceptional", weight: 1, type: "skin", prizeKind: "skin", icon: "🎨", shopSkinId: "cmuvdy3510ehdqq0190p5cmyd", rarityLabel: "NGOẠI HẠNG", rarityColor: "#eab308" },
+    { name: "🙅 Chúc May Mắn Lần Sau", rarity: "common", weight: 20, type: "nothing", prizeKind: "nothing", icon: "🙅", rarityLabel: "THƯỜNG", rarityColor: "#64748b" }
   ]
 };
 
-// Danh sách các hòm mở thưởng (Chỉ giữ lại duy nhất Gacha Halloween)
+// Hàm đọc danh sách hòm quà trực tiếp từ IslePilot Cloud (GET /cases)
+async function getLiveIslePilotCrates() {
+  try {
+    const pilotCases = await callIslePilot('/cases', 'GET', null, true);
+    if (pilotCases && pilotCases.crates && Array.isArray(pilotCases.crates) && pilotCases.crates.length > 0) {
+      return pilotCases.crates.map(c => {
+        const items = (c.items || []).map(item => {
+          let rarityLabel = "THƯỜNG";
+          let rarityColor = "#38bdf8";
+          if (item.rarity === 'ancient') { rarityLabel = "CỔ ĐẠI"; rarityColor = "#ef4444"; }
+          else if (item.rarity === 'mythical') { rarityLabel = "THẦN THOẠI"; rarityColor = "#ec4899"; }
+          else if (item.rarity === 'exceptional') { rarityLabel = "NGOẠI HẠNG"; rarityColor = "#eab308"; }
+          else if (item.rarity === 'uncommon') { rarityLabel = "HIẾM"; rarityColor = "#a855f7"; }
+
+          let icon = "🎁";
+          if (item.prizeKind === 'dino') {
+            icon = (item.species === 'Triceratops') ? "🦏" : (item.species === 'Allosaurus' ? "🦖" : "🐾");
+          } else if (item.prizeKind === 'coins') {
+            icon = "🌾";
+          } else if (item.prizeKind === 'skin') {
+            icon = "🎨";
+          } else if (item.prizeKind === 'nothing') {
+            icon = "🙅";
+          }
+
+          const rawGrowth = item.growth !== undefined ? Number(item.growth) : 0.8;
+          const growthPct = rawGrowth <= 1 ? Math.round(rawGrowth * 100) : Math.round(rawGrowth);
+
+          return {
+            id: item.id,
+            name: item.name,
+            weight: item.weight !== undefined ? Number(item.weight) : 10,
+            type: item.prizeKind === 'coins' ? 'lua' : (item.prizeKind || 'dino'),
+            prizeKind: item.prizeKind || 'dino',
+            amount: item.coins || 0,
+            coins: item.coins || 0,
+            icon,
+            rarity: item.rarity || 'common',
+            rarityLabel,
+            rarityColor,
+            growth: growthPct,
+            species: item.species || "Tyrannosaurus",
+            isPrimeElder: !!item.isPrimeElder,
+            shopSkinId: item.shopSkinId,
+            dinoData: {
+              species: item.species || "Tyrannosaurus",
+              growth: growthPct,
+              gender: "Đực (Male)",
+              isPrimeElder: !!item.isPrimeElder
+            }
+          };
+        });
+
+        return {
+          id: c.id,
+          name: c.name === "Halloween" ? "Hòm Halloween Huyền Bí 🎃" : c.name,
+          price: Number(c.cost) || 8,
+          cost: Number(c.cost) || 8,
+          color: c.color || "#6600ff",
+          icon: "🎃",
+          theme: "halloween",
+          badge: `GACHA ISLEPILOT CLOUD (${c.cost || 8} LÚA)`,
+          desc: `Vòng quay Gacha chính thức đồng bộ thời gian thực từ IslePilot Cloud (Server ID: cmufraiwk7fnooa01vpdzdhm4). Khủng long trúng thưởng tự động nạp thẳng vào Gara!`,
+          isGachaRoll: true,
+          rewards: items
+        };
+      });
+    }
+  } catch (err) {
+    console.warn('Lỗi đồng bộ hòm quà từ IslePilot Cloud:', err.message);
+  }
+  return [GACHA_HALLOWEEN_FALLBACK];
+}
+
+// 1. Danh sách các hòm mở thưởng (Đồng bộ thời gian thực từ IslePilot Cloud)
 app.get('/api/crates/list', async (req, res) => {
   const steamId = req.query.steamId || getRequestSteamId(req);
   const userBal = steamId ? await getLivePlayerBalance(steamId) : 0;
+  const crates = await getLiveIslePilotCrates();
 
   res.json({
     steamId: steamId || null,
     balance: userBal,
-    crates: [GACHA_HALLOWEEN]
+    crates: crates,
+    cloudSync: true,
+    serverDashboardUrl: "https://islepilot.eu/dashboard/servers/cmufraiwk7fnooa01vpdzdhm4"
   });
 });
 
-// Mở Hòm May Mắn — Tự Động Thêm Khủng Long Vào Gara Giống Nhà Phát Hành!
+// 2. Mở Hòm May Mắn — Tự Động Thêm Khủng Long Thẳng Vào Gara
 app.post('/api/crates/open', async (req, res) => {
   const steamId = req.body.steamId || getRequestSteamId(req);
 
@@ -3376,61 +3455,71 @@ app.post('/api/crates/open', async (req, res) => {
     return res.status(401).json({ error: "Vui lòng đăng nhập Steam để quay thưởng!" });
   }
 
-  const crate = GACHA_HALLOWEEN;
-  const userBal = await getLivePlayerBalance(steamId);
-  if (userBal < crate.price) {
-    return res.status(400).json({ error: `Bạn không đủ Lúa để mở hòm! Cần ${crate.price} Lúa 🌾 (Hiện có: ${userBal} Lúa).` });
+  const cleanSteamId = String(steamId || '').trim();
+  const crates = await getLiveIslePilotCrates();
+  const reqCrateId = req.body.crateId;
+  const crate = (crates.find(c => c.id === reqCrateId) || crates[0]) || GACHA_HALLOWEEN_FALLBACK;
+
+  const userBal = await getLivePlayerBalance(cleanSteamId);
+  const price = Number(crate.price || crate.cost || 8);
+  if (userBal < price) {
+    return res.status(400).json({ error: `Bạn không đủ Lúa để mở hòm! Cần ${price} Lúa 🌾 (Hiện có: ${userBal} Lúa).` });
   }
 
-  // 1. Trừ Lúa mở hòm trực tiếp vào tài khoản Steam của người chơi
-  const deductRes = await modifyLivePlayerBalance(steamId, -crate.price, `Quay Gacha ${crate.name}`);
+  // 1. Trừ Lúa mở hòm trực tiếp vào tài khoản Steam của người chơi trên IslePilot Cloud
+  const deductRes = await modifyLivePlayerBalance(cleanSteamId, -price, `Quay Gacha ${crate.name}`);
   let currentBalance = deductRes.balance;
 
-  // 2. Quay số trúng thưởng theo trọng số weight
-  const totalWeight = crate.rewards.reduce((sum, r) => sum + r.weight, 0);
+  // 2. Quay số trúng thưởng theo trọng số weight từ IslePilot Cloud
+  const totalWeight = crate.rewards.reduce((sum, r) => sum + (Number(r.weight) || 1), 0);
   let randomVal = Math.random() * totalWeight;
   let wonReward = crate.rewards[0];
 
   for (const reward of crate.rewards) {
-    if (randomVal <= reward.weight) {
+    const w = Number(reward.weight) || 1;
+    if (randomVal <= w) {
       wonReward = reward;
       break;
     }
-    randomVal -= reward.weight;
+    randomVal -= w;
   }
 
-  // 3. Phân phối phần thưởng
+  // 3. Phân phối phần thưởng: DINO TRÚNG THƯỞNG ĐƯỢC CỘNG THẲNG VÀO GARAGE
   let transferredToGarage = false;
   const data = getPortalData();
 
-  const cleanSteamId = String(steamId || '').trim();
-
-  if (wonReward.type === 'lua') {
+  if (wonReward.type === 'lua' || wonReward.prizeKind === 'coins') {
     // Cộng Lúa trực tiếp vào ví người chơi
-    const addRes = await modifyLivePlayerBalance(cleanSteamId, wonReward.amount, `Trúng thưởng ${wonReward.name} từ ${crate.name}`);
+    const coinsAmount = wonReward.coins || wonReward.amount || 2;
+    const addRes = await modifyLivePlayerBalance(cleanSteamId, coinsAmount, `Trúng thưởng ${wonReward.name} từ ${crate.name}`);
     currentBalance = addRes.balance;
-  } else if (wonReward.type === 'dino') {
-    // TỰ ĐỘNG THÊM VÀO GARA CỦA ĐÚNG NGƯỜI CHƠI (GIỐNG NHÀ PHÁT HÀNH ISLEPILOT)
+  } else if (wonReward.type === 'dino' || wonReward.prizeKind === 'dino') {
+    // TỰ ĐỘNG THÊM VÀO GARA CỦA ĐÚNG NGƯỜI CHƠI (HIỂN THỊ NGAY TRONG GARA VÀ CLOUD)
     const dinoData = wonReward.dinoData || {};
+    const species = wonReward.species || dinoData.species || "Tyrannosaurus";
+    const growth = wonReward.growth !== undefined ? Number(wonReward.growth) : (dinoData.growth !== undefined ? Number(dinoData.growth) : 80);
+    const isPrimeElder = wonReward.isPrimeElder !== undefined ? !!wonReward.isPrimeElder : !!dinoData.isPrimeElder;
+
     addDinoToGarage(cleanSteamId, {
-      species: dinoData.species || "Tyrannosaurus",
-      growth: dinoData.growth !== undefined ? dinoData.growth : 80,
+      species: species,
+      growth: growth,
       gender: dinoData.gender || (Math.random() > 0.5 ? "Đực (Male)" : "Cái (Female)"),
-      isPrimeElder: dinoData.isPrimeElder || false,
-      mutations: dinoData.isPrimeElder ? ["Hemomania", "Multichambered Lungs", "Osteophagic", "Gastronomic Regeneration"] : [],
-      source: `Gacha May Mắn (${crate.name})`
+      isPrimeElder: isPrimeElder,
+      mutations: isPrimeElder ? ["Hemomania", "Multichambered Lungs", "Osteophagic", "Gastronomic Regeneration"] : [],
+      source: `Gacha IslePilot Cloud (${crate.name})`
     }, data);
     savePortalData(data);
     transferredToGarage = true;
-  } else if (wonReward.type === 'skin' || wonReward.type === 'item') {
+  } else if (wonReward.type === 'skin' || wonReward.prizeKind === 'skin') {
     if (!data.userInventory) data.userInventory = {};
     if (!data.userInventory[cleanSteamId]) data.userInventory[cleanSteamId] = [];
     data.userInventory[cleanSteamId].push({
       id: `inv-${Date.now()}`,
       name: wonReward.name,
-      icon: wonReward.icon || "🎁",
-      desc: `Trúng thưởng từ ${crate.name}`,
-      type: wonReward.type
+      icon: wonReward.icon || "🎨",
+      desc: `Trúng thưởng từ ${crate.name} (IslePilot Cloud)`,
+      type: "skin",
+      shopSkinId: wonReward.shopSkinId
     });
     savePortalData(data);
   }
@@ -3443,7 +3532,8 @@ app.post('/api/crates/open', async (req, res) => {
     reward: wonReward,
     newBalance: currentBalance,
     crateName: crate.name,
-    transferredToGarage: transferredToGarage
+    transferredToGarage: transferredToGarage,
+    cloudSync: true
   });
 });
 

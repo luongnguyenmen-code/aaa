@@ -1,7 +1,7 @@
 {
   "userWallets": {
     "76561198636766540": 58,
-    "76561198354289789": 10234,
+    "76561198354289789": 10226,
     "76561198838095252": 586,
     "76561199229687125": 22,
     "76561198789527189": 302
@@ -403,6 +403,29 @@
         ],
         "stored_at": "16:31:38 7/10/2026",
         "source": "Giao Dịch ST25 (Nhận từ: Thích Thì Var)",
+        "isLocal": true
+      },
+      {
+        "id": "dino-1791397419672-224",
+        "species": "Tyrannosaurus",
+        "gender": "Đực (Male)",
+        "growth": 40,
+        "health": 100,
+        "hunger": 100,
+        "thirst": 100,
+        "diet": [
+          "S",
+          "S",
+          "D"
+        ],
+        "mutations": [
+          "Hemomania",
+          "Multichambered Lungs",
+          "Osteophagic",
+          "Gastronomic Regeneration"
+        ],
+        "stored_at": "01:23:39 8/10/2026",
+        "source": "Gacha IslePilot Cloud (Hòm Halloween Huyền Bí 🎃)",
         "isLocal": true
       }
     ],
