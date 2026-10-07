@@ -1,7 +1,8 @@
 {
   "userWallets": {
     "76561198636766540": 29,
-    "76561198354289789": 10467
+    "76561198354289789": 10219,
+    "76561198838095252": 586
   },
   "userInventory": {
     "76561198636766540": [
@@ -88,9 +89,49 @@
         "gender": "Đực (Male)",
         "purchased_at": "07:44:21 7/10/2026"
       }
+    ],
+    "76561198838095252": [
+      {
+        "id": "voucher-1791336181143-806",
+        "name": "T-Rex 100% Chiến Thần ST25",
+        "icon": "🦖",
+        "desc": "Khủng long Tyrannosaurus (Đực (Male), 100% Growth). Mua từ Chợ ST25.",
+        "type": "dino_voucher",
+        "species": "Tyrannosaurus",
+        "growth": 100,
+        "gender": "Đực (Male)",
+        "purchased_at": "08:23:01 7/10/2026"
+      }
     ]
   },
   "marketListings": [
+    {
+      "id": "mkt-1791336308886",
+      "seller": "Maico Dol",
+      "sellerSteamId": "76561198354289789",
+      "title": "1",
+      "species": "Allosaurus",
+      "gender": "Đực (Male)",
+      "price": 80,
+      "growth": 60,
+      "diet": "S-S-D",
+      "icon": "🦖",
+      "dinoData": {
+        "id": "cmuwjve0y00axp7015omvmy62",
+        "name": null,
+        "species": "Allosaurus",
+        "gender": "Male",
+        "growth": 0.6,
+        "health": 1,
+        "hunger": 1,
+        "thirst": 1,
+        "stamina": null,
+        "isPrimeElder": true,
+        "mutations": [],
+        "parkedAt": "2026-10-06T10:42:55.043Z"
+      },
+      "createdAt": "08:25:08 7/10/2026"
+    },
     {
       "id": "mkt-2",
       "seller": "Sát Thủ Đầm Lầy",
@@ -320,10 +361,11 @@
         "isLocal": true
       }
     ],
-    "76561198354289789": [
+    "76561198354289789": [],
+    "76561198838095252": [
       {
-        "id": "dino-1791288903157-422",
-        "species": "Omniraptor",
+        "id": "dino-1791334448673-768",
+        "species": "Deinosuchus",
         "gender": "Đực (Male)",
         "growth": 100,
         "health": 100,
@@ -334,9 +376,14 @@
           "S",
           "D"
         ],
-        "mutations": [],
-        "stored_at": "19:15:03 6/10/2026",
-        "source": "Mua từ Chợ Giao Dịch (Raptor Tốc Độ)",
+        "mutations": [
+          "Hemomania",
+          "Multichambered Lungs",
+          "Osteophagic",
+          "Gastronomic Regeneration"
+        ],
+        "stored_at": "07:54:08 7/10/2026",
+        "source": "Hòm May Mắn (Hòm Kim Cương Thần Thú 💎)",
         "isLocal": true
       }
     ]
@@ -346,5 +393,14 @@
       "cmuwjve0y00axp7015omvmy62",
       "cmuwkxsoo09qjrz01nz42tye5"
     ]
+  },
+  "adminAssignments": {
+    "76561198745006783": {
+      "roleKey": "booster",
+      "slots": 5,
+      "updatedBy": "76561198354289789",
+      "updatedAt": "12:32:01 7/10/2026",
+      "notes": ""
+    }
   }
 }

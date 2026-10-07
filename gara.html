@@ -112,6 +112,7 @@
         <li><a href="hom-qua.html" class="nav-link">🎁 Mở Hòm</a></li>
         <li><a href="gara.html" class="nav-link active">🦖 Gara</a></li>
         <li><a href="skin.html" class="nav-link">🎨 Skin</a></li>
+        <li id="nav-admin-link-item" style="display: none;"><a href="cai-dat.html" class="nav-link" id="nav-admin-link" style="color: #fbbf24; font-weight: 700;">👑 Cấp Role & Slot</a></li>
         <li><a href="tha-xac.html" class="nav-link">🥩 Thả Xác</a></li>
         <li><a href="moi-ban.html" class="nav-link">👥 Mời Bạn</a></li>
         <li><a href="ho-tro.html" class="nav-link">🆘 Hỗ Trợ</a></li>
@@ -119,7 +120,8 @@
       </ul>
 
       <div class="nav-actions">
-        <a href="lien-ket-steam.html" class="btn btn-secondary btn-sm" id="nav-btn-steam">Đổi Tài Khoản Steam</a>
+        <a href="cai-dat.html" class="btn btn-sm" style="display: none; background: rgba(234, 179, 8, 0.2); border: 1px solid #eab308; color: #facc15; font-weight: 700;" id="btn-header-admin">👑 Phân Quyền</a>
+        <a href="lien-ket-steam.html" class="btn btn-secondary btn-sm" id="nav-btn-steam">🎮 Đăng Nhập Steam</a>
         <a href="tai-hud.html" class="btn btn-hud btn-sm">Tải HUD</a>
       </div>
     </div>
@@ -135,11 +137,15 @@
           GARA KHỦNG LONG ST25
         </h1>
         <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">
-          Đồng bộ Cloud 100% với nhà phát hành IslePilot (<a href="https://st25.islepilot.eu/garage" target="_blank" style="color: #38bdf8;">st25.islepilot.eu/garage</a>). Lưu giữ chỉ số, đột biến và tăng trưởng!
+          Đồng bộ Cloud 100% với nhà phát hành IslePilot (<a href="https://st25.islepilot.eu/garage" target="_blank" style="color: #38bdf8;">st25.islepilot.eu/garage</a>). Quản lý thú nuôi riêng tư theo tài khoản Steam!
         </p>
       </div>
 
       <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <!-- Nút Admin chỉ hiển thị khi tài khoản đăng nhập là Admin -->
+        <a href="cai-dat.html" class="btn btn-sm" style="display: none; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-weight: 800; border: none; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);" id="btn-admin-panel-link">
+          👑 Quản Trị Cấp Role & Slot
+        </a>
         <button onclick="Garage.refresh()" class="btn btn-secondary btn-sm" id="btn-refresh-garage">
           🔄 Đồng bộ dữ liệu
         </button>
@@ -148,6 +154,53 @@
         </a>
       </div>
     </div>
+
+    <!-- Admin Quick Switcher Bar (CHỈ ADMIN MỚI THẤY) -->
+    <div id="admin-quick-bar" style="display: none; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(234, 179, 8, 0.4); border-radius: var(--radius-md); padding: 12px 18px; margin-bottom: 20px; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.2rem;">🔍</span>
+        <span style="color: #facc15; font-weight: 700; font-size: 0.9rem;">Admin Soi Gara Người Chơi:</span>
+        <input type="text" id="admin-quick-steamid" placeholder="Nhập Steam ID người chơi..." style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; padding: 6px 12px; color: #fff; font-size: 0.85rem; width: 220px;" onkeydown="if(event.key==='Enter') Garage.switchPlayer(this.value)">
+        <button onclick="Garage.switchPlayer(document.getElementById('admin-quick-steamid').value)" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; padding: 5px 10px;">
+          Xem Gara
+        </button>
+        <button onclick="Garage.resetToAdminSelf()" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; padding: 5px 10px; color: #38bdf8; border-color: #38bdf8;">
+          👤 Về Tài Khoản Tôi
+        </button>
+      </div>
+
+      <div>
+        <a href="javascript:void(0)" onclick="Garage.openAssignForCurrent()" class="btn btn-sm" style="background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8; font-size: 0.82rem; font-weight: 700;">
+          ⚡ Cấp Thêm Slot Cho ID Này
+        </a>
+      </div>
+    </div>
+
+    <!-- Màn hình yêu cầu Đăng Nhập Steam khi chưa login -->
+    <div id="login-required-panel" style="display: none; background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-lg); padding: 50px 30px; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
+      <span style="font-size: 3.5rem; display: block; margin-bottom: 14px;">🔒</span>
+      <h2 style="color: #fff; font-size: 1.8rem; font-weight: 800; margin-bottom: 10px;">Vui Lòng Đăng Nhập Tài Khoản Steam</h2>
+      <p style="color: #94a3b8; max-width: 600px; margin: 0 auto 24px; line-height: 1.6; font-size: 0.95rem;">
+        Hệ thống Gara ST25 quản lý khủng long riêng biệt theo từng tài khoản. Hãy đăng nhập tài khoản Steam của bạn để xem và bảo quản khủng long an toàn, không bị nhầm lẫn dữ liệu với thành viên khác!
+      </p>
+      <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-bottom: 24px;">
+        <a href="/api/player/steam/login?redirect=/gara.html" class="btn btn-primary" style="font-weight: 800; padding: 14px 28px; font-size: 1.05rem; background: linear-gradient(135deg, #10b981, #059669); border: none;">
+          🎮 Đăng Nhập Bằng Steam Chính Chủ
+        </a>
+      </div>
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); max-width: 480px; margin-left: auto; margin-right: auto;">
+        <small style="color: #64748b; display: block; margin-bottom: 10px; font-size: 0.85rem;">Hoặc nhập nhanh Steam ID 64 (17 số) để liên kết:</small>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="manual-login-steamid" placeholder="Ví dụ: 76561198354289789" class="form-input" style="padding: 10px 14px; font-size: 0.9rem;" onkeydown="if(event.key==='Enter') Garage.quickLoginManual()">
+          <button onclick="Garage.quickLoginManual()" class="btn btn-secondary btn-sm" style="white-space: nowrap; font-weight: 700;">
+            Liên Kết Ngay
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Khung Nội Dung Gara Cá Nhân (Chỉ hiển thị khi đã đăng nhập) -->
+    <div id="garage-authenticated-content" style="display: none;">
 
     <!-- Live Account Bar -->
     <div class="garage-header-box">
@@ -221,6 +274,8 @@
         <!-- Rendered by gara.js -->
       </div>
     </section>
+
+    </div> <!-- End of #garage-authenticated-content -->
 
   </main>
 

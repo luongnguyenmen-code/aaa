@@ -2,10 +2,795 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=index.html">
-  <title>ST25 VIETNAM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bảng Quản Trị Cấp Role & Slot Gara — ST25 VIETNAM</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+  <style>
+    .admin-card {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85));
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .admin-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+    @media (max-width: 992px) {
+      .admin-grid { grid-template-columns: 1fr; }
+    }
+    .form-group {
+      margin-bottom: 18px;
+    }
+    .form-label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+    }
+    .form-input, .form-select {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      color: #fff;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+    }
+    .quick-slot-btns {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .btn-quick-slot {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-quick-slot:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: #38bdf8;
+      color: #fff;
+    }
+    .player-preview-card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-top: 14px;
+    }
+    .player-preview-card img {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 2px solid #38bdf8;
+    }
+    .table-container {
+      overflow-x: auto;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+    }
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    .admin-table th {
+      background: rgba(30, 41, 59, 0.9);
+      padding: 14px 18px;
+      color: #94a3b8;
+      font-weight: 600;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .admin-table td {
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #e2e8f0;
+      vertical-align: middle;
+    }
+    .admin-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .badge-admin {
+      background: rgba(234, 179, 8, 0.15);
+      border: 1px solid #eab308;
+      color: #facc15;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+    .badge-slot {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid #38bdf8;
+      color: #38bdf8;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+    .btn-action-sm {
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .btn-action-edit {
+      background: #0284c7;
+      color: #fff;
+      margin-right: 6px;
+    }
+    .btn-action-edit:hover { background: #0369a1; }
+    .btn-action-del {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid #ef4444;
+      color: #fca5a5;
+    }
+    .btn-action-del:hover { background: #ef4444; color: #fff; }
+  </style>
 </head>
 <body>
-  <script>window.location.href = "index.html";</script>
+
+  <!-- Navigation Bar -->
+  <header class="site-header">
+    <div class="container header-container">
+      <a href="index.html" class="brand">
+        <span style="color: #fbbf24;">🌾 ST25</span>
+        <span class="brand-tag">🦖 THE ISLE</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="index.html" class="nav-link">🌾 Trang chủ</a></li>
+        <li><a href="bando.html" class="nav-link">🗺️ Bản đồ</a></li>
+        <li><a href="nhiem-vu.html" class="nav-link">🌾 Kho Lúa</a></li>
+        <li><a href="giao-dich.html" class="nav-link">⚖️ Giao Dịch</a></li>
+        <li><a href="hom-qua.html" class="nav-link">🎁 Mở Hòm</a></li>
+        <li><a href="gara.html" class="nav-link">🦖 Gara</a></li>
+        <li><a href="skin.html" class="nav-link">🎨 Skin</a></li>
+        <li><a href="cai-dat.html" class="nav-link active" style="color: #fbbf24; font-weight: 700;">👑 Quản Trị Cấp Role</a></li>
+        <li><a href="ho-tro.html" class="nav-link">🆘 Hỗ Trợ</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="gara.html" class="btn btn-secondary btn-sm">Xem Gara Khủng Long</a>
+        <a href="tai-hud.html" class="btn btn-hud btn-sm">Tải HUD</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container" style="padding-top: 35px; padding-bottom: 60px;">
+
+    <!-- Access Denied Panel (Hiển thị khi chưa đăng nhập hoặc không phải Admin) -->
+    <div id="access-denied-panel" style="display: none; background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1px solid #ef4444; border-radius: var(--radius-lg); padding: 50px 30px; text-align: center; margin: 40px auto; max-width: 650px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <span style="font-size: 3.5rem; display: block; margin-bottom: 14px;">⛔</span>
+      <h2 style="color: #ef4444; font-size: 1.8rem; font-weight: 800; margin-bottom: 12px;">TRUY CẬP BỊ TỪ CHỐI</h2>
+      <p style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; margin-bottom: 24px;">
+        Khu vực Quản Trị chỉ dành riêng cho <strong>Quản Trị Viên (Admin) ST25</strong> đã đăng nhập tài khoản Steam chính chủ. Tài khoản thành viên (member) hoặc khách chưa đăng nhập không có quyền truy cập vào đây.
+      </p>
+      <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
+        <a href="index.html" class="btn btn-secondary" style="font-weight: 700;">
+          Quay Về Trang Chủ
+        </a>
+        <a href="/api/player/steam/login?redirect=/cai-dat.html" class="btn btn-primary" style="background: #ef4444; border: none; font-weight: 700;">
+          🎮 Đăng Nhập Tài Khoản Admin
+        </a>
+      </div>
+    </div>
+
+    <!-- Admin Authorized Content (Chỉ hiển thị khi đã đăng nhập Admin) -->
+    <div id="admin-authorized-content" style="display: none;">
+
+    <!-- Page Header -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+      <div>
+        <h1 style="font-size: 2.2rem; font-weight: 800; color: #fff; margin-bottom: 6px; display: flex; align-items: center; gap: 12px;">
+          <span>👑 BẢNG QUẢN TRỊ CẤP ROLE & SLOT GARA</span>
+        </h1>
+        <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">
+          Dành riêng cho Quản Trị Viên (Admin) ST25: Phân quyền, cấp vai trò Discord / Web và điều chỉnh số lượng Slot Gara trực tiếp theo Steam ID. Cập nhật tức thì 100%!
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <button onclick="AdminPanel.init()" class="btn btn-secondary btn-sm">
+          🔄 Tải lại dữ liệu
+        </button>
+        <a href="gara.html" class="btn btn-primary btn-sm">
+          🦖 Vào Gara Của Bạn
+        </a>
+      </div>
+    </div>
+
+    <!-- Admin Status Banner -->
+    <div class="admin-card" id="admin-banner-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <img id="admin-avatar" src="https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg" alt="Admin" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #fbbf24;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: #fff; font-weight: 800; font-size: 1.15rem;" id="admin-name">Đang kiểm tra quyền Admin...</span>
+              <span class="badge-admin" id="admin-tag">👑 QUẢN TRỊ VIÊN TỐI CAO</span>
+            </div>
+            <small style="color: #94a3b8; font-family: monospace;" id="admin-steamid">Steam ID: Đang tải...</small>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 0.85rem; color: #10b981; background: rgba(16, 185, 129, 0.15); padding: 6px 12px; border-radius: 6px; border: 1px solid #10b981;">
+            🟢 Trạng thái hệ thống: Đã kích hoạt quyền Cấp Slot
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Form Grid -->
+    <div class="admin-grid">
+
+      <!-- Form Cấp Quyền -->
+      <div class="admin-card">
+        <h3 style="color: #fff; font-size: 1.25rem; margin: 0 0 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
+          ✍️ Cấp Role & Chỉnh Sửa Slot Gara Thủ Công
+        </h3>
+
+        <form id="assign-role-form" onsubmit="AdminPanel.submitAssign(event)">
+          
+          <!-- Steam ID Input -->
+          <div class="form-group">
+            <label class="form-label" for="target-steamid">Steam ID Người Chơi (17 số):</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="target-steamid" class="form-input" placeholder="Ví dụ: 76561198354289789" required autocomplete="off" oninput="AdminPanel.onSteamIdInput()">
+              <button type="button" onclick="AdminPanel.inspectPlayer()" class="btn btn-secondary btn-sm" style="white-space: nowrap;">
+                🔍 Tra Cứu
+              </button>
+            </div>
+            <small style="color: #64748b; margin-top: 4px; display: block;">
+              Nhập Steam ID 64 của người chơi cần nâng cấp hoặc điều chỉnh.
+            </small>
+          </div>
+
+          <!-- Quick Select from Online / Recent Players -->
+          <div class="form-group">
+            <label class="form-label">Hoặc chọn nhanh từ danh sách người chơi gần đây:</label>
+            <select id="recent-players-select" class="form-select" onchange="AdminPanel.onSelectRecentPlayer(this.value)">
+              <option value="">-- Chọn thành viên từ máy chủ --</option>
+            </select>
+          </div>
+
+          <!-- Player Preview Card (Hidden until checked) -->
+          <div id="player-preview" class="player-preview-card" style="display: none;">
+            <img id="preview-avatar" src="" alt="Avatar">
+            <div style="flex: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="color: #fff; margin: 0; font-size: 1.05rem;" id="preview-name">Player Name</h4>
+                <span class="badge-slot" id="preview-current-slots">3 Slots</span>
+              </div>
+              <div style="font-size: 0.85rem; color: #94a3b8; margin-top: 4px;">
+                Vai trò hiện tại: <strong style="color: #fbbf24;" id="preview-current-role">Thành Viên ST25</strong>
+              </div>
+              <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;" id="preview-status-extra">
+                Đang cất trong Gara: 0 con
+              </div>
+            </div>
+          </div>
+
+          <!-- Role Selection -->
+          <div class="form-group" style="margin-top: 18px;">
+            <label class="form-label" for="select-role">Chọn Vai Trò (Role):</label>
+            <select id="select-role" class="form-select" onchange="AdminPanel.onRoleChange(this.value)">
+              <!-- Options populated by JS -->
+            </select>
+          </div>
+
+          <!-- Garage Slots -->
+          <div class="form-group">
+            <label class="form-label" for="custom-slots">Số Lượng Slot Gara Muốn Cấp:</label>
+            <input type="number" id="custom-slots" class="form-input" min="1" max="100" value="3" required>
+            
+            <div class="quick-slot-btns">
+              <span style="font-size: 0.8rem; color: #94a3b8; align-self: center; margin-right: 4px;">Chọn nhanh:</span>
+              <button type="button" class="btn-quick-slot" onclick="AdminPanel.setSlots(3)">3 Slots (Mặc định)</button>
+              <button type="button" class="btn-quick-slot" onclick="AdminPanel.setSlots(5)">5 Slots</button>
+              <button type="button" class="btn-quick-slot" onclick="AdminPanel.setSlots(8)">8 Slots (Long Chủ)</button>
+              <button type="button" class="btn-quick-slot" onclick="AdminPanel.setSlots(12)">12 Slots (Long Tá Điền)</button>
+              <button type="button" class="btn-quick-slot" onclick="AdminPanel.setSlots(18)">18 Slots (Long Phú Nông)</button>
+              <button type="button" class="btn-quick-slot" onclick="AdminPanel.setSlots(20)">20 Slots (Admin/Đại Địa Chủ)</button>
+              <button type="button" class="btn-quick-slot" onclick="AdminPanel.setSlots(30)">30 Slots (Viên Gạch)</button>
+            </div>
+          </div>
+
+          <!-- Notes / Reason -->
+          <div class="form-group">
+            <label class="form-label" for="assign-notes">Ghi Chú / Lý Do (Tùy chọn):</label>
+            <input type="text" id="assign-notes" class="form-input" placeholder="Ví dụ: Cấp theo gói ủng hộ server, thưởng event...">
+          </div>
+
+          <!-- Submit Button -->
+          <div style="margin-top: 24px;">
+            <button type="submit" class="btn btn-primary" style="width: 100%; font-weight: 800; font-size: 1.05rem; padding: 14px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none;">
+              💾 LƯU & CẤP QUYỀN NGAY LẬP TỨC
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- Hướng Dẫn & Thông Tin Quy Định Slots -->
+      <div>
+        <div class="admin-card" style="margin-bottom: 20px;">
+          <h3 style="color: #fff; font-size: 1.2rem; margin: 0 0 12px;">
+            📜 Bảng Định Mức Slot Gara Theo Vai Trò
+          </h3>
+          <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 14px;">
+            Hệ thống ST25 tự động áp dụng số slot mặc định theo từng vai trò khi bạn phân quyền, hoặc bạn có thể tự tay gõ bất kỳ số slot nào (từ 1 đến 100):
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.88rem;">
+            <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(0,0,0,0.25); border-radius: 6px;">
+              <span>👑 Quản Trị Viên (Admin) / BQT Cấp Cao</span>
+              <strong style="color: #fbbf24;">20 Slots</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(0,0,0,0.25); border-radius: 6px;">
+              <span>🏰 LONG ĐẠI ĐỊA CHỦ</span>
+              <strong style="color: #38bdf8;">20 Slots</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(0,0,0,0.25); border-radius: 6px;">
+              <span>🌾 LONG PHÚ NÔNG</span>
+              <strong style="color: #10b981;">18 Slots</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(0,0,0,0.25); border-radius: 6px;">
+              <span>🌾 LONG TÁ ĐIỀN</span>
+              <strong style="color: #a855f7;">12 Slots</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(0,0,0,0.25); border-radius: 6px;">
+              <span>🐲 LONG CHỦ</span>
+              <strong style="color: #f43f5e;">8 Slots</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(0,0,0,0.25); border-radius: 6px;">
+              <span>🧱 Viên Gạch Đầu Tiên</span>
+              <strong style="color: #ec4899;">30 Slots</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(0,0,0,0.25); border-radius: 6px;">
+              <span>🚀 Booster Máy Chủ / Streamer</span>
+              <strong style="color: #06b6d4;">5 Slots</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(0,0,0,0.25); border-radius: 6px;">
+              <span>🦖 Thành Viên Thường ST25</span>
+              <strong style="color: #94a3b8;">3 Slots</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <h4 style="color: #38bdf8; margin: 0 0 8px; font-size: 1rem;">
+            💡 Cơ Chế Lưu Trữ Độc Lập & Bền Vững:
+          </h4>
+          <ul style="margin: 0; padding-left: 20px; font-size: 0.85rem; color: #94a3b8; line-height: 1.7;">
+            <li>Dữ liệu phân quyền được lưu đồng thời vào cả <code>server-config.json</code> và <code>portal-data.json</code>.</li>
+            <li>Khi bấm <strong>Lưu</strong>, bộ nhớ cache người chơi sẽ được xóa ngay tức thì.</li>
+            <li>Người chơi chỉ cần mở trang Gara là số slot mới sẽ hiển thị đúng 100% ngay mà không cần khởi động lại server.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Danh Sách Các Thành Viên Đã Phân Quyền -->
+    <section>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h3 style="color: #fff; font-size: 1.3rem; margin: 0 0 4px;">
+            📋 Danh Sách Thành Viên Đã Được Phân Quyền & Cấp Slot
+          </h3>
+          <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem;">
+            Các tài khoản đã được cấp role và số slot riêng biệt trong hệ thống.
+          </p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <input type="text" id="search-assigned" placeholder="Tìm theo Steam ID..." class="form-input" style="padding: 8px 12px; font-size: 0.85rem; width: 220px;" oninput="AdminPanel.filterTable(this.value)">
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Steam ID</th>
+              <th>Vai Trò (Role)</th>
+              <th>Sức Chứa Gara</th>
+              <th>Ghi Chú / Thời Gian</th>
+              <th style="text-align: right;">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody id="assigned-users-tbody">
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 30px; color: #64748b;">
+                Đang nạp danh sách thành viên...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    </div> <!-- End of #admin-authorized-content -->
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container" style="text-align: center;">
+      <p>© 2026 ST25 — Bảng Quản Trị Hệ Thống Cấp Role & Slot Gara Cloud Chính Thức.</p>
+    </div>
+  </footer>
+
+  <script src="assets/js/app.js"></script>
+  <script>
+    // Admin Panel Client Controller
+    const AdminPanel = {
+      roles: [],
+      assignedUsers: [],
+      recentPlayers: [],
+      currentAdminSteamId: null,
+
+      async init() {
+        const isAuthorizedAdmin = await this.checkAdminStatus();
+        if (!isAuthorizedAdmin) {
+          // Bị từ chối quyền truy cập
+          return;
+        }
+
+        // Lấy steamId từ URL nếu có
+        const urlParams = new URLSearchParams(window.location.search);
+        const qSteamId = urlParams.get('targetSteamId');
+        if (qSteamId) {
+          const inp = document.getElementById('target-steamid');
+          if (inp) {
+            inp.value = qSteamId;
+            setTimeout(() => this.inspectPlayer(), 300);
+          }
+        }
+
+        await this.fetchRolesAndSlots();
+        this.renderRolesDropdown();
+        this.renderRecentPlayersDropdown();
+        this.renderAssignedTable();
+      },
+
+      async checkAdminStatus() {
+        const deniedBox = document.getElementById('access-denied-panel');
+        const adminBox = document.getElementById('admin-authorized-content');
+
+        try {
+          // 1. Kiểm tra phiên đăng nhập người dùng từ server
+          const meRes = await fetch('/api/player/me');
+          const meData = await meRes.json();
+
+          if (!meData || !meData.isLoggedIn || !meData.steam_id || !meData.isAdmin) {
+            if (deniedBox) deniedBox.style.display = 'block';
+            if (adminBox) adminBox.style.display = 'none';
+            return false;
+          }
+
+          // Đã đăng nhập và đúng quyền Admin
+          this.currentAdminSteamId = meData.steam_id;
+
+          if (deniedBox) deniedBox.style.display = 'none';
+          if (adminBox) adminBox.style.display = 'block';
+
+          const nameEl = document.getElementById('admin-name');
+          const sidEl = document.getElementById('admin-steamid');
+          const avatarEl = document.getElementById('admin-avatar');
+
+          if (nameEl) nameEl.textContent = meData.persona_name || "Quản Trị Viên ST25";
+          if (sidEl) sidEl.textContent = `Steam ID Quản Trị: ${this.currentAdminSteamId}`;
+          if (avatarEl && meData.avatar) avatarEl.src = meData.avatar;
+
+          return true;
+        } catch (e) {
+          console.error("Lỗi kiểm tra quyền admin:", e);
+          if (deniedBox) deniedBox.style.display = 'block';
+          if (adminBox) adminBox.style.display = 'none';
+          return false;
+        }
+      },
+
+      async fetchRolesAndSlots() {
+        try {
+          const res = await fetch(`/api/admin/roles-slots?steamId=${encodeURIComponent(this.currentAdminSteamId)}`);
+          if (res.ok) {
+            const data = await res.json();
+            this.roles = data.roles || [];
+            this.assignedUsers = data.assignedUsers || [];
+            this.recentPlayers = data.recentPlayers || [];
+          } else {
+            App.showToast("Không thể tải danh sách cấu hình từ máy chủ!", "error");
+          }
+        } catch (e) {
+          console.error("Lỗi fetch roles:", e);
+        }
+      },
+
+      renderRolesDropdown() {
+        const sel = document.getElementById('select-role');
+        if (!sel || !this.roles.length) return;
+
+        const roleOrder = [
+          'admin', '.', 'mod', 'long_dai_dia_chu', 'long_phu_nong', 
+          'long_ta_dien', 'long_chu', 'vien_gach_dau_tien', 'dev', 
+          'booster', 'streamer', 'default'
+        ];
+
+        // Sắp xếp các role theo độ quan trọng
+        const sortedRoles = [...this.roles].sort((a, b) => {
+          const idxA = roleOrder.indexOf(a.key);
+          const idxB = roleOrder.indexOf(b.key);
+          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+          if (idxA !== -1) return -1;
+          if (idxB !== -1) return 1;
+          return a.key.localeCompare(b.key);
+        });
+
+        sel.innerHTML = sortedRoles.map(r => `
+          <option value="${r.key}" data-default-slots="${r.defaultSlots}">
+            ${r.name} (${r.defaultSlots} slots mặc định)
+          </option>
+        `).join('');
+      },
+
+      renderRecentPlayersDropdown() {
+        const sel = document.getElementById('recent-players-select');
+        if (!sel) return;
+        if (!this.recentPlayers.length) {
+          sel.innerHTML = '<option value="">-- Không có người chơi online nào --</option>';
+          return;
+        }
+
+        sel.innerHTML = '<option value="">-- Chọn thành viên từ máy chủ (' + this.recentPlayers.length + ' người) --</option>' +
+          this.recentPlayers.map(p => `
+            <option value="${p.steamId}">
+              ${p.name} [${p.steamId}] ${p.species ? '• ' + p.species : ''}
+            </option>
+          `).join('');
+      },
+
+      onSelectRecentPlayer(sid) {
+        if (!sid) return;
+        document.getElementById('target-steamid').value = sid;
+        this.inspectPlayer();
+      },
+
+      onSteamIdInput() {
+        const val = document.getElementById('target-steamid').value.trim();
+        if (val.length === 17) {
+          this.inspectPlayer();
+        }
+      },
+
+      onRoleChange(roleKey) {
+        const sel = document.getElementById('select-role');
+        const selectedOpt = sel.options[sel.selectedIndex];
+        if (selectedOpt) {
+          const defSlots = selectedOpt.getAttribute('data-default-slots');
+          if (defSlots) {
+            document.getElementById('custom-slots').value = defSlots;
+          }
+        }
+      },
+
+      setSlots(n) {
+        document.getElementById('custom-slots').value = n;
+      },
+
+      async inspectPlayer() {
+        const sid = document.getElementById('target-steamid').value.trim();
+        if (!sid) return;
+
+        const previewCard = document.getElementById('player-preview');
+        try {
+          const res = await fetch(`/api/admin/player-info?steamId=${encodeURIComponent(sid)}&adminSteamId=${encodeURIComponent(this.currentAdminSteamId)}`);
+          if (res.ok) {
+            const data = await res.json();
+            previewCard.style.display = 'flex';
+            document.getElementById('preview-name').textContent = data.name;
+            document.getElementById('preview-avatar').src = data.avatar;
+            document.getElementById('preview-current-slots').textContent = `${data.garageStatus.maxSlots} Slots`;
+            document.getElementById('preview-current-role').textContent = data.garageStatus.roleName;
+            document.getElementById('preview-status-extra').textContent = `Đang cất trong Gara: ${data.garageStatus.totalParked} con • Nhân vật in-game: ${data.species}`;
+
+            // Tự động chọn role và slot hiện tại vào form
+            const selRole = document.getElementById('select-role');
+            if (selRole && data.garageStatus.roleKey) {
+              selRole.value = data.garageStatus.roleKey;
+            }
+            document.getElementById('custom-slots').value = data.garageStatus.maxSlots;
+          } else {
+            previewCard.style.display = 'none';
+          }
+        } catch (e) {
+          console.error("Lỗi tra cứu:", e);
+        }
+      },
+
+      async submitAssign(e) {
+        e.preventDefault();
+        const targetSteamId = document.getElementById('target-steamid').value.trim();
+        const roleKey = document.getElementById('select-role').value;
+        const customSlots = document.getElementById('custom-slots').value;
+        const notes = document.getElementById('assign-notes').value.trim();
+
+        if (!targetSteamId) {
+          App.showToast("Vui lòng nhập Steam ID của người chơi!", "error");
+          return;
+        }
+
+        App.showToast("Đang xử lý lưu quyền và slot...", "info");
+
+        try {
+          const res = await fetch('/api/admin/assign-role-slots', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              adminSteamId: this.currentAdminSteamId,
+              targetSteamId,
+              roleKey,
+              customSlots: Number(customSlots),
+              notes
+            })
+          });
+
+          const data = await res.json();
+          if (res.ok && data.success) {
+            App.showToast(data.message, "success");
+            // Cập nhật lại thông tin preview và bảng
+            await this.fetchRolesAndSlots();
+            this.renderAssignedTable();
+            this.inspectPlayer();
+          } else {
+            App.showToast(data.error || "Không thể cấp quyền lúc này!", "error");
+          }
+        } catch (err) {
+          console.error(err);
+          App.showToast("Lỗi kết nối máy chủ khi lưu quyền!", "error");
+        }
+      },
+
+      async removeAssign(targetSteamId) {
+        if (!confirm(`Xác nhận xóa thiết lập riêng của Steam ID [${targetSteamId}] và đưa về mặc định server?`)) {
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/admin/remove-role-slots', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              adminSteamId: this.currentAdminSteamId,
+              targetSteamId
+            })
+          });
+
+          const data = await res.json();
+          if (res.ok && data.success) {
+            App.showToast(data.message, "success");
+            await this.fetchRolesAndSlots();
+            this.renderAssignedTable();
+            const curInp = document.getElementById('target-steamid').value.trim();
+            if (curInp === targetSteamId) {
+              this.inspectPlayer();
+            }
+          } else {
+            App.showToast(data.error || "Lỗi khi xóa cấu hình!", "error");
+          }
+        } catch (e) {
+          console.error(e);
+          App.showToast("Không thể kết nối máy chủ!", "error");
+        }
+      },
+
+      editUser(steamId, roleKey, slots) {
+        document.getElementById('target-steamid').value = steamId;
+        const selRole = document.getElementById('select-role');
+        if (selRole) selRole.value = roleKey;
+        document.getElementById('custom-slots').value = slots;
+        this.inspectPlayer();
+        window.scrollTo({ top: 300, behavior: 'smooth' });
+      },
+
+      filterTable(keyword) {
+        const clean = keyword.toLowerCase().trim();
+        const rows = document.querySelectorAll('#assigned-users-tbody tr');
+        rows.forEach(r => {
+          const text = r.textContent.toLowerCase();
+          r.style.display = text.includes(clean) ? '' : 'none';
+        });
+      },
+
+      renderAssignedTable() {
+        const tbody = document.getElementById('assigned-users-tbody');
+        if (!tbody) return;
+
+        if (!this.assignedUsers.length) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 30px; color: #64748b;">
+                Chưa có tài khoản nào được phân quyền riêng.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = this.assignedUsers.map((u, idx) => `
+          <tr>
+            <td style="color: #64748b; font-weight: 700;">#${idx + 1}</td>
+            <td>
+              <strong style="color: #fff; font-family: monospace; font-size: 0.95rem;">${u.steamId}</strong>
+              ${u.isSuperAdmin ? '<span class="badge-admin" style="margin-left: 6px; font-size: 0.75rem;">SUPER ADMIN</span>' : ''}
+            </td>
+            <td>
+              <span class="badge-admin">${u.roleName}</span>
+            </td>
+            <td>
+              <span class="badge-slot">${u.slots} Slots</span>
+            </td>
+            <td>
+              <div style="font-size: 0.85rem; color: #cbd5e1;">${u.notes || '—'}</div>
+              ${u.updatedAt ? `<small style="color: #64748b; font-size: 0.75rem;">Cập nhật: ${u.updatedAt}</small>` : ''}
+            </td>
+            <td style="text-align: right; white-space: nowrap;">
+              <button onclick="AdminPanel.editUser('${u.steamId}', '${u.roleKey}', ${u.slots})" class="btn-action-sm btn-action-edit" title="Chỉnh sửa">
+                ✏️ Sửa
+              </button>
+              ${!u.isSuperAdmin ? `
+                <button onclick="AdminPanel.removeAssign('${u.steamId}')" class="btn-action-sm btn-action-del" title="Xóa đưa về mặc định">
+                  🗑️ Xóa
+                </button>
+              ` : ''}
+              <a href="gara.html?steamId=${u.steamId}" class="btn-action-sm" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #6ee7b7; text-decoration: none;" title="Soi Gara">
+                🦖 Gara
+              </a>
+            </td>
+          </tr>
+        `).join('');
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      AdminPanel.init();
+    });
+  </script>
 </body>
 </html>

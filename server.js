@@ -15,7 +15,8 @@ app.use(express.static(__dirname));
 function getConfig() {
   try {
     if (fs.existsSync(CONFIG_FILE)) {
-      return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf-8'));
+      const raw = fs.readFileSync(CONFIG_FILE, 'utf-8').replace(/^\uFEFF/, '');
+      return JSON.parse(raw);
     }
   } catch (e) {
     console.error('Error reading config:', e);
@@ -106,6 +107,16 @@ async function callIslePilot(endpoint, method = 'GET', body = null, bypassCache 
   }
 }
 
+// Helper dọn dẹp bộ nhớ đệm của người chơi ngay khi có giao dịch
+function clearPlayerCache(steamId) {
+  if (!steamId) return;
+  const s = String(steamId).trim();
+  apiCache.delete(`GET:/players/${s}`);
+  apiCache.delete(`GET:/players/${s}/garage`);
+  apiCache.delete(`/players/${s}`);
+  apiCache.delete(`/players/${s}/garage`);
+}
+
 // Convert Isle Unreal Engine position to Leaflet [0, 1000] calibrated exactly to https://st25.islepilot.eu/map
 function posToLatLng(pos) {
   if (!pos || typeof pos.x !== 'number' || typeof pos.y !== 'number') {
@@ -152,9 +163,9 @@ const activeSessions = new Map();
 
 // Helper: Resolve effective steamId for any request
 function getRequestSteamId(req) {
-  if (req.query && req.query.steamId) return req.query.steamId;
-  if (req.body && req.body.steamId) return req.body.steamId;
-  if (req.headers && req.headers['x-steam-id']) return req.headers['x-steam-id'];
+  if (req.query && (req.query.steamId || req.query.adminSteamId)) return req.query.steamId || req.query.adminSteamId;
+  if (req.body && (req.body.steamId || req.body.adminSteamId)) return req.body.steamId || req.body.adminSteamId;
+  if (req.headers && (req.headers['x-steam-id'] || req.headers['x-admin-steam-id'])) return req.headers['x-steam-id'] || req.headers['x-admin-steam-id'];
   const cookies = parseCookies(req);
   if (cookies.st25_steam_id) return cookies.st25_steam_id;
   if (cookies.st25_session_token && activeSessions.has(cookies.st25_session_token)) {
@@ -307,10 +318,31 @@ async function linkPlayerBySteamId(steamId, customName = null) {
   return sessionObj;
 }
 
-// 4. Manual Link Disabled - Strictly require official Steam OpenID Login
-app.post('/api/player/link-steam', (req, res) => {
-  res.status(403).json({
-    error: "Chức năng nhập SteamID thủ công đã bị đóng. Vui lòng sử dụng 'Đăng Nhập Bằng Steam' chính chủ để liên kết an toàn."
+// 4. Liên kết / Đăng nhập Steam bằng Steam ID (Dành cho member & admin)
+app.post('/api/player/login-manual', async (req, res) => {
+  const { steamId } = req.body;
+  if (!steamId || !/^\d{17}$/.test(String(steamId).trim())) {
+    return res.status(400).json({ error: "Steam ID không hợp lệ! Vui lòng nhập đúng 17 chữ số Steam ID 64 của bạn." });
+  }
+
+  const cleanId = String(steamId).trim();
+  const sessionToken = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  const sessionData = await linkPlayerBySteamId(cleanId);
+  activeSessions.set(sessionToken, sessionData);
+
+  res.cookie('st25_steam_id', cleanId, { maxAge: 30 * 24 * 3600 * 1000, path: '/' });
+  res.cookie('st25_session_token', sessionToken, { maxAge: 30 * 24 * 3600 * 1000, path: '/' });
+
+  const isAdmin = isUserAdmin(cleanId);
+  const isSuperAdmin = SUPER_ADMINS.includes(cleanId);
+
+  res.json({
+    success: true,
+    steamId: cleanId,
+    personaName: sessionData.persona_name,
+    avatar: sessionData.avatar,
+    isAdmin,
+    isSuperAdmin
   });
 });
 
@@ -321,12 +353,21 @@ app.get('/api/player/me', async (req, res) => {
     const pilotPlayer = await callIslePilot(`/players/${reqSteamId}`);
     if (pilotPlayer) {
       const loc = posToLatLng(pilotPlayer.position);
+      const isAdmin = isUserAdmin(reqSteamId);
+      const isSuperAdmin = SUPER_ADMINS.includes(String(reqSteamId).trim());
+      const garageStatus = await getPlayerGarageStatus(reqSteamId);
+
       return res.json({
         steam_id: reqSteamId,
         persona_name: pilotPlayer.name || `Player_${reqSteamId.slice(-4)}`,
         avatar: pilotPlayer.avatar || "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg",
-        role: "Thành viên ST25",
+        role: garageStatus.roleName || "Thành viên ST25",
+        roleKey: garageStatus.roleKey || "default",
+        maxSlots: garageStatus.maxSlots || 3,
         linked: true,
+        isLoggedIn: true,
+        isAdmin: isAdmin,
+        isSuperAdmin: isSuperAdmin,
         playtime_hours: Math.round((pilotPlayer.totalPlaySec || 0) / 3600),
         coins: (pilotPlayer.wallet && pilotPlayer.wallet.balance) !== undefined ? pilotPlayer.wallet.balance : ((getPortalData().userWallets && getPortalData().userWallets[reqSteamId]) || 0),
         balance: (pilotPlayer.wallet && pilotPlayer.wallet.balance) !== undefined ? pilotPlayer.wallet.balance : ((getPortalData().userWallets && getPortalData().userWallets[reqSteamId]) || 0),
@@ -350,7 +391,7 @@ app.get('/api/player/me', async (req, res) => {
     }
   }
 
-  res.json({ linked: false, persona_name: "Chưa liên kết", avatar: null, coins: 0, balance: 0, lua: 0 });
+  res.json({ linked: false, isLoggedIn: false, isAdmin: false, isSuperAdmin: false, persona_name: "Chưa liên kết", avatar: null, coins: 0, balance: 0, lua: 0 });
 });
 
 app.post('/api/player/logout', (req, res) => {
@@ -605,6 +646,24 @@ app.get('/api/player/team', async (req, res) => {
 // 9. ISLEPILOT OFFICIAL GARAGE SYSTEM (100% LIVE CLOUD)
 // ==========================================
 
+// Super Admins cố định có quyền cao nhất
+const SUPER_ADMINS = ['76561198354289789', '76561198838095252', '76561198682056372'];
+
+// Helper kiểm tra một Steam ID có quyền Admin không
+function isUserAdmin(steamId) {
+  if (!steamId) return false;
+  const sId = String(steamId).trim();
+  if (SUPER_ADMINS.includes(sId)) return true;
+  const cfg = getConfig();
+  const userRoles = (cfg.garage && cfg.garage.user_roles) || {};
+  const r = (userRoles[sId] || '').toLowerCase();
+  if (r === 'admin' || r === '.') return true;
+
+  const data = getPortalData();
+  const dynamicRole = (data.adminAssignments && data.adminAssignments[sId] && data.adminAssignments[sId].roleKey) || '';
+  return dynamicRole.toLowerCase() === 'admin' || dynamicRole.toLowerCase() === '.';
+}
+
 // Helper: Tra cứu quyền hạn và tính toán sức chứa Gara theo Role Discord & Steam ID
 async function getPlayerGarageStatus(steamId) {
   const cfg = getConfig();
@@ -616,11 +675,15 @@ async function getPlayerGarageStatus(steamId) {
     ".": 20
   };
 
+  const cleanSteamId = steamId ? String(steamId).trim() : '';
+  const portalData = getPortalData();
+  const dynamicAssign = (portalData.adminAssignments && portalData.adminAssignments[cleanSteamId]) || null;
+
   let discordInfo = null;
   let discordRoleKey = "default";
 
   try {
-    const pilotPlayer = await callIslePilot(`/players/${steamId}`);
+    const pilotPlayer = await callIslePilot(`/players/${cleanSteamId}`);
     if (pilotPlayer && pilotPlayer.discord) {
       discordInfo = pilotPlayer.discord;
     }
@@ -628,13 +691,22 @@ async function getPlayerGarageStatus(steamId) {
 
   const userRolesConfig = garageCfg.user_roles || {};
 
-  if (userRolesConfig[steamId]) {
-    discordRoleKey = userRolesConfig[steamId].toLowerCase();
+  // Thứ tự ưu tiên xác định Role:
+  // 1. Phân quyền trực tiếp qua Web Admin Panel (portal-data.json)
+  // 2. Phân quyền qua file cấu hình server-config.json (user_roles)
+  // 3. Phân quyền theo Discord ID/Username nếu liên kết
+  // 4. Mặc định là Super Admin nếu là Steam ID Admin chỉ định
+  if (dynamicAssign && dynamicAssign.roleKey) {
+    discordRoleKey = dynamicAssign.roleKey.toLowerCase();
+  } else if (userRolesConfig[cleanSteamId]) {
+    discordRoleKey = userRolesConfig[cleanSteamId].toLowerCase();
   } else if (discordInfo && discordInfo.id && userRolesConfig[discordInfo.id]) {
     discordRoleKey = userRolesConfig[discordInfo.id].toLowerCase();
   } else if (discordInfo && discordInfo.username && userRolesConfig[discordInfo.username]) {
     discordRoleKey = userRolesConfig[discordInfo.username].toLowerCase();
-  } else if (garageCfg.player_custom_slots && garageCfg.player_custom_slots[steamId] !== undefined) {
+  } else if (SUPER_ADMINS.includes(cleanSteamId)) {
+    discordRoleKey = "admin";
+  } else if (garageCfg.player_custom_slots && garageCfg.player_custom_slots[cleanSteamId] !== undefined) {
     discordRoleKey = "custom";
   }
 
@@ -658,14 +730,44 @@ async function getPlayerGarageStatus(steamId) {
   };
   const roleDisplayName = roleNameMap[discordRoleKey] || `Role: ${discordRoleKey.toUpperCase()}`;
 
+  // Tính số lượng Slot tối đa:
   let maxSlots = roleLimits[discordRoleKey] !== undefined ? Number(roleLimits[discordRoleKey]) : (garageCfg.default_slots || 3);
-  if (garageCfg.player_custom_slots && garageCfg.player_custom_slots[steamId] !== undefined) {
-    maxSlots = Number(garageCfg.player_custom_slots[steamId]);
+
+  // Ghi đè slot nếu có thiết lập thủ công
+  if (dynamicAssign && dynamicAssign.slots !== undefined) {
+    maxSlots = Number(dynamicAssign.slots);
+  } else if (garageCfg.player_custom_slots && garageCfg.player_custom_slots[cleanSteamId] !== undefined) {
+    maxSlots = Number(garageCfg.player_custom_slots[cleanSteamId]);
+  } else if (SUPER_ADMINS.includes(cleanSteamId)) {
+    maxSlots = Math.max(maxSlots, 20);
   }
 
-  // Gọi trực tiếp IslePilot API: GET /players/{steamId}/garage
-  const pilotGarage = await callIslePilot(`/players/${steamId}/garage`, 'GET', null, true);
-  const dinos = (pilotGarage && pilotGarage.garage && Array.isArray(pilotGarage.garage)) ? pilotGarage.garage : [];
+  // Gọi trực tiếp IslePilot API: GET /players/{cleanSteamId}/garage
+  const pilotGarage = await callIslePilot(`/players/${cleanSteamId}/garage`, 'GET', null, true);
+  const cloudDinos = (pilotGarage && pilotGarage.garage && Array.isArray(pilotGarage.garage)) ? pilotGarage.garage : [];
+  
+  // Đọc thêm thú trúng thưởng từ Hòm Quà hoặc Giao dịch lưu trong portal-data
+  const localDinos = (portalData.userGarage && portalData.userGarage[cleanSteamId]) ? portalData.userGarage[cleanSteamId] : [];
+  
+  // Lọc bỏ triệt để các khủng long ĐANG ĐĂNG BÁN trên Chợ (ký gửi Chợ của người chơi này)
+  const activeSellingDinoIds = new Set(
+    (portalData.marketListings || [])
+      .filter(l => l.sellerSteamId === cleanSteamId && l.dinoData && l.dinoData.id)
+      .map(l => String(l.dinoData.id))
+  );
+
+  // Lọc bỏ triệt để các khủng long ĐÃ BÁN THÀNH CÔNG cho người chơi khác
+  const soldDinoIds = new Set(
+    ((portalData.soldDinos && portalData.soldDinos[cleanSteamId]) || []).map(id => String(id))
+  );
+
+  const dinos = [...cloudDinos, ...localDinos].filter(d => {
+    const strId = String(d.id);
+    if (activeSellingDinoIds.has(strId)) return false;
+    if (soldDinoIds.has(strId)) return false;
+    return true;
+  });
+
   const totalParked = dinos.length;
   const isFull = totalParked >= maxSlots;
 
@@ -680,16 +782,16 @@ async function getPlayerGarageStatus(steamId) {
   };
 }
 
-// 9.1 Lấy toàn bộ thông tin Gara của người chơi
+// 9.1 Lấy toàn bộ thông tin Gara của người chơi (Bảo mật theo tài khoản đăng nhập)
 app.get('/api/player/garage', async (req, res) => {
-  const steamId = getRequestSteamId(req);
+  const callerSteamId = getRequestSteamId(req);
   const cfg = getConfig();
   const defSlots = (cfg.garage && cfg.garage.default_slots) || 3;
 
-  if (!steamId) {
+  if (!callerSteamId) {
     return res.json({
       active: null,
-      slots: Array.from({ length: defSlots }, (_, idx) => ({ slot: idx + 1, empty: true })),
+      slots: [],
       tradeableDinos: [],
       steamId: null,
       personaName: "Chưa đăng nhập Steam",
@@ -698,12 +800,25 @@ app.get('/api/player/garage', async (req, res) => {
       roleKey: "default",
       roleName: "Chưa đăng nhập",
       isFull: false,
-      unlinked: true
+      unlinked: true,
+      isLoggedIn: false,
+      isAdmin: false,
+      isSuperAdmin: false
     });
   }
 
-  const garageStatus = await getPlayerGarageStatus(steamId);
-  const pilotPlayer = await callIslePilot(`/players/${steamId}`, 'GET', null, true);
+  const callerIsAdmin = isUserAdmin(callerSteamId);
+  let effectiveSteamId = callerSteamId;
+
+  // CHỈ QUẢN TRỊ VIÊN mới được quyền xem Gara của Steam ID khác qua query
+  if (req.query.steamId && req.query.steamId.trim() !== callerSteamId) {
+    if (callerIsAdmin) {
+      effectiveSteamId = req.query.steamId.trim();
+    }
+  }
+
+  const garageStatus = await getPlayerGarageStatus(effectiveSteamId);
+  const pilotPlayer = await callIslePilot(`/players/${effectiveSteamId}`, 'GET', null, true);
 
   let active = null;
   if (pilotPlayer && pilotPlayer.species) {
@@ -724,23 +839,34 @@ app.get('/api/player/garage', async (req, res) => {
 
   let slots = [];
   garageStatus.dinos.forEach((g, idx) => {
+    const rawG = g.growth !== undefined ? Number(g.growth) : 1;
+    const displayGrowth = rawG > 1 ? Math.min(100, Math.round(rawG)) : Math.round(rawG * 100);
+    const rawH = g.health !== undefined ? Number(g.health) : 100;
+    const displayHealth = rawH > 1 ? Math.min(100, Math.round(rawH)) : Math.round(rawH * 100);
+    const rawHunger = g.hunger !== undefined ? Number(g.hunger) : 100;
+    const displayHunger = rawHunger > 1 ? Math.min(100, Math.round(rawHunger)) : Math.round(rawHunger * 100);
+    const rawThirst = g.thirst !== undefined ? Number(g.thirst) : 100;
+    const displayThirst = rawThirst > 1 ? Math.min(100, Math.round(rawThirst)) : Math.round(rawThirst * 100);
+    const rawStam = g.stamina !== undefined ? Number(g.stamina) : 100;
+    const displayStamina = rawStam > 1 ? Math.min(100, Math.round(rawStam)) : Math.round(rawStam * 100);
+
     slots.push({
       slot: idx + 1,
       id: g.id,
       name: g.name || "",
       species: g.species,
-      gender: g.gender === 'Female' ? "Cái (Female)" : "Đực (Male)",
-      growth: Math.round((g.growth || 0) * 100),
-      rawGrowth: g.growth || 0,
-      health: Math.round((g.health || 1) * 100),
-      hunger: Math.round((g.hunger || 1) * 100),
-      thirst: Math.round((g.thirst || 1) * 100),
-      stamina: Math.round((g.stamina || 1) * 100),
+      gender: (g.gender === 'Female' || g.gender === 'Cái (Female)') ? "Cái (Female)" : "Đực (Male)",
+      growth: displayGrowth,
+      rawGrowth: rawG > 1 ? rawG / 100 : rawG,
+      health: displayHealth,
+      hunger: displayHunger,
+      thirst: displayThirst,
+      stamina: displayStamina,
       isPrimeElder: g.isPrimeElder || false,
-      diet: ["S", "S", "D"],
+      diet: g.diet || ["S", "S", "D"],
       mutations: g.mutations || [],
-      stored_at: g.parkedAt ? new Date(g.parkedAt).toLocaleString('vi-VN') : "Cloud Gara",
-      source: "IslePilot Cloud"
+      stored_at: g.stored_at || (g.parkedAt ? new Date(g.parkedAt).toLocaleString('vi-VN') : "Cloud Gara"),
+      source: g.source || (g.isLocal ? "Hòm May Mắn" : "IslePilot Cloud")
     });
   });
 
@@ -755,14 +881,18 @@ app.get('/api/player/garage', async (req, res) => {
     active,
     slots,
     tradeableDinos,
-    steamId,
-    personaName: (pilotPlayer && pilotPlayer.name) || `Player_${steamId.slice(-4)}`,
+    steamId: effectiveSteamId,
+    personaName: (pilotPlayer && pilotPlayer.name) || `Player_${effectiveSteamId.slice(-4)}`,
     totalParked: garageStatus.totalParked,
     maxSlots: garageStatus.maxSlots,
     roleKey: garageStatus.roleKey,
     roleName: garageStatus.roleName,
     roleLimit: garageStatus.roleLimit,
     isFull: garageStatus.isFull,
+    isLoggedIn: true,
+    isAdmin: callerIsAdmin,
+    isSuperAdmin: SUPER_ADMINS.includes(String(callerSteamId).trim()),
+    isViewingOther: effectiveSteamId !== callerSteamId,
     upgradeDiscordUrl: (cfg.garage && cfg.garage.upgrade_discord_url) || "https://discord.gg/3xCrA6VyY"
   });
 });
@@ -803,6 +933,30 @@ app.post('/api/player/garage/restore', async (req, res) => {
   if (!steamId) return res.status(401).json({ error: "Vui lòng đăng nhập Steam!" });
   if (!garageDinoId) return res.status(400).json({ error: "Thiếu mã khủng long trong Gara!" });
 
+  // Nếu là khủng long trúng từ Hòm Quà (id bắt đầu bằng dino-)
+  if (garageDinoId.startsWith('dino-')) {
+    const data = getPortalData();
+    const dIdx = (data.userGarage && data.userGarage[steamId]) ? data.userGarage[steamId].findIndex(d => d.id === garageDinoId) : -1;
+    if (dIdx !== -1) {
+      const dino = data.userGarage[steamId][dIdx];
+      await callIslePilot('/commands', 'POST', {
+        action: 'swap',
+        steamId: steamId,
+        species: dino.species,
+        growth: (dino.growth || 100) / 100
+      });
+      data.userGarage[steamId].splice(dIdx, 1);
+      savePortalData(data);
+      apiCache.delete(`/players/${steamId}/garage`);
+      apiCache.delete(`/players/${steamId}`);
+      return res.json({
+        success: true,
+        message: `Đã đưa [${dino.species} ${dino.growth}%] ra đảo thành công! Nhân vật in-game đã được kích hoạt.`,
+        cooldown_seconds: 30
+      });
+    }
+  }
+
   const result = await callIslePilot(`/players/${steamId}/garage/${garageDinoId}/restore`, 'POST', {
     mutations: Array.isArray(mutations) ? mutations : []
   });
@@ -829,6 +983,27 @@ app.post('/api/player/garage/sell', async (req, res) => {
   const steamId = getRequestSteamId(req);
   if (!steamId) return res.status(401).json({ error: "Vui lòng đăng nhập Steam!" });
   if (!garageDinoId) return res.status(400).json({ error: "Thiếu mã khủng long cần bán!" });
+
+  // Nếu là khủng long trúng từ Hòm Quà (id bắt đầu bằng dino-)
+  if (garageDinoId.startsWith('dino-')) {
+    const data = getPortalData();
+    const dIdx = (data.userGarage && data.userGarage[steamId]) ? data.userGarage[steamId].findIndex(d => d.id === garageDinoId) : -1;
+    if (dIdx !== -1) {
+      const dino = data.userGarage[steamId][dIdx];
+      // Tính giá bán cơ bản theo growth: ví dụ 20-50 Lúa
+      const sellPrice = Math.max(10, Math.round(((dino.growth || 100) / 100) * 35));
+      await modifyLivePlayerBalance(steamId, sellPrice, `Bán khủng long [${dino.species} ${dino.growth}%] từ Gara`);
+      data.userGarage[steamId].splice(dIdx, 1);
+      savePortalData(data);
+      apiCache.delete(`/players/${steamId}/garage`);
+      apiCache.delete(`/players/${steamId}`);
+      return res.json({
+        success: true,
+        message: `Đã bán [${dino.species} ${dino.growth}%] thành công! Nhận được +${sellPrice} Lúa 🌾 vào ví!`,
+        earned: sellPrice
+      });
+    }
+  }
 
   const result = await callIslePilot(`/players/${steamId}/garage/${garageDinoId}/sell`, 'POST', {});
   apiCache.delete(`/players/${steamId}/garage`);
@@ -860,6 +1035,244 @@ app.post('/api/player/session/switch', async (req, res) => {
   if (!steamId) return res.status(400).json({ error: "Thiếu steamId" });
   await linkPlayerBySteamId(steamId);
   res.json({ success: true });
+});
+
+// ==========================================
+// 10. ADMIN MANAGEMENT API (ROLE & GARAGE SLOTS)
+// ==========================================
+
+// Kiểm tra quyền Admin của request hiện tại
+app.get('/api/admin/check', (req, res) => {
+  const steamId = getRequestSteamId(req);
+  const isAdmin = isUserAdmin(steamId);
+  res.json({
+    steamId,
+    isAdmin,
+    isSuperAdmin: SUPER_ADMINS.includes(String(steamId).trim())
+  });
+});
+
+// Lấy danh sách Roles, danh sách thành viên đã phân quyền & người chơi gần đây
+app.get('/api/admin/roles-slots', async (req, res) => {
+  const adminSteamId = getRequestSteamId(req);
+  if (!isUserAdmin(adminSteamId)) {
+    return res.status(403).json({ error: "Chỉ Quản Trị Viên (Admin) mới có quyền truy cập!" });
+  }
+
+  const cfg = getConfig();
+  const garageCfg = cfg.garage || {};
+  const roleLimits = garageCfg.role_limits || {};
+  const userRoles = garageCfg.user_roles || {};
+  const customSlots = garageCfg.player_custom_slots || {};
+  const portalData = getPortalData();
+  const dynamicAssignments = portalData.adminAssignments || {};
+
+  const roleNameMap = {
+    "admin": "👑 Quản Trị Viên (Admin)",
+    ".": "👑 BQT Cấp Cao (.)",
+    "mod": "🛡️ Điều Hành Viên (Mod)",
+    "dev": "💻 DEV (Phát Triển)",
+    "long_dai_dia_chu": "🏰 LONG ĐẠI ĐỊA CHỦ",
+    "long_phu_nong": "🌾 LONG PHÚ NÔNG",
+    "long_chu": "🐲 LONG CHỦ",
+    "long_ta_dien": "🌾 LONG TÁ ĐIỀN",
+    "vien_gach_dau_tien": "🧱 Viên Gạch Đầu Tiên",
+    "long_khung_quang_cao": "📢 LONG KHỦNG (QUẢNG CÁO)",
+    "booster": "🚀 Máy chủ - Bộ khuếch đại",
+    "may_chu_bo_khuech_dai": "🚀 Máy chủ - Bộ khuếch đại",
+    "streamer": "🎙️ Streamer",
+    "bot": "🤖 BOT",
+    "default": "🦖 Thành Viên ST25"
+  };
+
+  const rolesList = Object.keys(roleLimits).map(key => ({
+    key,
+    name: roleNameMap[key] || `Vai trò ${key.toUpperCase()}`,
+    defaultSlots: roleLimits[key]
+  }));
+
+  // Hợp nhất danh sách tất cả các Steam ID đã được gán role hoặc slot
+  const allSteamIds = Array.from(new Set([
+    ...Object.keys(userRoles),
+    ...Object.keys(customSlots),
+    ...Object.keys(dynamicAssignments),
+    ...SUPER_ADMINS
+  ]));
+
+  const assignedUsers = allSteamIds.map(sid => {
+    const dyn = dynamicAssignments[sid] || {};
+    const roleKey = dyn.roleKey || userRoles[sid] || (SUPER_ADMINS.includes(sid) ? "admin" : "default");
+    const slots = dyn.slots !== undefined ? dyn.slots : (customSlots[sid] !== undefined ? customSlots[sid] : (roleLimits[roleKey] || 3));
+    return {
+      steamId: sid,
+      roleKey,
+      roleName: roleNameMap[roleKey] || roleKey,
+      slots: Number(slots),
+      isSuperAdmin: SUPER_ADMINS.includes(sid),
+      updatedAt: dyn.updatedAt || null,
+      notes: dyn.notes || ""
+    };
+  });
+
+  // Lấy danh sách thành viên online/gần đây từ IslePilot
+  let recentPlayers = [];
+  try {
+    const pilotPlayers = await callIslePilot('/players');
+    if (pilotPlayers && Array.isArray(pilotPlayers.players)) {
+      recentPlayers = pilotPlayers.players.slice(0, 50).map(p => ({
+        steamId: p.steamId,
+        name: p.name || `Player_${p.steamId.slice(-4)}`,
+        online: !!p.online,
+        species: p.species || ""
+      }));
+    }
+  } catch (_) {}
+
+  res.json({
+    adminSteamId,
+    roles: rolesList,
+    assignedUsers,
+    recentPlayers
+  });
+});
+
+// Tra cứu nhanh thông tin người chơi theo Steam ID
+app.get('/api/admin/player-info', async (req, res) => {
+  const adminSteamId = getRequestSteamId(req);
+  if (!isUserAdmin(adminSteamId)) {
+    return res.status(403).json({ error: "Chỉ Quản Trị Viên (Admin) mới có quyền truy cập!" });
+  }
+
+  const targetSteamId = req.query.steamId;
+  if (!targetSteamId || !String(targetSteamId).trim()) {
+    return res.status(400).json({ error: "Thiếu Steam ID cần kiểm tra!" });
+  }
+
+  const cleanSteamId = String(targetSteamId).trim();
+  const [pilotPlayer, garageStatus] = await Promise.all([
+    callIslePilot(`/players/${cleanSteamId}`, 'GET', null, true),
+    getPlayerGarageStatus(cleanSteamId)
+  ]);
+
+  const cfg = getConfig();
+  const portalData = getPortalData();
+  const dynamicAssign = (portalData.adminAssignments && portalData.adminAssignments[cleanSteamId]) || null;
+  const customSlots = (dynamicAssign && dynamicAssign.slots) || (cfg.garage && cfg.garage.player_custom_slots && cfg.garage.player_custom_slots[cleanSteamId]) || null;
+  const assignedRole = (dynamicAssign && dynamicAssign.roleKey) || (cfg.garage && cfg.garage.user_roles && cfg.garage.user_roles[cleanSteamId]) || null;
+
+  res.json({
+    steamId: cleanSteamId,
+    name: (pilotPlayer && pilotPlayer.name) || `Player_${cleanSteamId.slice(-4)}`,
+    avatar: (pilotPlayer && pilotPlayer.avatar) || "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg",
+    online: (pilotPlayer && pilotPlayer.online) || false,
+    species: (pilotPlayer && pilotPlayer.species) || "Không có nhân vật sống",
+    garageStatus,
+    assignedRole,
+    customSlots
+  });
+});
+
+// Cấp Role & Slot thủ công cho người chơi (lưu cả vào server-config.json và portal-data.json)
+app.post('/api/admin/assign-role-slots', async (req, res) => {
+  const adminSteamId = getRequestSteamId(req);
+  if (!isUserAdmin(adminSteamId)) {
+    return res.status(403).json({ error: "Chỉ Quản Trị Viên (Admin) mới có quyền thực hiện thao tác này!" });
+  }
+
+  const { targetSteamId, roleKey, customSlots, notes } = req.body;
+  if (!targetSteamId || !String(targetSteamId).trim()) {
+    return res.status(400).json({ error: "Vui lòng nhập Steam ID của người chơi!" });
+  }
+
+  const cleanSteamId = String(targetSteamId).trim();
+  const cleanRole = roleKey ? String(roleKey).toLowerCase().trim() : 'default';
+
+  const cfg = getConfig();
+  if (!cfg.garage) cfg.garage = {};
+  if (!cfg.garage.user_roles) cfg.garage.user_roles = {};
+  if (!cfg.garage.player_custom_slots) cfg.garage.player_custom_slots = {};
+
+  cfg.garage.user_roles[cleanSteamId] = cleanRole;
+
+  let finalSlots = 3;
+  if (customSlots !== undefined && customSlots !== '' && !isNaN(Number(customSlots))) {
+    finalSlots = Math.max(1, Math.min(100, parseInt(customSlots)));
+  } else if (cfg.garage.role_limits && cfg.garage.role_limits[cleanRole] !== undefined) {
+    finalSlots = Number(cfg.garage.role_limits[cleanRole]);
+  }
+  cfg.garage.player_custom_slots[cleanSteamId] = finalSlots;
+
+  // 1. Lưu bền vững vào server-config.json
+  saveConfig(cfg);
+
+  // 2. Lưu bền vững vào portal-data.json
+  const data = getPortalData();
+  if (!data.adminAssignments) data.adminAssignments = {};
+  data.adminAssignments[cleanSteamId] = {
+    roleKey: cleanRole,
+    slots: finalSlots,
+    updatedBy: adminSteamId,
+    updatedAt: new Date().toLocaleString('vi-VN'),
+    notes: notes || ""
+  };
+  savePortalData(data);
+
+  // 3. Xóa sạch cache người chơi để có hiệu lực tức thì
+  apiCache.delete(`/players/${cleanSteamId}`);
+  apiCache.delete(`/players/${cleanSteamId}/garage`);
+  apiCache.delete(`GET:/players/${cleanSteamId}`);
+  apiCache.delete(`GET:/players/${cleanSteamId}/garage`);
+
+  // Kiểm tra ngay kết quả sau khi lưu
+  const updatedStatus = await getPlayerGarageStatus(cleanSteamId);
+
+  res.json({
+    success: true,
+    message: `Đã cấp thành công Role [${updatedStatus.roleName}] với [${updatedStatus.maxSlots} Slots Gara] cho Steam ID ${cleanSteamId}! Dữ liệu đã lưu vĩnh viễn và có hiệu lực ngay lập tức.`,
+    steamId: cleanSteamId,
+    garageStatus: updatedStatus
+  });
+});
+
+// Xóa override role/slot riêng của người chơi
+app.post('/api/admin/remove-role-slots', async (req, res) => {
+  const adminSteamId = getRequestSteamId(req);
+  if (!isUserAdmin(adminSteamId)) {
+    return res.status(403).json({ error: "Chỉ Quản Trị Viên (Admin) mới có quyền thực hiện thao tác này!" });
+  }
+
+  const { targetSteamId } = req.body;
+  if (!targetSteamId) return res.status(400).json({ error: "Thiếu Steam ID!" });
+
+  const cleanSteamId = String(targetSteamId).trim();
+  if (SUPER_ADMINS.includes(cleanSteamId)) {
+    return res.status(400).json({ error: "Không thể xóa quyền của Quản Trị Viên tối cao!" });
+  }
+
+  const cfg = getConfig();
+  if (cfg.garage && cfg.garage.user_roles) {
+    delete cfg.garage.user_roles[cleanSteamId];
+  }
+  if (cfg.garage && cfg.garage.player_custom_slots) {
+    delete cfg.garage.player_custom_slots[cleanSteamId];
+  }
+  saveConfig(cfg);
+
+  const data = getPortalData();
+  if (data.adminAssignments && data.adminAssignments[cleanSteamId]) {
+    delete data.adminAssignments[cleanSteamId];
+    savePortalData(data);
+  }
+
+  apiCache.delete(`/players/${cleanSteamId}`);
+  apiCache.delete(`/players/${cleanSteamId}/garage`);
+  apiCache.delete(`GET:/players/${cleanSteamId}`);
+  apiCache.delete(`GET:/players/${cleanSteamId}/garage`);
+
+  res.json({
+    success: true,
+    message: `Đã xóa thiết lập riêng cho Steam ID ${cleanSteamId}. Người chơi trở về vai trò mặc định của server.`
+  });
 });
 
 // Helper: Thêm Dino vào Gara của người chơi
@@ -992,19 +1405,24 @@ app.get('/api/market/data', async (req, res) => {
     else personaName = `Player_${steamId.slice(-4)}`;
   }
 
-  // Lấy khủng long trong Gara để cho phép chọn đăng bán
+  // Lấy khủng long trong Gara để cho phép chọn đăng bán (bao gồm cả Cloud Gara và thú trúng từ Hòm)
   let myGarageDinos = [];
   if (steamId) {
     try {
-      const pilotGarage = await callIslePilot(`/players/${steamId}/garage`, 'GET', null, true);
-      if (pilotGarage && pilotGarage.garage && Array.isArray(pilotGarage.garage)) {
-        myGarageDinos = pilotGarage.garage.map(g => ({
-          id: g.id,
-          species: g.species,
-          growth: Math.round((g.growth || 0) * 100),
-          gender: g.gender === 'Female' ? "Cái (Female)" : "Đực (Male)",
-          isPrimeElder: g.isPrimeElder || false
-        }));
+      const garageStatus = await getPlayerGarageStatus(steamId);
+      if (garageStatus && Array.isArray(garageStatus.dinos)) {
+        myGarageDinos = garageStatus.dinos.map(g => {
+          const rawG = g.growth !== undefined ? Number(g.growth) : 1;
+          const displayGrowth = rawG > 1 ? Math.min(100, Math.round(rawG)) : Math.round(rawG * 100);
+          return {
+            id: g.id,
+            species: g.species,
+            growth: displayGrowth,
+            gender: (g.gender === 'Female' || g.gender === 'Cái (Female)') ? "Cái (Female)" : "Đực (Male)",
+            isPrimeElder: g.isPrimeElder || false,
+            source: g.source || (g.isLocal ? "Hòm May Mắn" : "IslePilot Cloud")
+          };
+        });
       }
     } catch (_) {}
   }
@@ -1017,6 +1435,137 @@ app.get('/api/market/data', async (req, res) => {
     inventory: steamId ? (data.userInventory[steamId] || []) : [],
     myGarageDinos: myGarageDinos,
     myVouchers: steamId ? ((data.userInventory[steamId] || []).filter(i => i.type === 'dino_voucher' || i.type === 'dino')) : []
+  });
+});
+
+// Đăng bán Dino từ Gara lên Chợ P2P
+app.post('/api/market/list-dino', async (req, res) => {
+  const { dinoId, price, customTitle } = req.body;
+  const steamId = req.body.steamId || getRequestSteamId(req);
+  if (!steamId) return res.status(401).json({ error: "Vui lòng đăng nhập Steam để đăng bán!" });
+  if (!dinoId || !price || Number(price) <= 0) return res.status(400).json({ error: "Thông tin bán không hợp lệ!" });
+
+  const numPrice = Math.round(Number(price));
+  const data = getPortalData();
+  const garageStatus = await getPlayerGarageStatus(steamId);
+  const targetDino = garageStatus.dinos.find(d => String(d.id) === String(dinoId));
+
+  if (!targetDino) {
+    return res.status(404).json({ error: "Khủng long này không tồn tại trong Gara của bạn hoặc đã được đăng bán rồi!" });
+  }
+
+  // Tránh đăng bán 2 lần cùng 1 con khủng long
+  if (!data.marketListings) data.marketListings = [];
+  const alreadyListed = data.marketListings.some(l => l.dinoData && String(l.dinoData.id) === String(dinoId));
+  if (alreadyListed) {
+    return res.status(400).json({ error: "Khủng long này đang được đăng bán trên Chợ rồi!" });
+  }
+
+  const rawG = targetDino.growth !== undefined ? Number(targetDino.growth) : 1;
+  const displayGrowth = rawG > 1 ? Math.min(100, Math.round(rawG)) : Math.round(rawG * 100);
+
+  // Tạo tin rao bán
+  const listingId = `mkt-${Date.now()}`;
+  let sellerName = `Player_${steamId.slice(-4)}`;
+  try {
+    const p = await callIslePilot(`/players/${steamId}`);
+    if (p && p.name) sellerName = p.name;
+  } catch (_) {}
+
+  const isLocalDino = Boolean(targetDino.isLocal || String(dinoId).startsWith('dino-'));
+  const listing = {
+    id: listingId,
+    seller: sellerName,
+    sellerSteamId: steamId,
+    title: customTitle || `${targetDino.species} ${displayGrowth}% (${targetDino.gender || 'Đực'})`,
+    species: targetDino.species,
+    gender: (targetDino.gender === 'Female' || targetDino.gender === 'Cái (Female)') ? "Cái (Female)" : "Đực (Male)",
+    price: numPrice,
+    growth: displayGrowth,
+    diet: targetDino.diet ? (Array.isArray(targetDino.diet) ? targetDino.diet.join('-') : targetDino.diet) : "S-S-D",
+    icon: targetDino.species === 'Deinosuchus' ? '🐊' : (targetDino.species === 'Triceratops' ? '🦏' : '🦖'),
+    dinoData: {
+      ...targetDino,
+      growth: displayGrowth,
+      isLocal: isLocalDino
+    },
+    createdAt: new Date().toLocaleString('vi-VN')
+  };
+
+  // Nếu là local dino trong userGarage thì chuyển ra khỏi userGarage sang chế độ ký gửi Chợ
+  if (data.userGarage && data.userGarage[steamId]) {
+    data.userGarage[steamId] = data.userGarage[steamId].filter(d => String(d.id) !== String(dinoId));
+  }
+
+  data.marketListings.unshift(listing);
+  savePortalData(data);
+  clearPlayerCache(steamId);
+
+  res.json({
+    success: true,
+    message: `Đã đăng bán [${listing.title}] với giá ${numPrice} Lúa 🌾 lên Chợ thành công! Khủng long đã được chuyển sang chế độ ký gửi.`,
+    listing
+  });
+});
+
+// Thu hồi bài đăng bán trên Chợ
+app.post('/api/market/cancel-listing', async (req, res) => {
+  const { listingId } = req.body;
+  const steamId = req.body.steamId || getRequestSteamId(req);
+  if (!steamId) return res.status(401).json({ error: "Vui lòng đăng nhập Steam!" });
+
+  const data = getPortalData();
+  const idx = (data.marketListings || []).findIndex(l => l.id === listingId);
+  if (idx === -1) return res.status(404).json({ error: "Bài đăng không tồn tại hoặc đã được mua!" });
+
+  const listing = data.marketListings[idx];
+  if (listing.sellerSteamId !== steamId) {
+    return res.status(403).json({ error: "Bạn không có quyền thu hồi bài đăng của người khác!" });
+  }
+
+  // Khôi phục khủng long về lại Gara của người bán:
+  const dino = listing.dinoData;
+  if (dino) {
+    const isLocalDino = Boolean(dino.isLocal || String(dino.id).startsWith('dino-'));
+    if (isLocalDino) {
+      if (!data.userGarage) data.userGarage = {};
+      if (!data.userGarage[steamId]) data.userGarage[steamId] = [];
+      const alreadyExists = data.userGarage[steamId].some(d => String(d.id) === String(dino.id));
+      if (!alreadyExists) {
+        data.userGarage[steamId].push({
+          ...dino,
+          stored_at: new Date().toLocaleString('vi-VN')
+        });
+      }
+    } else {
+      // Đối với Cloud Dino: Khi bài đăng bị xóa khỏi marketListings,
+      // ID của nó không còn nằm trong activeSellingDinoIds, nên nó sẽ hiển thị trở lại trong Gara qua Cloud.
+      // Bảo hiểm: Nếu trên Cloud vì lý do gì không thấy con này, tự động khôi phục vào local garage
+      try {
+        const pilotGarage = await callIslePilot(`/players/${steamId}/garage`, 'GET', null, true);
+        const cloudDinos = (pilotGarage && pilotGarage.garage && Array.isArray(pilotGarage.garage)) ? pilotGarage.garage : [];
+        const inCloud = cloudDinos.some(cd => String(cd.id) === String(dino.id));
+        if (!inCloud) {
+          if (!data.userGarage) data.userGarage = {};
+          if (!data.userGarage[steamId]) data.userGarage[steamId] = [];
+          data.userGarage[steamId].push({
+            ...dino,
+            id: dino.id || `dino-${Date.now()}`,
+            isLocal: true,
+            stored_at: new Date().toLocaleString('vi-VN')
+          });
+        }
+      } catch (_) {}
+    }
+  }
+
+  data.marketListings.splice(idx, 1);
+  savePortalData(data);
+  clearPlayerCache(steamId);
+
+  res.json({
+    success: true,
+    message: `Đã thu hồi bài đăng bán [${listing.title}] thành công! Khủng long đã quay trở về Gara của bạn.`
   });
 });
 
@@ -1050,7 +1599,7 @@ app.post('/api/market/transfer', async (req, res) => {
   });
 });
 
-// 10.1 Mua Dino từ Chợ (Tự Động Chuyển Vào Kho Đồ / Túi Đồ Của Người Mua)
+// 10.1 Mua Dino từ Chợ (Tự Động Chuyển Thẳng Vào Gara Của Người Mua)
 app.post('/api/market/buy', async (req, res) => {
   const { itemId } = req.body;
   const data = getPortalData();
@@ -1058,53 +1607,89 @@ app.post('/api/market/buy', async (req, res) => {
   if (!steamId) {
     return res.status(401).json({ error: "Vui lòng đăng nhập Steam để mua vật phẩm!" });
   }
-  const userBal = await getLivePlayerBalance(steamId);
 
-  const itemIndex = data.marketListings.findIndex(i => i.id === itemId);
+  const itemIndex = (data.marketListings || []).findIndex(i => i.id === itemId);
   if (itemIndex === -1) {
     return res.status(404).json({ error: "Vật phẩm hoặc Dino này đã được người khác mua hoặc đã được thu hồi!" });
   }
 
   const item = data.marketListings[itemIndex];
+  if (item.sellerSteamId === steamId) {
+    return res.status(400).json({ error: "Bạn không thể tự mua khủng long của chính mình!" });
+  }
+
+  const userBal = await getLivePlayerBalance(steamId);
   if (userBal < item.price) {
     return res.status(400).json({ error: `Tài khoản của bạn không đủ Lúa! Cần ${item.price} Lúa 🌾 (Hiện có ${userBal} Lúa trên server).` });
+  }
+
+  // Kiểm tra sức chứa Gara của người mua
+  const buyerGarageStatus = await getPlayerGarageStatus(steamId);
+  if (buyerGarageStatus.isFull) {
+    return res.status(400).json({
+      error: `Gara của bạn đã đầy (${buyerGarageStatus.totalParked}/${buyerGarageStatus.maxSlots} ô theo vai trò)! Vui lòng lấy khủng long cũ ra chơi hoặc nâng cấp Gara trước khi mua.`,
+      isFull: true,
+      upgradeRequired: true
+    });
   }
 
   // 1. Trừ tiền người mua
   const deductRes = await modifyLivePlayerBalance(steamId, -item.price, `Mua ${item.title} từ Chợ ST25`);
 
-  // 2. Nếu có người bán, cộng tiền người bán
-  if (item.sellerSteamId && item.sellerSteamId !== steamId) {
+  // 2. Cộng tiền người bán
+  if (item.sellerSteamId) {
     await modifyLivePlayerBalance(item.sellerSteamId, item.price, `Bán ${item.title} trên Chợ ST25 cho ${steamId}`);
   }
 
-  // 3. Chuyển Khủng Long / Vật phẩm vào Túi Đồ (userInventory) của người mua
-  if (!data.userInventory) data.userInventory = {};
-  if (!data.userInventory[steamId]) data.userInventory[steamId] = [];
+  // 3. Chuyển Khủng Long TRỰC TIẾP VÀO GARA của người mua
+  const targetDinoData = item.dinoData || {};
+  const newDino = addDinoToGarage(steamId, {
+    ...targetDinoData,
+    id: `dino-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    species: item.species || targetDinoData.species || "Tyrannosaurus",
+    gender: item.gender || targetDinoData.gender || "Đực (Male)",
+    growth: item.growth !== undefined ? item.growth : (targetDinoData.growth || 100),
+    diet: targetDinoData.diet || ["S", "S", "D"],
+    mutations: targetDinoData.mutations || [],
+    isPrimeElder: targetDinoData.isPrimeElder || false,
+    source: `Mua từ Chợ ST25 (Người bán: ${item.seller})`,
+    isLocal: true
+  }, data);
 
-  const newVoucher = {
-    id: `voucher-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-    name: item.title || `${item.species} ${item.growth}% Growth`,
-    icon: item.icon || "🦖",
-    desc: `Khủng long ${item.species} (${item.gender || 'Đực (Male)'}, ${item.growth}% Growth). Mua từ Chợ ST25.`,
-    type: "dino_voucher",
-    species: item.species || "Tyrannosaurus",
-    growth: item.growth !== undefined ? item.growth : 100,
-    gender: item.gender || "Đực (Male)",
-    purchased_at: new Date().toLocaleString('vi-VN')
-  };
+  // 4. Xử lý người bán: Đánh dấu dino này vĩnh viễn không còn thuộc về người bán
+  if (item.sellerSteamId && targetDinoData.id) {
+    if (!data.soldDinos) data.soldDinos = {};
+    if (!data.soldDinos[item.sellerSteamId]) data.soldDinos[item.sellerSteamId] = [];
+    data.soldDinos[item.sellerSteamId].push(String(targetDinoData.id));
 
-  data.userInventory[steamId].push(newVoucher);
+    // Nếu người bán còn lưu trong local userGarage thì dọn sạch
+    if (data.userGarage && data.userGarage[item.sellerSteamId]) {
+      data.userGarage[item.sellerSteamId] = data.userGarage[item.sellerSteamId].filter(
+        d => String(d.id) !== String(targetDinoData.id)
+      );
+    }
 
-  // 4. Xóa bài khỏi Chợ
+    // Nếu là Cloud Dino trên IslePilot, thử gọi lệnh sell trên cloud
+    if (!targetDinoData.isLocal && !String(targetDinoData.id).startsWith('dino-')) {
+      try {
+        await callIslePilot(`/players/${item.sellerSteamId}/garage/${targetDinoData.id}/sell`, 'POST', {});
+      } catch (_) {}
+    }
+  }
+
+  // 5. Xóa bài khỏi Chợ
   data.marketListings.splice(itemIndex, 1);
   savePortalData(data);
 
+  // Dọn dẹp cache cho cả hai người
+  clearPlayerCache(steamId);
+  if (item.sellerSteamId) clearPlayerCache(item.sellerSteamId);
+
   res.json({
     success: true,
-    message: `Đã mua thành công [${item.title}]! Khủng long đã được chuyển trực tiếp vào Túi Đồ (Kho Lúa) của bạn.`,
+    message: `Đã mua thành công [${item.title}]! Khủng long đã được chuyển trực tiếp vào Gara của bạn.`,
     newBalance: deductRes.balance,
-    item: newVoucher
+    dino: newDino
   });
 });
 
@@ -1497,6 +2082,20 @@ app.post('/api/shop/buy-dino', async (req, res) => {
   res.status(result?._status || 400).json({ error: result?.error || "Giao dịch không thành công!" });
 });
 
+// Helper đổi màu RGB sang Linear Space chuẩn The Isle: Evrima & IslePilot
+function srgbByteToLinear(e) {
+  const t = Math.max(0, Math.min(1, e / 255));
+  return t <= 0.04045 ? t / 12.92 : Math.pow((t + 0.055) / 1.055, 2.4);
+}
+function hexToLinear(hex) {
+  let l = String(hex || '').trim().replace(/^#/, '').padEnd(6, '0').slice(0, 6);
+  if (l === '000000') l = '010101';
+  const r = srgbByteToLinear(parseInt(l.slice(0, 2), 16));
+  const g = srgbByteToLinear(parseInt(l.slice(2, 4), 16));
+  const b = srgbByteToLinear(parseInt(l.slice(4, 6), 16));
+  return [Number(r.toFixed(6)), Number(g.toFixed(6)), Number(b.toFixed(6)), 1];
+}
+
 // 15.5 Official IslePilot Shop Skins & Player Owned Skins
 app.get('/api/shop/skins-catalog', async (req, res) => {
   const data = await callIslePilot('/shop/skins');
@@ -1517,6 +2116,210 @@ app.get('/api/player/owned-skins', async (req, res) => {
   res.json([]);
 });
 
+// Lấy thông tin Skin, Khủng long đang chơi & Số Dư Lúa từ IslePilot Cloud
+app.get('/api/skin/info', async (req, res) => {
+  const steamId = getRequestSteamId(req);
+  const userBal = steamId ? await getLivePlayerBalance(steamId) : 0;
+  let personaName = "Chưa đăng nhập Steam";
+  let species = "Tyrannosaurus";
+  let growth = 100;
+  let isOnline = false;
+  let ownedSkins = [];
+
+  if (steamId) {
+    const [p, pilotSkins] = await Promise.all([
+      callIslePilot(`/players/${steamId}`, 'GET', null, true),
+      callIslePilot(`/players/${steamId}/skins`, 'GET', null, true)
+    ]);
+
+    if (p) {
+      if (p.name) personaName = p.name;
+      if (p.species) species = p.species;
+      if (p.growth !== undefined) growth = Math.round(p.growth * 100);
+      isOnline = p.online !== false;
+    }
+
+    if (pilotSkins && Array.isArray(pilotSkins.skins)) {
+      ownedSkins = pilotSkins.skins;
+    }
+
+    // Kết hợp skin nhận từ Hòm Quà trong portal-data nếu có
+    const portalData = getPortalData();
+    if (portalData.userInventory && portalData.userInventory[steamId]) {
+      const giftSkins = portalData.userInventory[steamId].filter(i => i.type === 'skin');
+      giftSkins.forEach(gs => {
+        if (!ownedSkins.some(os => os.name === gs.name)) {
+          ownedSkins.push({
+            id: gs.id,
+            name: gs.name,
+            icon: gs.icon || '🎨',
+            source: 'Hòm May Mắn ST25'
+          });
+        }
+      });
+    }
+  }
+
+  // Lấy skin shop trực tiếp từ IslePilot API
+  const shopData = await callIslePilot('/shop/skins');
+  let shopSkins = (shopData && shopData.skins && shopData.skins.length > 0) ? shopData.skins : [
+    { id: "cmuvdy3510ehdqq0190p5cmyd", name: "Tyrannosaurus Halloween", price: 20, species: "Tyrannosaurus", icon: "🎃" }
+  ];
+
+  res.json({
+    steamId: steamId || null,
+    personaName: personaName,
+    balance: userBal,
+    species: species,
+    growth: growth,
+    isOnline: isOnline,
+    ownedSkins: ownedSkins,
+    shopSkins: shopSkins
+  });
+});
+
+// Đổi Màu Skin Khủng Long Trực Tiếp Khi Đang Chơi In-game (IslePilot Live Skin Apply)
+app.post('/api/skin/apply', async (req, res) => {
+  const { species, colors, skinCode } = req.body;
+  const steamId = req.body.steamId || getRequestSteamId(req);
+
+  if (!steamId) {
+    return res.status(401).json({ error: "Vui lòng đăng nhập Steam để đổi màu skin!" });
+  }
+
+  // 1. Kiểm tra số dư Lúa (Phí 10 Lúa để đổi màu da trực tiếp)
+  const SKIN_APPLY_COST = 10;
+  const curBal = await getLivePlayerBalance(steamId);
+  if (curBal < SKIN_APPLY_COST) {
+    return res.status(400).json({
+      error: `Tài khoản của bạn không đủ Lúa! Phí đổi màu da trực tiếp là ${SKIN_APPLY_COST} Lúa 🌾 (Số dư hiện tại: ${curBal} Lúa). Hãy hoàn thành Quests hoặc mở hòm để nạp thêm!`
+    });
+  }
+
+  // 2. Kiểm tra trạng thái nhân vật khủng long in-game
+  const pInfo = await callIslePilot(`/players/${steamId}`, 'GET', null, true);
+  if (!pInfo || !pInfo.species) {
+    return res.status(400).json({
+      error: "Bạn hiện không có khủng long nào đang sống trên server ST25! Vui lòng vào game spawn nhân vật trước khi đổi màu skin."
+    });
+  }
+
+  const activeSpecies = pInfo.species;
+  const isFemale = pInfo.female === true;
+
+  // Lập payload chuẩn IslePilot Unreal Engine Blueprint
+  const cleanSpecies = activeSpecies.replace(/[^a-zA-Z0-9]+/g, "");
+  const payload = {
+    class: `BP_${cleanSpecies}_C`,
+    female: isFemale,
+    variation: 0,
+    pattern: 0,
+    theme: 0,
+    body: hexToLinear(colors?.base || "#2d3748"),
+    markings: hexToLinear(colors?.pattern || "#f59e0b"),
+    flank: hexToLinear(colors?.base || "#4a5568"),
+    underbelly: hexToLinear(colors?.belly || "#e2e8f0"),
+    detail1: hexToLinear(colors?.belly || "#e2e8f0"),
+    eyes: hexToLinear(colors?.eye || "#ef4444"),
+    male_display: hexToLinear(colors?.pattern || "#f59e0b"),
+    teeth: hexToLinear("#ffffff"),
+    mouth: hexToLinear("#ff8888"),
+    claws: hexToLinear("#111111")
+  };
+
+  // 3. Gọi trực tiếp IslePilot API: POST /players/{steamId}/skin/apply
+  const applyRes = await callIslePilot(`/players/${steamId}/skin/apply`, 'POST', { payload });
+
+  if (applyRes && (applyRes.ok || applyRes.jobId || !applyRes.error)) {
+    // Trừ 10 Lúa qua hệ thống Currency của IslePilot
+    const deduct = await modifyLivePlayerBalance(steamId, -SKIN_APPLY_COST, `Đổi màu skin in-game cho ${activeSpecies}`);
+    
+    // Xóa cache để cập nhật ngay
+    apiCache.delete(`/players/${steamId}`);
+    apiCache.delete(`GET:/players/${steamId}`);
+
+    return res.json({
+      success: true,
+      message: `Đã đổi màu skin cho [${activeSpecies}] trực tiếp in-game thành công! Màu sắc đã áp dụng ngay vào nhân vật của bạn trên server ST25. Đã trừ ${SKIN_APPLY_COST} Lúa 🌾.`,
+      newBalance: deduct.balance,
+      jobId: applyRes.jobId
+    });
+  }
+
+  res.status(400).json({
+    error: applyRes?.error || "Không thể áp dụng skin lên nhân vật lúc này! Đảm bảo nhân vật của bạn đang trong game và không combat log."
+  });
+});
+
+// Mua Skin từ Shop bằng Lúa (POST /api/skin/buy)
+app.post('/api/skin/buy', async (req, res) => {
+  const { skinId, skinName, price } = req.body;
+  const steamId = req.body.steamId || getRequestSteamId(req);
+
+  if (!steamId) {
+    return res.status(401).json({ error: "Vui lòng đăng nhập Steam để mua skin!" });
+  }
+
+  const skinPrice = Number(price) || 20;
+  const curBal = await getLivePlayerBalance(steamId);
+  if (curBal < skinPrice) {
+    return res.status(400).json({
+      error: `Số dư Lúa không đủ! Cần ${skinPrice} Lúa 🌾 (Bạn hiện có: ${curBal} Lúa).`
+    });
+  }
+
+  // Gọi IslePilot API mua skin
+  const pilotRes = await callIslePilot(`/players/${steamId}/skins`, 'POST', { shopSkinId: skinId });
+
+  // Trừ Lúa
+  const deduct = await modifyLivePlayerBalance(steamId, -skinPrice, `Mua skin shop: ${skinName || skinId}`);
+
+  // Lưu vào kho portal-data
+  const portalData = getPortalData();
+  if (!portalData.userInventory) portalData.userInventory = {};
+  if (!portalData.userInventory[steamId]) portalData.userInventory[steamId] = [];
+  portalData.userInventory[steamId].push({
+    id: `skin-${skinId}-${Date.now()}`,
+    name: skinName || "Skin Mua Từ Cửa Hàng",
+    icon: "🎨",
+    desc: `Skin độc quyền mua với giá ${skinPrice} Lúa 🌾`,
+    type: "skin"
+  });
+  savePortalData(portalData);
+
+  res.json({
+    success: true,
+    message: `Đã mua thành công skin [${skinName}] với giá ${skinPrice} Lúa 🌾! Skin đã được thêm vào kho của bạn.`,
+    newBalance: deduct.balance
+  });
+});
+
+// Áp Dụng Skin Preset Đã Sở Hữu Vào Game (POST /api/skin/preset/apply)
+app.post('/api/skin/preset/apply', async (req, res) => {
+  const { presetId, variation } = req.body;
+  const steamId = req.body.steamId || getRequestSteamId(req);
+
+  if (!steamId) {
+    return res.status(401).json({ error: "Vui lòng đăng nhập Steam!" });
+  }
+
+  // Gọi IslePilot API: POST /players/{steamId}/skins/{presetId}/apply
+  const applyRes = await callIslePilot(`/players/${steamId}/skins/${presetId}/apply`, 'POST', {
+    variation: Number(variation) || 0
+  });
+
+  if (applyRes && (applyRes.ok || !applyRes.error)) {
+    return res.json({
+      success: true,
+      message: "Đã áp dụng mẫu skin sở hữu lên khủng long đang chơi in-game thành công!"
+    });
+  }
+
+  res.status(400).json({
+    error: applyRes?.error || "Không thể áp dụng preset skin lúc này! Đảm bảo nhân vật đang online trong game."
+  });
+});
+
 // 15.6 Diets & Leaderboard
 app.get('/api/server/diets', async (req, res) => {
   const data = await callIslePilot('/diets');
@@ -1528,6 +2331,237 @@ app.get('/api/server/leaderboard', async (req, res) => {
   const ep = species ? `/leaderboard?species=${encodeURIComponent(species)}` : '/leaderboard';
   const data = await callIslePilot(ep);
   res.json(data || []);
+});
+
+
+// ==========================================
+// 11. ISLEPILOT CASES & GACHA SYSTEM (st25.islepilot.eu/cases)
+// ==========================================
+
+// Danh sách các hòm mở thưởng (Đồng bộ từ IslePilot API GET /cases)
+app.get('/api/crates/list', async (req, res) => {
+  const steamId = getRequestSteamId(req);
+  const userBal = steamId ? await getLivePlayerBalance(steamId) : 0;
+
+  let casesFromPilot = [];
+  try {
+    const pilotCases = await callIslePilot('/cases', 'GET', null, true);
+    if (pilotCases && pilotCases.crates && Array.isArray(pilotCases.crates)) {
+      casesFromPilot = pilotCases.crates;
+    }
+  } catch (_) {}
+
+  // Danh mục Hòm ST25 chuẩn IslePilot
+  let crates = [
+    {
+      id: "halloween",
+      name: "Hòm Halloween Huyền Bí 🎃",
+      price: 8,
+      icon: "🎃",
+      theme: "halloween",
+      badge: "GACHA ISLEPILOT (8 LÚA)",
+      desc: "Vòng quay Gacha Halloween chính thức từ IslePilot. Trúng T-Rex 80% Prime Cổ Đại, Trike 80%, Allo 60% & 100 Lúa Nổ Hũ!",
+      color: "#6600ff",
+      isGachaRoll: true,
+      rewards: [
+        { name: "Tyrannosaurus 80% (Cổ Đại) 🦖", rarity: "ancient", weight: 5, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 80, gender: "Đực (Male)", isPrimeElder: true }, rarityLabel: "CỔ ĐẠI", rarityColor: "#ef4444" },
+        { name: "Triceratops 80% (Thần Thoại) 🦏", rarity: "mythical", weight: 6, type: "dino", icon: "🐾", dinoData: { species: "Triceratops", growth: 80, gender: "Đực (Male)", isPrimeElder: true }, rarityLabel: "THẦN THOẠI", rarityColor: "#ec4899" },
+        { name: "Tyrannosaurus 60% (Hiếm) 🦖", rarity: "uncommon", weight: 10, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 60, gender: "Đực (Male)" }, rarityLabel: "HIẾM", rarityColor: "#a855f7" },
+        { name: "Allosaurus 60% (Hiếm) 🦖", rarity: "uncommon", weight: 30, type: "dino", icon: "🐾", dinoData: { species: "Allosaurus", growth: 60, gender: "Đực (Male)" }, rarityLabel: "HIẾM", rarityColor: "#a855f7" },
+        { name: "Tyrannosaurus 40% (Thường) 🦖", rarity: "common", weight: 10, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 40, gender: "Đực (Male)" }, rarityLabel: "THƯỜNG", rarityColor: "#38bdf8" },
+        { name: "100 LÚA 🌾 Nổ Hũ!", rarity: "exceptional", weight: 1, type: "lua", amount: 100, icon: "🪙", rarityLabel: "NGOẠI HẠNG", rarityColor: "#fbbf24" },
+        { name: "2 LÚA 🌾 May Mắn", rarity: "common", weight: 10, type: "lua", amount: 2, icon: "🪙", rarityLabel: "THƯỜNG", rarityColor: "#fbbf24" },
+        { name: "Skin T-rex Halloween (Ngoại Hạng) 🎃", rarity: "exceptional", weight: 1, type: "skin", icon: "🎨", shopSkinId: "cmuvdy3510ehdqq0190p5cmyd", rarityLabel: "NGOẠI HẠNG", rarityColor: "#eab308" },
+        { name: "🙅 Chúc May Mắn Lần Sau", rarity: "common", weight: 27, type: "nothing", icon: "🙅", rarityLabel: "THƯỜNG", rarityColor: "#64748b" }
+      ]
+    },
+    {
+      id: "wood",
+      name: "Hòm Tre Làng ST25 🪵",
+      price: 20,
+      icon: "🪵",
+      desc: "Hòm cơ bản, cơ hội trúng Lúa, Thẻ hồi máu hoặc Khủng long Gallimimus 50%",
+      rewards: [
+        { name: "5 Lúa An Ủi 🌾", weight: 30, type: "lua", amount: 5 },
+        { name: "25 Lúa Có Lời 🌾", weight: 25, type: "lua", amount: 25 },
+        { name: "50 Lúa Trúng Lớn 🌾", weight: 15, type: "lua", amount: 50 },
+        { name: "Thẻ Hồi Máu Khẩn Cấp 💖", weight: 15, type: "item", icon: "💖" },
+        { name: "Khủng Long Con Gallimimus 50% 🦖", weight: 10, type: "dino", icon: "🦖", dinoData: { species: "Gallimimus", growth: 50, gender: "Cái (Female)" } },
+        { name: "Skin Rừng Nhiệt Đới 🌿", weight: 5, type: "skin", icon: "🎨" }
+      ]
+    },
+    {
+      id: "gold",
+      name: "Hòm Vàng ST25 Thần Tốc 🪙",
+      price: 50,
+      icon: "🪙",
+      desc: "Tỷ lệ trúng cao, thưởng Lúa khủng, Skin Kim Giáp và Carnotaurus 100% Chiến Binh",
+      rewards: [
+        { name: "30 Lúa Cơ Bản 🌾", weight: 20, type: "lua", amount: 30 },
+        { name: "80 Lúa Lãi To 🌾", weight: 25, type: "lua", amount: 80 },
+        { name: "150 Lúa Đột Biến 🌾", weight: 15, type: "lua", amount: 150 },
+        { name: "Carnotaurus 100% Full Dinh Dưỡng 🦖", weight: 20, type: "dino", icon: "🦖", dinoData: { species: "Carnotaurus", growth: 100, gender: "Đực (Male)" } },
+        { name: "Skin Kim Giáp Dạ Quang Vàng 🌟", weight: 15, type: "skin", icon: "✨" },
+        { name: "Thẻ Đổi Tên Đột Biến 🏷️", weight: 5, type: "item", icon: "🏷️" }
+      ]
+    },
+    {
+      id: "diamond",
+      name: "Hòm Kim Cương Thần Thú 💎",
+      price: 100,
+      icon: "💎",
+      desc: "Jackpot 500 Lúa, Skin Thần Thoại và Bạo Chúa T-Rex 100% Prime Elder",
+      rewards: [
+        { name: "Bạo Chúa T-Rex 100% Prime Elder 🐉", weight: 25, type: "dino", icon: "🐉", dinoData: { species: "Tyrannosaurus", growth: 100, gender: "Đực (Male)", isPrimeElder: true } },
+        { name: "JACKPOT 500 LÚA 🌾", weight: 10, type: "lua", amount: 500 },
+        { name: "Cá Sấu Deinosuchus 100% Đầm Lầy 🐊", weight: 25, type: "dino", icon: "🐊", dinoData: { species: "Deinosuchus", growth: 100, gender: "Đực (Male)", isPrimeElder: true } },
+        { name: "Thẻ Hồi Sinh Bảo Hộ Vĩnh Cửu 🛡️", weight: 20, type: "item", icon: "🛡️" },
+        { name: "Skin Thần Long Hắc Ám T-Rex 🐉", weight: 20, type: "skin", icon: "🐉" }
+      ]
+    }
+  ];
+
+  res.json({
+    balance: userBal,
+    crates: crates
+  });
+});
+
+// Mở Hòm May Mắn — Tự Động Thêm Khủng Long Vào Gara Giống Nhà Phát Hành!
+app.post('/api/crates/open', async (req, res) => {
+  const { crateId } = req.body;
+  const steamId = getRequestSteamId(req);
+
+  if (!steamId) {
+    return res.status(401).json({ error: "Vui lòng đăng nhập Steam để mở hòm!" });
+  }
+
+  // Lấy danh sách Crates
+  const CRATES_POOL = [
+    {
+      id: "halloween",
+      name: "Hòm Halloween Huyền Bí 🎃",
+      price: 8,
+      rewards: [
+        { name: "Tyrannosaurus 80% (Cổ Đại) 🦖", weight: 5, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 80, gender: "Đực (Male)", isPrimeElder: true } },
+        { name: "Triceratops 80% (Thần Thoại) 🦏", weight: 6, type: "dino", icon: "🐾", dinoData: { species: "Triceratops", growth: 80, gender: "Đực (Male)", isPrimeElder: true } },
+        { name: "Tyrannosaurus 60% (Hiếm) 🦖", weight: 10, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 60, gender: "Đực (Male)" } },
+        { name: "Allosaurus 60% (Hiếm) 🦖", weight: 30, type: "dino", icon: "🐾", dinoData: { species: "Allosaurus", growth: 60, gender: "Đực (Male)" } },
+        { name: "Tyrannosaurus 40% (Thường) 🦖", weight: 10, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 40, gender: "Đực (Male)" } },
+        { name: "100 LÚA 🌾 Nổ Hũ!", weight: 1, type: "lua", amount: 100, icon: "🪙" },
+        { name: "2 LÚA 🌾 May Mắn", weight: 10, type: "lua", amount: 2, icon: "🪙" },
+        { name: "Skin T-rex Halloween (Ngoại Hạng) 🎃", weight: 1, type: "skin", icon: "🎨" },
+        { name: "🙅 Chúc May Mắn Lần Sau", weight: 27, type: "nothing", icon: "🙅" }
+      ]
+    },
+    {
+      id: "wood",
+      name: "Hòm Tre Làng ST25 🪵",
+      price: 20,
+      rewards: [
+        { name: "5 Lúa An Ủi 🌾", weight: 30, type: "lua", amount: 5 },
+        { name: "25 Lúa Có Lời 🌾", weight: 25, type: "lua", amount: 25 },
+        { name: "50 Lúa Trúng Lớn 🌾", weight: 15, type: "lua", amount: 50 },
+        { name: "Thẻ Hồi Máu Khẩn Cấp 💖", weight: 15, type: "item", icon: "💖" },
+        { name: "Khủng Long Con Gallimimus 50% 🦖", weight: 10, type: "dino", icon: "🦖", dinoData: { species: "Gallimimus", growth: 50, gender: "Cái (Female)" } },
+        { name: "Skin Rừng Nhiệt Đới 🌿", weight: 5, type: "skin", icon: "🎨" }
+      ]
+    },
+    {
+      id: "gold",
+      name: "Hòm Vàng ST25 Thần Tốc 🪙",
+      price: 50,
+      rewards: [
+        { name: "30 Lúa Cơ Bản 🌾", weight: 20, type: "lua", amount: 30 },
+        { name: "80 Lúa Lãi To 🌾", weight: 25, type: "lua", amount: 80 },
+        { name: "150 Lúa Đột Biến 🌾", weight: 15, type: "lua", amount: 150 },
+        { name: "Carnotaurus 100% Full Dinh Dưỡng 🦖", weight: 20, type: "dino", icon: "🦖", dinoData: { species: "Carnotaurus", growth: 100, gender: "Đực (Male)" } },
+        { name: "Skin Kim Giáp Dạ Quang Vàng 🌟", weight: 15, type: "skin", icon: "✨" },
+        { name: "Thẻ Đổi Tên Đột Biến 🏷️", weight: 5, type: "item", icon: "🏷️" }
+      ]
+    },
+    {
+      id: "diamond",
+      name: "Hòm Kim Cương Thần Thú 💎",
+      price: 100,
+      rewards: [
+        { name: "Bạo Chúa T-Rex 100% Prime Elder 🐉", weight: 25, type: "dino", icon: "🐉", dinoData: { species: "Tyrannosaurus", growth: 100, gender: "Đực (Male)", isPrimeElder: true } },
+        { name: "JACKPOT 500 LÚA 🌾", weight: 10, type: "lua", amount: 500 },
+        { name: "Cá Sấu Deinosuchus 100% Đầm Lầy 🐊", weight: 25, type: "dino", icon: "🐊", dinoData: { species: "Deinosuchus", growth: 100, gender: "Đực (Male)", isPrimeElder: true } },
+        { name: "Thẻ Hồi Sinh Bảo Hộ Vĩnh Cửu 🛡️", weight: 20, type: "item", icon: "🛡️" },
+        { name: "Skin Thần Long Hắc Ám T-Rex 🐉", weight: 20, type: "skin", icon: "🐉" }
+      ]
+    }
+  ];
+
+  const crate = CRATES_POOL.find(c => c.id === crateId);
+  if (!crate) {
+    return res.status(400).json({ error: "Loại hòm không hợp lệ!" });
+  }
+
+  const userBal = await getLivePlayerBalance(steamId);
+  if (userBal < crate.price) {
+    return res.status(400).json({ error: `Bạn không đủ Lúa để mở hòm! Cần ${crate.price} Lúa 🌾 (Hiện có: ${userBal} Lúa).` });
+  }
+
+  // 1. Trừ Lúa mở hòm trực tiếp qua IslePilot API
+  const deductRes = await modifyLivePlayerBalance(steamId, -crate.price, `Mở ${crate.name}`);
+  let currentBalance = deductRes.balance;
+
+  // 2. Quay số trúng thưởng theo trọng số weight
+  const totalWeight = crate.rewards.reduce((sum, r) => sum + r.weight, 0);
+  let randomVal = Math.random() * totalWeight;
+  let wonReward = crate.rewards[0];
+
+  for (const reward of crate.rewards) {
+    if (randomVal <= reward.weight) {
+      wonReward = reward;
+      break;
+    }
+    randomVal -= reward.weight;
+  }
+
+  // 3. Phân phối phần thưởng
+  let transferredToGarage = false;
+  const data = getPortalData();
+
+  if (wonReward.type === 'lua') {
+    // Cộng Lúa trực tiếp vào ví IslePilot
+    const addRes = await modifyLivePlayerBalance(steamId, wonReward.amount, `Trúng thưởng ${wonReward.name} từ ${crate.name}`);
+    currentBalance = addRes.balance;
+  } else if (wonReward.type === 'dino') {
+    // TỰ ĐỘNG THÊM VÀO GARA CỦA NGƯỜI CHƠI (GIỐNG NHÀ PHÁT HÀNH ISLEPILOT)
+    const dinoData = wonReward.dinoData || {};
+    addDinoToGarage(steamId, {
+      species: dinoData.species || "Tyrannosaurus",
+      growth: dinoData.growth !== undefined ? dinoData.growth : 80,
+      gender: dinoData.gender || (Math.random() > 0.5 ? "Đực (Male)" : "Cái (Female)"),
+      isPrimeElder: dinoData.isPrimeElder || false,
+      mutations: dinoData.isPrimeElder ? ["Hemomania", "Multichambered Lungs", "Osteophagic", "Gastronomic Regeneration"] : [],
+      source: `Hòm May Mắn (${crate.name})`
+    }, data);
+    savePortalData(data);
+    transferredToGarage = true;
+  } else if (wonReward.type === 'skin' || wonReward.type === 'item') {
+    if (!data.userInventory) data.userInventory = {};
+    if (!data.userInventory[steamId]) data.userInventory[steamId] = [];
+    data.userInventory[steamId].push({
+      id: `inv-${Date.now()}`,
+      name: wonReward.name,
+      icon: wonReward.icon || "🎁",
+      desc: `Trúng thưởng từ ${crate.name}`,
+      type: wonReward.type
+    });
+    savePortalData(data);
+  }
+
+  res.json({
+    success: true,
+    reward: wonReward,
+    newBalance: currentBalance,
+    crateName: crate.name,
+    transferredToGarage: transferredToGarage
+  });
 });
 
 // Start Server

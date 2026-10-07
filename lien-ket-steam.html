@@ -25,7 +25,7 @@
         <li><a href="giao-dich.html" class="nav-link">⚖️ Giao Dịch</a></li>
         <li><a href="hom-qua.html" class="nav-link">🎁 Mở Hòm</a></li>
         <li><a href="gara.html" class="nav-link">🦖 Gara</a></li>
-                <li><a href="skin.html" class="nav-link">🎨 Skin</a></li>
+        <li><a href="skin.html" class="nav-link">🎨 Skin</a></li>
         <li><a href="tha-xac.html" class="nav-link">🥩 Thả Xác</a></li>
         <li><a href="moi-ban.html" class="nav-link">👥 Mời Bạn</a></li>
         <li><a href="ho-tro.html" class="nav-link">🆘 Hỗ Trợ</a></li>
@@ -237,49 +237,15 @@
     // 2. Load Current Authenticated Session from Steam OpenID
     async function loadCurrentSession() {
       try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const querySteamId = urlParams.get('steamId');
-        let endpoint = '/api/player/me';
-        if (querySteamId) {
-          endpoint = `/api/player/me?steamId=${encodeURIComponent(querySteamId)}`;
-        }
-
-        const res = await fetch(endpoint);
+        const res = await fetch('/api/player/me');
         if (res.ok) {
           const user = await res.json();
           if (user && user.linked) {
             localStorage.setItem('st25_steam_user', JSON.stringify(user));
             updateProfileCard(user);
-
-            if (urlParams.get('login') === 'success') {
-              if (typeof App !== 'undefined' && App.showToast) {
-                App.showToast(`Chào mừng ${user.persona_name}! Đã đồng bộ tài khoản Steam thành công.`, 'success');
-              }
-              // Clean URL without reload
-              window.history.replaceState({}, document.title, window.location.pathname);
-            }
-            return;
           }
         }
-
-        // Fallback to localStorage if cookie hasn't loaded yet
-        const stored = localStorage.getItem('st25_steam_user');
-        if (stored) {
-          const u = JSON.parse(stored);
-          if (u && u.steam_id) {
-            const fallbackRes = await fetch(`/api/player/me?steamId=${u.steam_id}`);
-            if (fallbackRes.ok) {
-              const fresh = await fallbackRes.json();
-              if (fresh && fresh.linked) {
-                localStorage.setItem('st25_steam_user', JSON.stringify(fresh));
-                updateProfileCard(fresh);
-              }
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Error loading session:', e);
-      }
+      } catch (e) {}
     }
 
     function updateProfileCard(user) {

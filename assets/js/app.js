@@ -26,14 +26,25 @@ const App = {
     try {
       const res = await fetch('/api/player/me');
       if (res.ok) {
-        this.user = await res.json();
+        const u = await res.json();
+        if (u && u.linked && u.steam_id) {
+          this.user = u;
+          localStorage.setItem('st25_steam_user', JSON.stringify({
+            steam_id: u.steam_id,
+            persona_name: u.persona_name,
+            avatar: u.avatar,
+            isAdmin: !!u.isAdmin
+          }));
+        } else {
+          this.user = null;
+          localStorage.removeItem('st25_steam_user');
+          localStorage.removeItem('the_isle_demo_user');
+        }
+      } else {
+        this.user = null;
       }
     } catch (e) {
-      // Local storage fallback for standalone demo
-      const savedUser = localStorage.getItem('the_isle_demo_user');
-      if (savedUser) {
-        this.user = JSON.parse(savedUser);
-      }
+      this.user = null;
     }
   },
 
@@ -45,18 +56,32 @@ const App = {
   },
 
   updateUI() {
-    const steamBtn = document.getElementById('btn-steam-auth');
+    const steamBtn = document.getElementById('btn-steam-auth') || document.getElementById('nav-btn-steam');
     const userBadge = document.getElementById('user-badge');
     const userName = document.getElementById('user-display-name');
 
-    if (this.user) {
-      if (steamBtn) steamBtn.style.display = 'none';
+    const isLoggedIn = !!(this.user && this.user.linked && this.user.steam_id);
+    const isAdmin = !!(isLoggedIn && this.user.isAdmin);
+
+    // Ẩn/hiện các phần tử Admin trên toàn bộ website
+    document.querySelectorAll('.admin-only, #nav-admin-link-item, #btn-header-admin, #btn-admin-panel-link, #admin-quick-bar').forEach(el => {
+      el.style.display = isAdmin ? '' : 'none';
+    });
+
+    if (isLoggedIn) {
+      if (steamBtn) {
+        steamBtn.textContent = 'Đổi Steam';
+        steamBtn.href = 'lien-ket-steam.html';
+      }
       if (userBadge) {
         userBadge.style.display = 'flex';
         if (userName) userName.textContent = this.user.persona_name || this.user.name || 'Người chơi';
       }
     } else {
-      if (steamBtn) steamBtn.style.display = 'inline-flex';
+      if (steamBtn) {
+        steamBtn.textContent = '🎮 Đăng Nhập Steam';
+        steamBtn.href = '/api/player/steam/login';
+      }
       if (userBadge) userBadge.style.display = 'none';
     }
   },

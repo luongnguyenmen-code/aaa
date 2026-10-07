@@ -8,8 +8,8 @@
     "max_players": 100,
     "map": "Gateway v0.21.7",
     "discord_url": "https://discord.gg/3xCrA6VyY",
-    "hud_download_url": "https://drive.google.com/drive/folders/1lt_7g8rYuyqvrqZJidq8O1o0az1u-EtS?usp=drive_link",
-    "hud_direct_download_url": "https://drive.google.com/uc?export=download&id=1ZDrKQPffJ51AkPXsEGk3SCK6RUl8jof5"
+    "hud_download_url": "https://drive.google.com/file/d/1RvIjjldsLZp58QifkEZQcMkBeXyWdhpI/view?usp=sharing",
+    "hud_direct_download_url": "https://drive.google.com/file/d/1RvIjjldsLZp58QifkEZQcMkBeXyWdhpI/view?usp=sharing"
   },
   "islepilot": {
     "dashboard_url": "https://islepilot.eu/dashboard/servers/cmufraiwk7fnooa01vpdzdhm4/api",
@@ -53,19 +53,18 @@
     },
     "player_custom_slots": {
       "76561198354289789": 20,
-      "76561198694488278": 20,
       "76561199194553823": 20,
-      "76561198838095252": 20
+      "76561198838095252": 20,
+      "76561198682056372": 20,
+      "76561198745006783": 5
     },
     "user_roles": {
       "76561198354289789": "admin",
-      "76561198694488278": "admin",
+      "76561198682056372": "admin",
       "76561198636766540": "long_chu",
       "76561199194553823": "mod",
-      "1125011824853647441": "mod",
       "76561198838095252": ".",
-      "1331979324689219720": ".",
-      "hieu": "."
+      "76561198745006783": "booster"
     },
     "upgrade_discord_url": "https://discord.gg/3xCrA6VyY"
   }

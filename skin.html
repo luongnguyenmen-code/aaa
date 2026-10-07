@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chỉnh Sửa Skin Khủng Long — ST25 VIETNAM</title>
-  <meta name="description" content="Trình thiết kế và phối màu Skin khủng long Evrima trực quan của server ST25. Áp dụng skin bằng Lúa 🌾 trực tiếp vào tài khoản game.">
+  <title>Chỉnh Sửa & Đổi Skin Khủng Long — ST25 VIETNAM</title>
+  <meta name="description" content="Trình thiết kế và phối màu Skin khủng long Evrima trực quan của server ST25. Áp dụng skin bằng Lúa 🌾 trực tiếp vào game khi đang chơi.">
   <link rel="stylesheet" href="assets/css/style.css">
-  <link rel="icon" href="assets/map/gateway.webp">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
   <style>
     .editor-layout {
       display: grid;
@@ -96,57 +99,118 @@
       transform: translateY(-3px);
       box-shadow: 0 6px 20px rgba(245, 158, 11, 0.15);
     }
+    .owned-skin-card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
   </style>
 </head>
 <body>
 
   <!-- Site Header -->
   <header class="site-header">
-    <div class="container nav-container">
-      <a href="index.html" class="brand-logo">
-        <span class="brand-text">🌾 ST25 <span class="brand-accent">VIETNAM</span> 🦖</span>
+    <div class="container header-container">
+      <a href="index.html" class="brand">
+        <span style="color: #fbbf24;">🌾 ST25</span>
+        <span class="brand-tag">🦖 THE ISLE</span>
       </a>
 
       <ul class="nav-links">
         <li><a href="index.html" class="nav-link">🌾 Trang chủ</a></li>
         <li><a href="bando.html" class="nav-link">🗺️ Bản đồ</a></li>
-        <li><a href="nhiem-vu.html" class="nav-link">🌾 Kho Lúa & Quests</a></li>
+        <li><a href="nhiem-vu.html" class="nav-link">🌾 Kho Lúa</a></li>
         <li><a href="giao-dich.html" class="nav-link">⚖️ Giao Dịch</a></li>
-        <li><a href="hom-qua.html" class="nav-link">🎁 Hòm May Mắn</a></li>
+        <li><a href="hom-qua.html" class="nav-link">🎁 Mở Hòm</a></li>
         <li><a href="gara.html" class="nav-link">🦖 Gara</a></li>
-                <li><a href="skin.html" class="nav-link active">🎨 Skin</a></li>
+        <li><a href="skin.html" class="nav-link active">🎨 Skin</a></li>
+        <li id="nav-admin-link-item" style="display: none;"><a href="cai-dat.html" class="nav-link" id="nav-admin-link" style="color: #fbbf24; font-weight: 700;">👑 Cấp Role & Slot</a></li>
         <li><a href="tha-xac.html" class="nav-link">🥩 Thả Xác</a></li>
         <li><a href="moi-ban.html" class="nav-link">👥 Mời Bạn</a></li>
         <li><a href="ho-tro.html" class="nav-link">🆘 Hỗ Trợ</a></li>
-        <li><a href="noi-quy.html" class="nav-link">📜 Nội quy</a></li>
       </ul>
 
       <div class="nav-actions">
-        <a href="lien-ket-steam.html" class="btn btn-secondary btn-sm">🎮 Steam Profile</a>
-        <a href="tai-hud.html" class="btn btn-hud btn-sm">Tải IsleLiveMap</a>
+        <a href="cai-dat.html" class="btn btn-sm" id="btn-header-admin" style="display: none; background: rgba(234, 179, 8, 0.2); border: 1px solid #eab308; color: #facc15; font-weight: 700;">👑 Phân Quyền</a>
+        <a href="lien-ket-steam.html" class="btn btn-secondary btn-sm" id="nav-btn-steam">Đổi Steam</a>
+        <a href="tai-hud.html" class="btn btn-hud btn-sm">Tải HUD</a>
       </div>
     </div>
   </header>
 
   <!-- Main Content -->
   <main class="container" style="padding-top: 30px; padding-bottom: 60px;">
+
+    <!-- Quick Switcher Bar (CHỈ DÀNH CHO ADMIN) -->
+    <div id="skin-admin-quick-bar" style="display: none; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: var(--radius-md); padding: 12px 18px; margin-bottom: 20px; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.2rem;">🔍</span>
+        <span style="color: #facc15; font-weight: 700; font-size: 0.9rem;">Admin Soi Skin Tài Khoản:</span>
+        <input type="text" id="skin-switcher-steamid" placeholder="Nhập Steam ID cần xem..." style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; padding: 6px 12px; color: #fff; font-size: 0.85rem; width: 220px;" onkeydown="if(event.key==='Enter') switchSkinSteamUser(this.value)">
+        <button onclick="switchSkinSteamUser(document.getElementById('skin-switcher-steamid').value)" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; padding: 5px 10px;">
+          Xem
+        </button>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button onclick="switchSkinSteamUser('76561198354289789')" class="btn btn-secondary btn-sm" style="font-size: 0.78rem; padding: 4px 8px; color: #38bdf8; border-color: #38bdf8;">
+          Admin Dol
+        </button>
+        <button onclick="switchSkinSteamUser('76561198682056372')" class="btn btn-secondary btn-sm" style="font-size: 0.78rem; padding: 4px 8px; color: #fbbf24; border-color: #fbbf24;">
+          Admin ST25
+        </button>
+        <button onclick="switchSkinSteamUser('76561198838095252')" class="btn btn-secondary btn-sm" style="font-size: 0.78rem; padding: 4px 8px; color: #a855f7; border-color: #a855f7;">
+          Admin Hiếu
+        </button>
+      </div>
+    </div>
+
+    <!-- Màn hình yêu cầu Đăng Nhập Steam khi chưa login -->
+    <div id="skin-login-required-panel" style="display: none; background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-lg); padding: 50px 30px; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
+      <span style="font-size: 3.5rem; display: block; margin-bottom: 14px;">🎨</span>
+      <h2 style="color: #fff; font-size: 1.8rem; font-weight: 800; margin-bottom: 10px;">Vui Lòng Đăng Nhập Tài Khoản Steam</h2>
+      <p style="color: #94a3b8; max-width: 600px; margin: 0 auto 24px; line-height: 1.6; font-size: 0.95rem;">
+        Hệ thống Skin ST25 liên kết trực tiếp với ví Lúa 🌾 và nhân vật khủng long in-game của từng cá nhân. Vui lòng đăng nhập Steam để xem số dư ví Lúa, kho skin và đổi màu trực tiếp cho khủng long của bạn!
+      </p>
+      <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-bottom: 24px;">
+        <a href="/api/player/steam/login?redirect=/skin.html" class="btn btn-primary" style="font-weight: 800; padding: 14px 28px; font-size: 1.05rem; background: linear-gradient(135deg, #10b981, #059669); border: none;">
+          🎮 Đăng Nhập Bằng Steam Chính Chủ
+        </a>
+      </div>
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); max-width: 480px; margin-left: auto; margin-right: auto;">
+        <small style="color: #64748b; display: block; margin-bottom: 10px; font-size: 0.85rem;">Hoặc nhập nhanh Steam ID 64 (17 số) để liên kết:</small>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="skin-manual-login-steamid" placeholder="Ví dụ: 76561198354289789" class="form-input" style="padding: 10px 14px; font-size: 0.9rem;" onkeydown="if(event.key==='Enter') quickLoginSkinManual()">
+          <button onclick="quickLoginSkinManual()" class="btn btn-secondary btn-sm" style="white-space: nowrap; font-weight: 700;">
+            Liên Kết Ngay
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Khung Nội Dung Chỉnh Skin Cá Nhân (Chỉ hiển thị khi đã đăng nhập) -->
+    <div id="skin-authenticated-content" style="display: none;">
     
-    <!-- Account & Balance Status Banner (Live API Synced) -->
-    <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: var(--radius-md); padding: 20px 24px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+    <!-- Account & Balance Status Banner (Live IslePilot Wallet Synced) -->
+    <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-md); padding: 20px 24px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);">
       <div>
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-          <span class="rule-badge badge-allow" style="font-size: 0.8rem;">Đồng Bộ Tài Khoản Game</span>
-          <span style="color: #cbd5e1; font-size: 0.85rem;" id="player-status-tag">SteamID: 76561198636766540</span>
+          <span class="rule-badge badge-allow" style="font-size: 0.8rem;">🟢 ĐỒNG BỘ ISLEPILOT WALLET & GAME</span>
+          <span style="color: #cbd5e1; font-size: 0.85rem;" id="player-status-tag">Đang nạp tài khoản...</span>
         </div>
-        <h1 style="color: #fff; font-size: 1.8rem; margin: 0 0 4px;">CHỈNH SỬA & ĐỔI SKIN KHỦNG LONG 🦖</h1>
-        <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">
-          Khủng long đang chơi: <strong style="color: #38bdf8;" id="my-dino-species">Tyrannosaurus</strong> (<span id="my-dino-growth">25%</span> Growth).
+        <h1 style="color: #fff; font-size: 1.8rem; margin: 0 0 4px; font-weight: 800;">CHỈNH SỬA & ĐỔI SKIN KHỦNG LONG 🦖</h1>
+        <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;" id="player-dino-status-text">
+          Khủng long đang chơi: <strong style="color: #38bdf8;" id="my-dino-species">Đang tải...</strong> (<span id="my-dino-growth">--</span> Growth).
         </p>
       </div>
 
-      <div style="text-align: right; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-sm); padding: 12px 20px;">
-        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Số Dư Lúa Trong Tài Khoản</span>
-        <div style="font-size: 1.6rem; font-weight: 900; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
+      <div style="text-align: right; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-sm); padding: 12px 22px;">
+        <span style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Số Dư Lúa Trong Ví Game</span>
+        <div style="font-size: 1.8rem; font-weight: 900; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
           <span id="skin-balance-val">---</span>
           <span>Lúa 🌾</span>
         </div>
@@ -155,7 +219,7 @@
 
     <!-- Presets Quick Bar -->
     <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 20px; margin-bottom: 25px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
-      <strong style="color: #fbbf24; font-size: 0.9rem; margin-right: 8px;">🌾 Mẫu Skin Gợi Ý ST25:</strong>
+      <strong style="color: #fbbf24; font-size: 0.9rem; margin-right: 8px;">🌾 Mẫu Phối Màu Gợi Ý:</strong>
       <span class="preset-pill active" onclick="applyPreset('golden_rice')">🌾 Hoàng Kim ST25 (Vàng Lúa)</span>
       <span class="preset-pill" onclick="applyPreset('shadow')">🌑 Hắc Long Bóng Đêm</span>
       <span class="preset-pill" onclick="applyPreset('jungle')">🌿 Rừng Dừa Xanh Mướt</span>
@@ -200,7 +264,7 @@
       <!-- Controls Panel -->
       <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 22px;">
         <h3 style="color: #fff; font-size: 1.2rem; margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
-          <span>⚙️ Bảng Phối Màu Lớp Da</span>
+          <span>⚙️ Bảng Phối Màu Lớp Da In-Game</span>
         </h3>
 
         <!-- Chọn Loài -->
@@ -217,6 +281,8 @@
             <option value="Stegosaurus">Stegosaurus (Khủng long gai đuôi)</option>
             <option value="Gallimimus">Gallimimus (Đà điểu nhanh nhẹn)</option>
             <option value="Pteranodon">Pteranodon (Dực long bay lượn)</option>
+            <option value="Herrerasaurus">Herrerasaurus (Thằn lằn leo cây)</option>
+            <option value="Diabloceratops">Diabloceratops (Quỷ sừng)</option>
           </select>
         </div>
 
@@ -256,9 +322,9 @@
           <input type="color" id="color-eye" class="color-swatch-input" value="#ef4444" oninput="updateColors()">
         </div>
 
-        <!-- Action Button 1: Apply using Lúa via API -->
-        <button onclick="handleApplySkinWithLua()" class="btn btn-primary" style="width: 100%; margin-bottom: 10px; font-weight: 700;">
-          🌾 Áp Dụng Skin Lên Dino (10 Lúa 🌾) 🚀
+        <!-- Action Button 1: Apply using Lúa via API directly in-game -->
+        <button onclick="handleApplySkinWithLua()" class="btn btn-primary" style="width: 100%; margin-bottom: 10px; font-weight: 800; font-size: 1rem; padding: 13px; background: linear-gradient(135deg, #10b981, #059669); border: none;">
+          ⚡ ĐỔI MÀU TRỰC TIẾP IN-GAME (10 LÚA 🌾)
         </button>
 
         <!-- Action Button 2: Export code free -->
@@ -283,12 +349,29 @@
       <textarea id="skin-code-output" style="width: 100%; height: 90px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 6px; color: #fbbf24; font-family: monospace; font-size: 0.85rem; padding: 12px; resize: none;" readonly></textarea>
     </div>
 
+    <!-- Kho Skin Đã Sở Hữu -->
+    <section style="margin-top: 45px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h2 style="color: #fff; font-size: 1.4rem; margin: 0 0 4px;">🎒 Kho Skin Đã Sở Hữu Của Bạn</h2>
+          <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem;">Các mẫu skin bạn đã mở khóa từ Shop hoặc trúng từ Hòm May Mắn. Có thể áp dụng ngay vào nhân vật.</p>
+        </div>
+        <span class="rule-badge badge-allow" id="owned-skin-count">0 Mẫu Skin</span>
+      </div>
+
+      <div id="owned-skin-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px;">
+        <div style="grid-column: 1 / -1; text-align: center; padding: 30px; background: rgba(0,0,0,0.25); border-radius: 8px; color: #94a3b8;">
+          Đang nạp kho skin của bạn...
+        </div>
+      </div>
+    </section>
+
     <!-- Skin Shop Section (Linked Directly to IslePilot API) -->
-    <div style="margin-top: 45px;">
+    <section style="margin-top: 45px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
         <div>
           <h2 style="color: #fff; font-size: 1.4rem; margin: 0 0 4px;">✨ Cửa Hàng Skin Độc Quyền ST25 (Dùng Lúa 🌾)</h2>
-          <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem;">Các mẫu skin dạ quang và sự kiện đặc biệt mua trực tiếp bằng Lúa trong tài khoản.</p>
+          <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem;">Các mẫu skin dạ quang và sự kiện đặc biệt mua trực tiếp bằng Lúa trong ví tài khoản IslePilot.</p>
         </div>
         <span class="rule-badge badge-warn" id="shop-skin-count">Đang tải...</span>
       </div>
@@ -296,7 +379,9 @@
       <div id="skin-shop-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px;">
         <!-- Injected by JS -->
       </div>
-    </div>
+    </section>
+
+    </div> <!-- End skin-authenticated-content -->
 
   </main>
 
@@ -311,6 +396,7 @@
   <script>
     let myLiveBalance = 0;
     let currentSpecies = "Tyrannosaurus";
+    let isUserOnlineInGame = false;
 
     const PRESETS = {
       golden_rice: { base: "#1e293b", pattern: "#fbbf24", belly: "#f59e0b", eye: "#ef4444" },
@@ -320,12 +406,111 @@
       albino: { base: "#f8fafc", pattern: "#e2e8f0", belly: "#cbd5e1", eye: "#ec4899" }
     };
 
+    function getActiveSteamId() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const qId = urlParams.get('steamId');
+        if (qId && /^\d{17}$/.test(qId.trim())) return qId.trim();
+        const stored = localStorage.getItem('st25_steam_user');
+        if (stored) {
+          const u = JSON.parse(stored);
+          if (u && u.steam_id && /^\d{17}$/.test(u.steam_id.trim())) return u.steam_id.trim();
+        }
+      } catch (_) {}
+      return null;
+    }
+
+    function switchSkinSteamUser(sid) {
+      if (!sid || !sid.trim()) return;
+      window.location.search = `?steamId=${encodeURIComponent(sid.trim())}`;
+    }
+
+    async function quickLoginSkinManual() {
+      const inp = document.getElementById('skin-manual-login-steamid');
+      const sid = inp ? inp.value.trim() : '';
+      if (!sid || !/^\d{17}$/.test(sid)) {
+        App.showToast('Vui lòng nhập đúng 17 chữ số Steam ID 64 của bạn!', 'error');
+        return;
+      }
+
+      App.showToast('Đang kết nối tài khoản Steam...', 'info');
+      try {
+        const res = await fetch('/api/player/login-manual', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ steamId: sid })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          localStorage.setItem('st25_steam_user', JSON.stringify({
+            steam_id: data.steamId,
+            persona_name: data.personaName,
+            avatar: data.avatar,
+            isAdmin: data.isAdmin
+          }));
+          App.showToast(`Chào mừng ${data.personaName}! Đã liên kết thành công.`, 'success');
+          window.location.href = 'skin.html';
+        } else {
+          App.showToast(data.error || 'Không thể liên kết Steam ID này!', 'error');
+        }
+      } catch (e) {
+        console.error(e);
+        App.showToast('Lỗi kết nối máy chủ!', 'error');
+      }
+    }
+
     async function loadSkinPageData() {
       try {
-        const res = await fetch('/api/skin/info');
+        // Kiểm tra phiên đăng nhập từ máy chủ
+        let meUser = null;
+        try {
+          const meRes = await fetch('/api/player/me');
+          if (meRes.ok) {
+            const meData = await meRes.json();
+            if (meData && meData.isLoggedIn && meData.steam_id) {
+              meUser = meData;
+            }
+          }
+        } catch (_) {}
+
+        const loginPanel = document.getElementById('skin-login-required-panel');
+        const contentPanel = document.getElementById('skin-authenticated-content');
+        const adminBar = document.getElementById('skin-admin-quick-bar');
+
+        if (!meUser) {
+          // Chưa đăng nhập -> Hiện bảng yêu cầu đăng nhập, ẩn nội dung
+          localStorage.removeItem('st25_steam_user');
+          if (loginPanel) loginPanel.style.display = 'block';
+          if (contentPanel) contentPanel.style.display = 'none';
+          if (adminBar) adminBar.style.display = 'none';
+          return;
+        }
+
+        // Đã đăng nhập
+        if (loginPanel) loginPanel.style.display = 'none';
+        if (contentPanel) contentPanel.style.display = 'block';
+
+        // Phân quyền Admin: Chỉ Admin mới thấy thanh soi Skin tài khoản khác
+        const isUserAdmin = !!meUser.isAdmin;
+        if (adminBar) adminBar.style.display = isUserAdmin ? 'flex' : 'none';
+
+        // Steam ID mục tiêu
+        let activeSid = meUser.steam_id;
+        const urlParams = new URLSearchParams(window.location.search);
+        const querySid = urlParams.get('steamId');
+        if (querySid && isUserAdmin) {
+          activeSid = querySid.trim();
+        }
+
+        const swInp = document.getElementById('skin-switcher-steamid');
+        if (swInp) swInp.value = activeSid;
+
+        const url = `/api/skin/info?steamId=${encodeURIComponent(activeSid)}`;
+        const res = await fetch(url, { headers: { 'x-steam-id': activeSid } });
         const data = await res.json();
 
-        myLiveBalance = data.balance;
+        myLiveBalance = data.balance || 0;
+        isUserOnlineInGame = !!data.isOnline;
         document.getElementById('skin-balance-val').textContent = myLiveBalance.toLocaleString('vi-VN');
         document.getElementById('player-status-tag').textContent = `Tài khoản: ${data.personaName} (${data.steamId})`;
 
@@ -336,7 +521,15 @@
           const sel = document.getElementById('dino-species-select');
           if (sel) sel.value = data.species;
           changeSpecies(data.species);
+
+          const statusTextEl = document.getElementById('player-dino-status-text');
+          if (statusTextEl) {
+            statusTextEl.innerHTML = `Khủng long in-game: <strong style="color: #38bdf8;">${data.species}</strong> (<span style="color: #10b981; font-weight: 700;">${data.growth}% Growth</span>) • Trạng thái: <strong style="color: ${data.isOnline ? '#10b981' : '#f59e0b'};">${data.isOnline ? '🟢 Đang Trong Game (Online)' : '🟡 Ngoại Tuyến (Offline)'}</strong>`;
+          }
         }
+
+        // Render Owned Skins
+        renderOwnedSkins(data.ownedSkins || []);
 
         // Render Skin Shop
         const shopGrid = document.getElementById('skin-shop-grid');
@@ -348,16 +541,16 @@
           <div class="skin-shop-card">
             <div>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span style="font-size: 2rem;">${s.icon || '🦖'}</span>
-                <span class="rule-badge badge-allow" style="font-weight: 700; color: #fbbf24;">
+                <span style="font-size: 2.2rem;">${s.icon || '🎃'}</span>
+                <span class="rule-badge badge-allow" style="font-weight: 800; color: #fbbf24; font-size: 0.9rem;">
                   ${s.price} Lúa 🌾
                 </span>
               </div>
-              <h4 style="color: #fff; font-size: 1.05rem; margin-bottom: 4px;">${s.name}</h4>
-              <p style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 12px;">Dành riêng cho loài <strong>${s.species || 'Tất cả'}</strong></p>
+              <h4 style="color: #fff; font-size: 1.1rem; margin-bottom: 6px;">${s.name}</h4>
+              <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">Dành riêng cho loài <strong>${s.species || 'Tất cả'}</strong></p>
             </div>
-            <button onclick="handleBuySkin('${s.id}', '${s.name}', ${s.price})" class="btn btn-primary btn-sm" style="width: 100%;">
-              🌾 Mua Bằng Lúa (${s.price} Lúa)
+            <button onclick="handleBuySkin('${s.id}', '${s.name}', ${s.price})" class="btn btn-primary btn-sm" style="width: 100%; font-weight: 700;">
+              🌾 Mua Bằng Lúa (${s.price} Lúa 🌾)
             </button>
           </div>
         `).join('');
@@ -365,6 +558,38 @@
       } catch (e) {
         console.error('Error loading skin data:', e);
       }
+    }
+
+    function renderOwnedSkins(ownedList) {
+      const ownedGrid = document.getElementById('owned-skin-grid');
+      const countEl = document.getElementById('owned-skin-count');
+      if (countEl) countEl.textContent = `${ownedList.length} Mẫu Skin`;
+      if (!ownedGrid) return;
+
+      if (!ownedList.length) {
+        ownedGrid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 35px; background: rgba(0,0,0,0.25); border-radius: 8px; color: #94a3b8;">
+            Bạn chưa có skin nào trong kho. Hãy mua tại Shop bên dưới hoặc mở Hòm May Mắn để nhận skin hiếm!
+          </div>
+        `;
+        return;
+      }
+
+      ownedGrid.innerHTML = ownedList.map(s => `
+        <div class="owned-skin-card">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-size: 2rem;">${s.icon || '🎨'}</span>
+              <span class="rule-badge badge-allow" style="font-size: 0.75rem;">ĐÃ SỞ HỮU</span>
+            </div>
+            <h4 style="color: #fff; font-size: 1.05rem; margin-bottom: 4px;">${s.name}</h4>
+            <small style="color: #94a3b8; display: block; margin-bottom: 14px;">${s.source || 'IslePilot Cloud'}</small>
+          </div>
+          <button onclick="handleApplyOwnedPreset('${s.id}', '${s.name}')" class="btn btn-primary btn-sm" style="width: 100%; font-weight: 700; background: #0284c7; border: none;">
+            ⚡ Áp Dụng Lên Dino In-Game
+          </button>
+        </div>
+      `).join('');
     }
 
     function updateColors() {
@@ -432,12 +657,20 @@
     }
 
     async function handleApplySkinWithLua() {
-      if (myLiveBalance < 10) {
-        App.showToast(`Tài khoản của bạn không đủ Lúa! Cần 10 Lúa 🌾 để áp dụng skin (Hiện có: ${myLiveBalance}).`, 'error');
+      const activeSid = getActiveSteamId();
+      if (!activeSid) {
+        App.showToast('Vui lòng đăng nhập Steam để đổi màu skin!', 'error');
         return;
       }
 
-      if (!confirm(`Xác nhận dùng 10 Lúa 🌾 trong tài khoản để áp dụng bộ skin này cho ${currentSpecies} trên máy chủ?`)) return;
+      if (myLiveBalance < 10) {
+        App.showToast(`Tài khoản không đủ Lúa! Cần 10 Lúa 🌾 để đổi màu skin (Hiện có: ${myLiveBalance}).`, 'error');
+        return;
+      }
+
+      if (!confirm(`Xác nhận dùng 10 Lúa 🌾 để đổi màu skin trực tiếp in-game cho [${currentSpecies}]? Màu da sẽ thay đổi ngay lập tức trên nhân vật của bạn!`)) {
+        return;
+      }
 
       const code = generateEvrimaCode();
       const colors = {
@@ -448,13 +681,14 @@
       };
 
       try {
+        App.showToast('Đang kết nối IslePilot để áp dụng màu da trực tiếp vào game...', 'info');
         const res = await fetch('/api/skin/apply', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ species: currentSpecies, colors, skinCode: code })
+          headers: { 'Content-Type': 'application/json', 'x-steam-id': activeSid },
+          body: JSON.stringify({ species: currentSpecies, colors, skinCode: code, steamId: activeSid })
         });
         const result = await res.json();
-        if (res.ok) {
+        if (res.ok && result.success) {
           App.showToast(result.message, 'success');
           myLiveBalance = result.newBalance;
           document.getElementById('skin-balance-val').textContent = myLiveBalance.toLocaleString('vi-VN');
@@ -468,29 +702,54 @@
     }
 
     async function handleBuySkin(skinId, skinName, price) {
+      const activeSid = getActiveSteamId();
       if (myLiveBalance < price) {
-        App.showToast(`Tài khoản của bạn không đủ Lúa! Cần ${price} Lúa 🌾 (Hiện có: ${myLiveBalance}).`, 'error');
+        App.showToast(`Tài khoản không đủ Lúa! Cần ${price} Lúa 🌾 (Hiện có: ${myLiveBalance}).`, 'error');
         return;
       }
 
-      if (!confirm(`Xác nhận dùng ${price} Lúa 🌾 trong tài khoản để mua skin [${skinName}]?`)) return;
+      if (!confirm(`Xác nhận dùng ${price} Lúa 🌾 trong ví để mua skin [${skinName}]?`)) return;
 
       try {
+        App.showToast('Đang xử lý giao dịch mua skin...', 'info');
         const res = await fetch('/api/skin/buy', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ skinId, skinName, price })
+          headers: { 'Content-Type': 'application/json', 'x-steam-id': activeSid },
+          body: JSON.stringify({ skinId, skinName, price, steamId: activeSid })
         });
         const result = await res.json();
-        if (res.ok) {
+        if (res.ok && result.success) {
           App.showToast(result.message, 'success');
           myLiveBalance = result.newBalance;
           document.getElementById('skin-balance-val').textContent = myLiveBalance.toLocaleString('vi-VN');
+          await loadSkinPageData();
         } else {
           App.showToast(result.error || 'Mua skin thất bại!', 'error');
         }
       } catch (e) {
         App.showToast('Lỗi mạng khi kết nối máy chủ!', 'error');
+      }
+    }
+
+    async function handleApplyOwnedPreset(presetId, skinName) {
+      const activeSid = getActiveSteamId();
+      if (!confirm(`Xác nhận áp dụng skin [${skinName}] lên khủng long đang chơi in-game?`)) return;
+
+      try {
+        App.showToast(`Đang áp dụng ${skinName} vào nhân vật...`, 'info');
+        const res = await fetch('/api/skin/preset/apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-steam-id': activeSid },
+          body: JSON.stringify({ presetId, variation: 0, steamId: activeSid })
+        });
+        const result = await res.json();
+        if (res.ok && result.success) {
+          App.showToast(result.message, 'success');
+        } else {
+          App.showToast(result.error || 'Không thể áp dụng skin lúc này!', 'error');
+        }
+      } catch (e) {
+        App.showToast('Lỗi kết nối máy chủ!', 'error');
       }
     }
 

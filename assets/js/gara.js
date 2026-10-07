@@ -69,14 +69,71 @@ const Garage = {
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const qId = urlParams.get('steamId');
-      if (qId) return qId;
+      if (qId && /^\d{17}$/.test(qId.trim())) return qId.trim();
+
       const stored = localStorage.getItem('st25_steam_user');
       if (stored) {
         const u = JSON.parse(stored);
-        if (u && u.steam_id) return u.steam_id;
+        if (u && u.steam_id && /^\d{17}$/.test(u.steam_id.trim())) {
+          return u.steam_id.trim();
+        }
       }
     } catch (_) {}
     return null;
+  },
+
+  async quickLoginManual() {
+    const inp = document.getElementById('manual-login-steamid');
+    const sid = inp ? inp.value.trim() : '';
+    if (!sid || !/^\d{17}$/.test(sid)) {
+      App.showToast('Vui lòng nhập đúng 17 chữ số Steam ID 64 của bạn!', 'error');
+      return;
+    }
+
+    App.showToast('Đang kết nối tài khoản Steam...', 'info');
+    try {
+      const res = await fetch('/api/player/login-manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ steamId: sid })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        localStorage.setItem('st25_steam_user', JSON.stringify({
+          steam_id: data.steamId,
+          persona_name: data.personaName,
+          avatar: data.avatar,
+          isAdmin: data.isAdmin
+        }));
+        App.showToast(`Chào mừng ${data.personaName}! Đã liên kết thành công.`, 'success');
+        window.location.href = 'gara.html';
+      } else {
+        App.showToast(data.error || 'Không thể liên kết Steam ID này!', 'error');
+      }
+    } catch (e) {
+      console.error(e);
+      App.showToast('Lỗi kết nối máy chủ!', 'error');
+    }
+  },
+
+  switchPlayer(targetSteamId) {
+    if (!targetSteamId || !targetSteamId.trim()) {
+      App.showToast('Vui lòng nhập Steam ID của người chơi cần xem!', 'error');
+      return;
+    }
+    const cleanId = targetSteamId.trim();
+    window.location.search = `?steamId=${encodeURIComponent(cleanId)}`;
+  },
+
+  resetToAdminSelf() {
+    window.location.search = '';
+  },
+
+  openAssignForCurrent() {
+    const curId = (this.playerInfo && this.playerInfo.steamId) || this.getActiveSteamId();
+    if (curId) {
+      window.location.href = `cai-dat.html?targetSteamId=${encodeURIComponent(curId)}`;
+    }
   },
 
   async fetchGarageData() {
@@ -86,6 +143,33 @@ const Garage = {
       const res = await fetch(url, { headers: sid ? { 'x-steam-id': sid } : {} });
       if (res.ok) {
         const data = await res.json();
+        
+        // NẾU CHƯA ĐĂNG NHẬP (Chưa liên kết tài khoản Steam)
+        if (!data.isLoggedIn || !data.steamId) {
+          this.playerInfo = null;
+          this.activeDino = null;
+          this.slots = [];
+          
+          // Dọn dẹp localStorage nếu trước đó bị lưu đè sai
+          localStorage.removeItem('st25_steam_user');
+
+          // Hiển thị màn hình Login và Ẩn Gara
+          const loginPanel = document.getElementById('login-required-panel');
+          const garagePanel = document.getElementById('garage-authenticated-content');
+          if (loginPanel) loginPanel.style.display = 'block';
+          if (garagePanel) garagePanel.style.display = 'none';
+
+          // Ẩn tất cả công cụ và liên kết Admin
+          this.setAdminVisibility(false);
+          return;
+        }
+
+        // NẾU ĐÃ ĐĂNG NHẬP HỢP LỆ
+        const loginPanel = document.getElementById('login-required-panel');
+        const garagePanel = document.getElementById('garage-authenticated-content');
+        if (loginPanel) loginPanel.style.display = 'none';
+        if (garagePanel) garagePanel.style.display = 'block';
+
         this.activeDino = data.active;
         this.slots = data.slots || [];
         this.playerInfo = {
@@ -95,8 +179,30 @@ const Garage = {
           maxSlots: data.maxSlots || 3,
           roleKey: data.roleKey || 'default',
           roleName: data.roleName || '🦖 Thành Viên ST25',
-          roleLimit: data.roleLimit || data.maxSlots || 3
+          roleLimit: data.roleLimit || data.maxSlots || 3,
+          isAdmin: !!data.isAdmin,
+          isSuperAdmin: !!data.isSuperAdmin,
+          isViewingOther: !!data.isViewingOther
         };
+
+        // Lưu thông tin người dùng hiện tại vào localStorage
+        if (!data.isViewingOther) {
+          localStorage.setItem('st25_steam_user', JSON.stringify({
+            steam_id: data.steamId,
+            persona_name: data.personaName,
+            isAdmin: !!data.isAdmin
+          }));
+        }
+
+        // Điền Steam ID vào ô soi nhanh nếu là Admin
+        const quickInp = document.getElementById('admin-quick-steamid');
+        if (quickInp && data.steamId) {
+          quickInp.value = data.steamId;
+        }
+
+        // Cập nhật ẩn/hiện công cụ Admin theo đúng thẩm quyền
+        this.setAdminVisibility(!!data.isAdmin);
+
         this.updateHeaderUI();
         return;
       }
@@ -104,6 +210,18 @@ const Garage = {
       console.error('Lỗi nạp dữ liệu garage:', e);
       App.showToast('Không thể kết nối máy chủ để lấy dữ liệu Gara!', 'error');
     }
+  },
+
+  setAdminVisibility(isAdmin) {
+    const adminLinkBtn = document.getElementById('btn-admin-panel-link');
+    const adminBar = document.getElementById('admin-quick-bar');
+    const navAdminItem = document.getElementById('nav-admin-link-item');
+    const headerAdminBtn = document.getElementById('btn-header-admin');
+
+    if (adminLinkBtn) adminLinkBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+    if (adminBar) adminBar.style.display = isAdmin ? 'flex' : 'none';
+    if (navAdminItem) navAdminItem.style.display = isAdmin ? 'inline-block' : 'none';
+    if (headerAdminBtn) headerAdminBtn.style.display = isAdmin ? 'inline-flex' : 'none';
   },
 
   updateHeaderUI() {
