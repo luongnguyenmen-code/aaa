@@ -318,8 +318,36 @@
           const res = await fetch('/api/leaderboard');
           if (res.ok) {
             const json = await res.json();
-            if (json.success && json.categories) {
-              this.data = json.categories;
+            const raw = json.categories || json;
+            if (raw) {
+              this.data = {
+                survivors: Array.isArray(raw.survivors) ? raw.survivors.map(s => ({
+                  name: s.name,
+                  steamId: s.steamId,
+                  species: s.species,
+                  growth: s.growth != null ? (typeof s.growth === 'number' && s.growth > 1 ? `${s.growth}%` : s.growth) : '100%',
+                  survivalHours: s.survivalHours ?? s.hours ?? 0,
+                  avatar: s.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${s.steamId || s.name}`
+                })) : [],
+                hunters: Array.isArray(raw.hunters) ? raw.hunters.map(h => ({
+                  name: h.name,
+                  steamId: h.steamId,
+                  species: h.species,
+                  kills: h.kills ?? 0,
+                  deaths: h.deaths ?? Math.max(1, Math.round((h.kills || 10) / (h.kdRatio || h.kd || 2))),
+                  kd: h.kd ?? h.kdRatio ?? '0.0',
+                  killStreak: h.killStreak ?? h.bestPrey ?? `${h.kills || 0} kills`,
+                  avatar: h.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${h.steamId || h.name}`
+                })) : [],
+                wealth: Array.isArray(raw.wealth) ? raw.wealth.map(w => ({
+                  name: w.name,
+                  steamId: w.steamId,
+                  role: w.role || 'Thành viên',
+                  luaBalance: w.luaBalance ?? w.balance ?? 0,
+                  cratesWon: w.cratesWon ?? Math.floor((w.balance || w.luaBalance || 0) / 1000),
+                  avatar: w.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${w.steamId || w.name}`
+                })) : []
+              };
               this.renderCurrentView();
             }
           }
