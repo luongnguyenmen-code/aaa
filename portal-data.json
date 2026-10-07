@@ -380,7 +380,31 @@
         "isLocal": true
       }
     ],
-    "76561198354289789": [],
+    "76561198354289789": [
+      {
+        "id": "dino-1791365498163-172",
+        "species": "Tyrannosaurus",
+        "gender": "Cái (Female)",
+        "growth": 80,
+        "health": 1,
+        "hunger": 0.9636355584269429,
+        "thirst": 0.9528150000000001,
+        "diet": [
+          "S",
+          "S",
+          "D"
+        ],
+        "mutations": [
+          "None",
+          "None",
+          "None",
+          "None"
+        ],
+        "stored_at": "16:31:38 7/10/2026",
+        "source": "Giao Dịch ST25 (Nhận từ: Thích Thì Var)",
+        "isLocal": true
+      }
+    ],
     "76561198838095252": [
       {
         "id": "dino-1791334448673-768",
@@ -433,20 +457,111 @@
       "cmuwkxsoo09qjrz01nz42tye5"
     ]
   },
-  "adminAssignments": {
-    "76561198745006783": {
-      "roleKey": "booster",
-      "slots": 5,
-      "updatedBy": "76561198354289789",
-      "updatedAt": "13:52:55 7/10/2026",
-      "notes": "Test cap booster"
+  "adminAssignments": {},
+  "trades": [
+    {
+      "id": "trade-1791365521902-147",
+      "senderSteamId": "76561198354289789",
+      "senderName": "Maico Dol",
+      "receiverSteamId": "76561198636766540",
+      "receiverName": "Thích Thì Var",
+      "senderDino": {
+        "id": "cmuwmfr0a02lrk301b0zu7cgo",
+        "name": null,
+        "species": "Tyrannosaurus",
+        "gender": "Đực (Male)",
+        "growth": 100,
+        "health": 1,
+        "hunger": 0.315462647869065,
+        "thirst": 0.991319,
+        "stamina": 1,
+        "isPrimeElder": false,
+        "mutations": [
+          "None",
+          "None",
+          "None",
+          "None"
+        ],
+        "parkedAt": "2026-10-06T11:54:44.218Z",
+        "isLocal": false
+      },
+      "senderLua": 5,
+      "requestedLua": 0,
+      "note": "Test offer to cancel",
+      "status": "declined",
+      "createdAt": "16:32:01 7/10/2026",
+      "updatedAt": "16:32:01 7/10/2026"
     },
-    "76561198636766540": {
-      "roleKey": "long_phu_nong",
-      "slots": 18,
-      "updatedBy": "76561199229687125",
-      "updatedAt": "13:52:54 7/10/2026",
-      "notes": "Test cap phu nong"
+    {
+      "id": "trade-1791365520424-992",
+      "senderSteamId": "76561198354289789",
+      "senderName": "Maico Dol",
+      "receiverSteamId": "76561198636766540",
+      "receiverName": "Thích Thì Var",
+      "senderDino": {
+        "id": "cmuwmfr0a02lrk301b0zu7cgo",
+        "name": null,
+        "species": "Tyrannosaurus",
+        "gender": "Đực (Male)",
+        "growth": 100,
+        "health": 1,
+        "hunger": 0.315462647869065,
+        "thirst": 0.991319,
+        "stamina": 1,
+        "isPrimeElder": false,
+        "mutations": [
+          "None",
+          "None",
+          "None",
+          "None"
+        ],
+        "parkedAt": "2026-10-06T11:54:44.218Z",
+        "isLocal": false
+      },
+      "senderLua": 5,
+      "requestedLua": 0,
+      "note": "Test offer to cancel",
+      "status": "cancelled",
+      "createdAt": "16:32:00 7/10/2026",
+      "updatedAt": "16:32:00 7/10/2026"
+    },
+    {
+      "id": "trade-1791365496969-966",
+      "senderSteamId": "76561198636766540",
+      "senderName": "Thích Thì Var",
+      "receiverSteamId": "76561198354289789",
+      "receiverName": "Maico Dol",
+      "senderDino": {
+        "id": "cmuwrkdhj0537l401h8ec978q",
+        "name": null,
+        "species": "Tyrannosaurus",
+        "gender": "Cái (Female)",
+        "growth": 80,
+        "health": 1,
+        "hunger": 0.9636355584269429,
+        "thirst": 0.9528150000000001,
+        "stamina": 0.673442284325638,
+        "isPrimeElder": true,
+        "mutations": [
+          "None",
+          "None",
+          "None",
+          "None"
+        ],
+        "parkedAt": "2026-10-06T14:18:18.055Z",
+        "isLocal": false
+      },
+      "senderLua": 0,
+      "requestedLua": 10,
+      "note": "Giao dich Rex lay 10 Lua ST25",
+      "status": "accepted",
+      "createdAt": "16:31:36 7/10/2026",
+      "updatedAt": "16:31:38 7/10/2026"
     }
+  ],
+  "soldDinos": {
+    "76561198636766540": [
+      "cmuwrkdhj0537l401h8ec978q"
+    ]
   }
 }
