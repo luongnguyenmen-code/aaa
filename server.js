@@ -163,15 +163,26 @@ const activeSessions = new Map();
 
 // Helper: Resolve effective steamId for any request
 function getRequestSteamId(req) {
-  if (req.query && (req.query.steamId || req.query.adminSteamId)) return req.query.steamId || req.query.adminSteamId;
-  if (req.body && (req.body.steamId || req.body.adminSteamId)) return req.body.steamId || req.body.adminSteamId;
-  if (req.headers && (req.headers['x-steam-id'] || req.headers['x-admin-steam-id'])) return req.headers['x-steam-id'] || req.headers['x-admin-steam-id'];
+  if (req.headers && req.headers['x-steam-id']) return req.headers['x-steam-id'];
+  if (req.query && req.query.steamId) return req.query.steamId;
+  if (req.body && req.body.steamId) return req.body.steamId;
   const cookies = parseCookies(req);
   if (cookies.st25_steam_id) return cookies.st25_steam_id;
   if (cookies.st25_session_token && activeSessions.has(cookies.st25_session_token)) {
     return activeSessions.get(cookies.st25_session_token).steam_id;
   }
+  if (req.headers && req.headers['x-admin-steam-id']) return req.headers['x-admin-steam-id'];
+  if (req.query && req.query.adminSteamId) return req.query.adminSteamId;
+  if (req.body && req.body.adminSteamId) return req.body.adminSteamId;
   return null;
+}
+
+// Helper: Resolve admin identity specifically for admin actions
+function getAdminSteamId(req) {
+  if (req.headers && req.headers['x-admin-steam-id']) return req.headers['x-admin-steam-id'];
+  if (req.query && req.query.adminSteamId) return req.query.adminSteamId;
+  if (req.body && req.body.adminSteamId) return req.body.adminSteamId;
+  return getRequestSteamId(req);
 }
 
 /* ==================== API ROUTES ==================== */
@@ -647,7 +658,7 @@ app.get('/api/player/team', async (req, res) => {
 // ==========================================
 
 // Super Admins cố định có quyền cao nhất
-const SUPER_ADMINS = ['76561198354289789', '76561198838095252', '76561198682056372'];
+const SUPER_ADMINS = ['76561198354289789', '76561198838095252', '76561198682056372', '76561199229687125'];
 
 // Helper kiểm tra một Steam ID có quyền Admin không
 function isUserAdmin(steamId) {
@@ -1054,7 +1065,7 @@ app.get('/api/admin/check', (req, res) => {
 
 // Lấy danh sách Roles, danh sách thành viên đã phân quyền & người chơi gần đây
 app.get('/api/admin/roles-slots', async (req, res) => {
-  const adminSteamId = getRequestSteamId(req);
+  const adminSteamId = getAdminSteamId(req);
   if (!isUserAdmin(adminSteamId)) {
     return res.status(403).json({ error: "Chỉ Quản Trị Viên (Admin) mới có quyền truy cập!" });
   }
@@ -1138,7 +1149,7 @@ app.get('/api/admin/roles-slots', async (req, res) => {
 
 // Tra cứu nhanh thông tin người chơi theo Steam ID
 app.get('/api/admin/player-info', async (req, res) => {
-  const adminSteamId = getRequestSteamId(req);
+  const adminSteamId = getAdminSteamId(req);
   if (!isUserAdmin(adminSteamId)) {
     return res.status(403).json({ error: "Chỉ Quản Trị Viên (Admin) mới có quyền truy cập!" });
   }
@@ -1174,7 +1185,7 @@ app.get('/api/admin/player-info', async (req, res) => {
 
 // Cấp Role & Slot thủ công cho người chơi (lưu cả vào server-config.json và portal-data.json)
 app.post('/api/admin/assign-role-slots', async (req, res) => {
-  const adminSteamId = getRequestSteamId(req);
+  const adminSteamId = getAdminSteamId(req);
   if (!isUserAdmin(adminSteamId)) {
     return res.status(403).json({ error: "Chỉ Quản Trị Viên (Admin) mới có quyền thực hiện thao tác này!" });
   }
@@ -1218,10 +1229,8 @@ app.post('/api/admin/assign-role-slots', async (req, res) => {
   savePortalData(data);
 
   // 3. Xóa sạch cache người chơi để có hiệu lực tức thì
-  apiCache.delete(`/players/${cleanSteamId}`);
-  apiCache.delete(`/players/${cleanSteamId}/garage`);
-  apiCache.delete(`GET:/players/${cleanSteamId}`);
-  apiCache.delete(`GET:/players/${cleanSteamId}/garage`);
+  clearPlayerCache(cleanSteamId);
+  clearPlayerCache(adminSteamId);
 
   // Kiểm tra ngay kết quả sau khi lưu
   const updatedStatus = await getPlayerGarageStatus(cleanSteamId);
@@ -1236,7 +1245,7 @@ app.post('/api/admin/assign-role-slots', async (req, res) => {
 
 // Xóa override role/slot riêng của người chơi
 app.post('/api/admin/remove-role-slots', async (req, res) => {
-  const adminSteamId = getRequestSteamId(req);
+  const adminSteamId = getAdminSteamId(req);
   if (!isUserAdmin(adminSteamId)) {
     return res.status(403).json({ error: "Chỉ Quản Trị Viên (Admin) mới có quyền thực hiện thao tác này!" });
   }
@@ -1264,10 +1273,8 @@ app.post('/api/admin/remove-role-slots', async (req, res) => {
     savePortalData(data);
   }
 
-  apiCache.delete(`/players/${cleanSteamId}`);
-  apiCache.delete(`/players/${cleanSteamId}/garage`);
-  apiCache.delete(`GET:/players/${cleanSteamId}`);
-  apiCache.delete(`GET:/players/${cleanSteamId}/garage`);
+  clearPlayerCache(cleanSteamId);
+  clearPlayerCache(adminSteamId);
 
   res.json({
     success: true,
@@ -2338,174 +2345,62 @@ app.get('/api/server/leaderboard', async (req, res) => {
 // 11. ISLEPILOT CASES & GACHA SYSTEM (st25.islepilot.eu/cases)
 // ==========================================
 
-// Danh sách các hòm mở thưởng (Đồng bộ từ IslePilot API GET /cases)
+// ==========================================
+// 11. ISLEPILOT GACHA SYSTEM (st25.islepilot.eu/cases)
+// ==========================================
+
+// Danh mục Hòm Gacha duy nhất: Gacha Halloween 8 Lúa chuẩn IslePilot
+const GACHA_HALLOWEEN = {
+  id: "halloween",
+  name: "Hòm Halloween Huyền Bí 🎃",
+  price: 8,
+  icon: "🎃",
+  theme: "halloween",
+  badge: "GACHA ISLEPILOT (8 LÚA)",
+  desc: "Vòng quay Gacha Halloween chính thức từ IslePilot. Trúng T-Rex 80% Prime Cổ Đại, Trike 80%, Allo 60% & 100 Lúa Nổ Hũ!",
+  color: "#6600ff",
+  isGachaRoll: true,
+  rewards: [
+    { name: "Tyrannosaurus 80% (Cổ Đại) 🦖", rarity: "ancient", weight: 5, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 80, gender: "Đực (Male)", isPrimeElder: true }, rarityLabel: "CỔ ĐẠI", rarityColor: "#ef4444" },
+    { name: "Triceratops 80% (Thần Thoại) 🦏", rarity: "mythical", weight: 6, type: "dino", icon: "🐾", dinoData: { species: "Triceratops", growth: 80, gender: "Đực (Male)", isPrimeElder: true }, rarityLabel: "THẦN THOẠI", rarityColor: "#ec4899" },
+    { name: "Tyrannosaurus 60% (Hiếm) 🦖", rarity: "uncommon", weight: 10, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 60, gender: "Đực (Male)" }, rarityLabel: "HIẾM", rarityColor: "#a855f7" },
+    { name: "Allosaurus 60% (Hiếm) 🦖", rarity: "uncommon", weight: 30, type: "dino", icon: "🐾", dinoData: { species: "Allosaurus", growth: 60, gender: "Đực (Male)" }, rarityLabel: "HIẾM", rarityColor: "#a855f7" },
+    { name: "Tyrannosaurus 40% (Thường) 🦖", rarity: "common", weight: 10, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 40, gender: "Đực (Male)" }, rarityLabel: "THƯỜNG", rarityColor: "#38bdf8" },
+    { name: "100 LÚA 🌾 Nổ Hũ!", rarity: "exceptional", weight: 1, type: "lua", amount: 100, icon: "🪙", rarityLabel: "NGOẠI HẠNG", rarityColor: "#fbbf24" },
+    { name: "2 LÚA 🌾 May Mắn", rarity: "common", weight: 10, type: "lua", amount: 2, icon: "🪙", rarityLabel: "THƯỜNG", rarityColor: "#fbbf24" },
+    { name: "Skin T-rex Halloween (Ngoại Hạng) 🎃", rarity: "exceptional", weight: 1, type: "skin", icon: "🎨", shopSkinId: "cmuvdy3510ehdqq0190p5cmyd", rarityLabel: "NGOẠI HẠNG", rarityColor: "#eab308" },
+    { name: "🙅 Chúc May Mắn Lần Sau", rarity: "common", weight: 27, type: "nothing", icon: "🙅", rarityLabel: "THƯỜNG", rarityColor: "#64748b" }
+  ]
+};
+
+// Danh sách các hòm mở thưởng (Chỉ giữ lại duy nhất Gacha Halloween)
 app.get('/api/crates/list', async (req, res) => {
-  const steamId = getRequestSteamId(req);
+  const steamId = req.query.steamId || getRequestSteamId(req);
   const userBal = steamId ? await getLivePlayerBalance(steamId) : 0;
 
-  let casesFromPilot = [];
-  try {
-    const pilotCases = await callIslePilot('/cases', 'GET', null, true);
-    if (pilotCases && pilotCases.crates && Array.isArray(pilotCases.crates)) {
-      casesFromPilot = pilotCases.crates;
-    }
-  } catch (_) {}
-
-  // Danh mục Hòm ST25 chuẩn IslePilot
-  let crates = [
-    {
-      id: "halloween",
-      name: "Hòm Halloween Huyền Bí 🎃",
-      price: 8,
-      icon: "🎃",
-      theme: "halloween",
-      badge: "GACHA ISLEPILOT (8 LÚA)",
-      desc: "Vòng quay Gacha Halloween chính thức từ IslePilot. Trúng T-Rex 80% Prime Cổ Đại, Trike 80%, Allo 60% & 100 Lúa Nổ Hũ!",
-      color: "#6600ff",
-      isGachaRoll: true,
-      rewards: [
-        { name: "Tyrannosaurus 80% (Cổ Đại) 🦖", rarity: "ancient", weight: 5, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 80, gender: "Đực (Male)", isPrimeElder: true }, rarityLabel: "CỔ ĐẠI", rarityColor: "#ef4444" },
-        { name: "Triceratops 80% (Thần Thoại) 🦏", rarity: "mythical", weight: 6, type: "dino", icon: "🐾", dinoData: { species: "Triceratops", growth: 80, gender: "Đực (Male)", isPrimeElder: true }, rarityLabel: "THẦN THOẠI", rarityColor: "#ec4899" },
-        { name: "Tyrannosaurus 60% (Hiếm) 🦖", rarity: "uncommon", weight: 10, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 60, gender: "Đực (Male)" }, rarityLabel: "HIẾM", rarityColor: "#a855f7" },
-        { name: "Allosaurus 60% (Hiếm) 🦖", rarity: "uncommon", weight: 30, type: "dino", icon: "🐾", dinoData: { species: "Allosaurus", growth: 60, gender: "Đực (Male)" }, rarityLabel: "HIẾM", rarityColor: "#a855f7" },
-        { name: "Tyrannosaurus 40% (Thường) 🦖", rarity: "common", weight: 10, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 40, gender: "Đực (Male)" }, rarityLabel: "THƯỜNG", rarityColor: "#38bdf8" },
-        { name: "100 LÚA 🌾 Nổ Hũ!", rarity: "exceptional", weight: 1, type: "lua", amount: 100, icon: "🪙", rarityLabel: "NGOẠI HẠNG", rarityColor: "#fbbf24" },
-        { name: "2 LÚA 🌾 May Mắn", rarity: "common", weight: 10, type: "lua", amount: 2, icon: "🪙", rarityLabel: "THƯỜNG", rarityColor: "#fbbf24" },
-        { name: "Skin T-rex Halloween (Ngoại Hạng) 🎃", rarity: "exceptional", weight: 1, type: "skin", icon: "🎨", shopSkinId: "cmuvdy3510ehdqq0190p5cmyd", rarityLabel: "NGOẠI HẠNG", rarityColor: "#eab308" },
-        { name: "🙅 Chúc May Mắn Lần Sau", rarity: "common", weight: 27, type: "nothing", icon: "🙅", rarityLabel: "THƯỜNG", rarityColor: "#64748b" }
-      ]
-    },
-    {
-      id: "wood",
-      name: "Hòm Tre Làng ST25 🪵",
-      price: 20,
-      icon: "🪵",
-      desc: "Hòm cơ bản, cơ hội trúng Lúa, Thẻ hồi máu hoặc Khủng long Gallimimus 50%",
-      rewards: [
-        { name: "5 Lúa An Ủi 🌾", weight: 30, type: "lua", amount: 5 },
-        { name: "25 Lúa Có Lời 🌾", weight: 25, type: "lua", amount: 25 },
-        { name: "50 Lúa Trúng Lớn 🌾", weight: 15, type: "lua", amount: 50 },
-        { name: "Thẻ Hồi Máu Khẩn Cấp 💖", weight: 15, type: "item", icon: "💖" },
-        { name: "Khủng Long Con Gallimimus 50% 🦖", weight: 10, type: "dino", icon: "🦖", dinoData: { species: "Gallimimus", growth: 50, gender: "Cái (Female)" } },
-        { name: "Skin Rừng Nhiệt Đới 🌿", weight: 5, type: "skin", icon: "🎨" }
-      ]
-    },
-    {
-      id: "gold",
-      name: "Hòm Vàng ST25 Thần Tốc 🪙",
-      price: 50,
-      icon: "🪙",
-      desc: "Tỷ lệ trúng cao, thưởng Lúa khủng, Skin Kim Giáp và Carnotaurus 100% Chiến Binh",
-      rewards: [
-        { name: "30 Lúa Cơ Bản 🌾", weight: 20, type: "lua", amount: 30 },
-        { name: "80 Lúa Lãi To 🌾", weight: 25, type: "lua", amount: 80 },
-        { name: "150 Lúa Đột Biến 🌾", weight: 15, type: "lua", amount: 150 },
-        { name: "Carnotaurus 100% Full Dinh Dưỡng 🦖", weight: 20, type: "dino", icon: "🦖", dinoData: { species: "Carnotaurus", growth: 100, gender: "Đực (Male)" } },
-        { name: "Skin Kim Giáp Dạ Quang Vàng 🌟", weight: 15, type: "skin", icon: "✨" },
-        { name: "Thẻ Đổi Tên Đột Biến 🏷️", weight: 5, type: "item", icon: "🏷️" }
-      ]
-    },
-    {
-      id: "diamond",
-      name: "Hòm Kim Cương Thần Thú 💎",
-      price: 100,
-      icon: "💎",
-      desc: "Jackpot 500 Lúa, Skin Thần Thoại và Bạo Chúa T-Rex 100% Prime Elder",
-      rewards: [
-        { name: "Bạo Chúa T-Rex 100% Prime Elder 🐉", weight: 25, type: "dino", icon: "🐉", dinoData: { species: "Tyrannosaurus", growth: 100, gender: "Đực (Male)", isPrimeElder: true } },
-        { name: "JACKPOT 500 LÚA 🌾", weight: 10, type: "lua", amount: 500 },
-        { name: "Cá Sấu Deinosuchus 100% Đầm Lầy 🐊", weight: 25, type: "dino", icon: "🐊", dinoData: { species: "Deinosuchus", growth: 100, gender: "Đực (Male)", isPrimeElder: true } },
-        { name: "Thẻ Hồi Sinh Bảo Hộ Vĩnh Cửu 🛡️", weight: 20, type: "item", icon: "🛡️" },
-        { name: "Skin Thần Long Hắc Ám T-Rex 🐉", weight: 20, type: "skin", icon: "🐉" }
-      ]
-    }
-  ];
-
   res.json({
+    steamId: steamId || null,
     balance: userBal,
-    crates: crates
+    crates: [GACHA_HALLOWEEN]
   });
 });
 
 // Mở Hòm May Mắn — Tự Động Thêm Khủng Long Vào Gara Giống Nhà Phát Hành!
 app.post('/api/crates/open', async (req, res) => {
-  const { crateId } = req.body;
-  const steamId = getRequestSteamId(req);
+  const steamId = req.body.steamId || getRequestSteamId(req);
 
   if (!steamId) {
-    return res.status(401).json({ error: "Vui lòng đăng nhập Steam để mở hòm!" });
+    return res.status(401).json({ error: "Vui lòng đăng nhập Steam để quay thưởng!" });
   }
 
-  // Lấy danh sách Crates
-  const CRATES_POOL = [
-    {
-      id: "halloween",
-      name: "Hòm Halloween Huyền Bí 🎃",
-      price: 8,
-      rewards: [
-        { name: "Tyrannosaurus 80% (Cổ Đại) 🦖", weight: 5, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 80, gender: "Đực (Male)", isPrimeElder: true } },
-        { name: "Triceratops 80% (Thần Thoại) 🦏", weight: 6, type: "dino", icon: "🐾", dinoData: { species: "Triceratops", growth: 80, gender: "Đực (Male)", isPrimeElder: true } },
-        { name: "Tyrannosaurus 60% (Hiếm) 🦖", weight: 10, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 60, gender: "Đực (Male)" } },
-        { name: "Allosaurus 60% (Hiếm) 🦖", weight: 30, type: "dino", icon: "🐾", dinoData: { species: "Allosaurus", growth: 60, gender: "Đực (Male)" } },
-        { name: "Tyrannosaurus 40% (Thường) 🦖", weight: 10, type: "dino", icon: "🐾", dinoData: { species: "Tyrannosaurus", growth: 40, gender: "Đực (Male)" } },
-        { name: "100 LÚA 🌾 Nổ Hũ!", weight: 1, type: "lua", amount: 100, icon: "🪙" },
-        { name: "2 LÚA 🌾 May Mắn", weight: 10, type: "lua", amount: 2, icon: "🪙" },
-        { name: "Skin T-rex Halloween (Ngoại Hạng) 🎃", weight: 1, type: "skin", icon: "🎨" },
-        { name: "🙅 Chúc May Mắn Lần Sau", weight: 27, type: "nothing", icon: "🙅" }
-      ]
-    },
-    {
-      id: "wood",
-      name: "Hòm Tre Làng ST25 🪵",
-      price: 20,
-      rewards: [
-        { name: "5 Lúa An Ủi 🌾", weight: 30, type: "lua", amount: 5 },
-        { name: "25 Lúa Có Lời 🌾", weight: 25, type: "lua", amount: 25 },
-        { name: "50 Lúa Trúng Lớn 🌾", weight: 15, type: "lua", amount: 50 },
-        { name: "Thẻ Hồi Máu Khẩn Cấp 💖", weight: 15, type: "item", icon: "💖" },
-        { name: "Khủng Long Con Gallimimus 50% 🦖", weight: 10, type: "dino", icon: "🦖", dinoData: { species: "Gallimimus", growth: 50, gender: "Cái (Female)" } },
-        { name: "Skin Rừng Nhiệt Đới 🌿", weight: 5, type: "skin", icon: "🎨" }
-      ]
-    },
-    {
-      id: "gold",
-      name: "Hòm Vàng ST25 Thần Tốc 🪙",
-      price: 50,
-      rewards: [
-        { name: "30 Lúa Cơ Bản 🌾", weight: 20, type: "lua", amount: 30 },
-        { name: "80 Lúa Lãi To 🌾", weight: 25, type: "lua", amount: 80 },
-        { name: "150 Lúa Đột Biến 🌾", weight: 15, type: "lua", amount: 150 },
-        { name: "Carnotaurus 100% Full Dinh Dưỡng 🦖", weight: 20, type: "dino", icon: "🦖", dinoData: { species: "Carnotaurus", growth: 100, gender: "Đực (Male)" } },
-        { name: "Skin Kim Giáp Dạ Quang Vàng 🌟", weight: 15, type: "skin", icon: "✨" },
-        { name: "Thẻ Đổi Tên Đột Biến 🏷️", weight: 5, type: "item", icon: "🏷️" }
-      ]
-    },
-    {
-      id: "diamond",
-      name: "Hòm Kim Cương Thần Thú 💎",
-      price: 100,
-      rewards: [
-        { name: "Bạo Chúa T-Rex 100% Prime Elder 🐉", weight: 25, type: "dino", icon: "🐉", dinoData: { species: "Tyrannosaurus", growth: 100, gender: "Đực (Male)", isPrimeElder: true } },
-        { name: "JACKPOT 500 LÚA 🌾", weight: 10, type: "lua", amount: 500 },
-        { name: "Cá Sấu Deinosuchus 100% Đầm Lầy 🐊", weight: 25, type: "dino", icon: "🐊", dinoData: { species: "Deinosuchus", growth: 100, gender: "Đực (Male)", isPrimeElder: true } },
-        { name: "Thẻ Hồi Sinh Bảo Hộ Vĩnh Cửu 🛡️", weight: 20, type: "item", icon: "🛡️" },
-        { name: "Skin Thần Long Hắc Ám T-Rex 🐉", weight: 20, type: "skin", icon: "🐉" }
-      ]
-    }
-  ];
-
-  const crate = CRATES_POOL.find(c => c.id === crateId);
-  if (!crate) {
-    return res.status(400).json({ error: "Loại hòm không hợp lệ!" });
-  }
-
+  const crate = GACHA_HALLOWEEN;
   const userBal = await getLivePlayerBalance(steamId);
   if (userBal < crate.price) {
     return res.status(400).json({ error: `Bạn không đủ Lúa để mở hòm! Cần ${crate.price} Lúa 🌾 (Hiện có: ${userBal} Lúa).` });
   }
 
-  // 1. Trừ Lúa mở hòm trực tiếp qua IslePilot API
-  const deductRes = await modifyLivePlayerBalance(steamId, -crate.price, `Mở ${crate.name}`);
+  // 1. Trừ Lúa mở hòm trực tiếp vào tài khoản Steam của người chơi
+  const deductRes = await modifyLivePlayerBalance(steamId, -crate.price, `Quay Gacha ${crate.name}`);
   let currentBalance = deductRes.balance;
 
   // 2. Quay số trúng thưởng theo trọng số weight
@@ -2526,11 +2421,11 @@ app.post('/api/crates/open', async (req, res) => {
   const data = getPortalData();
 
   if (wonReward.type === 'lua') {
-    // Cộng Lúa trực tiếp vào ví IslePilot
+    // Cộng Lúa trực tiếp vào ví người chơi
     const addRes = await modifyLivePlayerBalance(steamId, wonReward.amount, `Trúng thưởng ${wonReward.name} từ ${crate.name}`);
     currentBalance = addRes.balance;
   } else if (wonReward.type === 'dino') {
-    // TỰ ĐỘNG THÊM VÀO GARA CỦA NGƯỜI CHƠI (GIỐNG NHÀ PHÁT HÀNH ISLEPILOT)
+    // TỰ ĐỘNG THÊM VÀO GARA CỦA ĐÚNG NGƯỜI CHƠI (GIỐNG NHÀ PHÁT HÀNH ISLEPILOT)
     const dinoData = wonReward.dinoData || {};
     addDinoToGarage(steamId, {
       species: dinoData.species || "Tyrannosaurus",
@@ -2538,7 +2433,7 @@ app.post('/api/crates/open', async (req, res) => {
       gender: dinoData.gender || (Math.random() > 0.5 ? "Đực (Male)" : "Cái (Female)"),
       isPrimeElder: dinoData.isPrimeElder || false,
       mutations: dinoData.isPrimeElder ? ["Hemomania", "Multichambered Lungs", "Osteophagic", "Gastronomic Regeneration"] : [],
-      source: `Hòm May Mắn (${crate.name})`
+      source: `Gacha May Mắn (${crate.name})`
     }, data);
     savePortalData(data);
     transferredToGarage = true;
@@ -2554,6 +2449,9 @@ app.post('/api/crates/open', async (req, res) => {
     });
     savePortalData(data);
   }
+
+  // Dọn dẹp cache của người chơi để Gara và ví cập nhật tức thì
+  clearPlayerCache(steamId);
 
   res.json({
     success: true,

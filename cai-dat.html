@@ -190,7 +190,31 @@
   </header>
 
   <!-- Main Content -->
-  <main class="container" style="padding-top: 35px; padding-bottom: 60px;">
+  <main class="container" style="padding-top: 25px; padding-bottom: 60px;">
+
+    <!-- Quick Admin Switcher & Login Helper -->
+    <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-md); padding: 12px 18px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.4rem;">👑</span>
+        <div>
+          <span style="color: #fff; font-weight: 700; font-size: 0.95rem;" id="admin-auth-header-name">Phiên Quản Trị ST25</span>
+          <small style="color: #fbbf24; display: block; font-family: monospace;" id="admin-auth-header-sid">Đang kiểm tra quyền Admin...</small>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <span style="color: #94a3b8; font-size: 0.8rem;">Đăng nhập nhanh Admin:</span>
+        <button onclick="AdminPanel.quickSwitchAdmin('76561198354289789')" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 4px 8px; color: #38bdf8;">Admin Dol</button>
+        <button onclick="AdminPanel.quickSwitchAdmin('76561199229687125')" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 4px 8px; color: #10b981;">Admin 3H</button>
+        <button onclick="AdminPanel.quickSwitchAdmin('76561198682056372')" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 4px 8px; color: #fbbf24;">Admin ST25</button>
+        <button onclick="AdminPanel.quickSwitchAdmin('76561198838095252')" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 4px 8px; color: #c084fc;">Admin Hiếu</button>
+        
+        <div style="display: flex; gap: 4px; margin-left: 6px;">
+          <input type="text" id="manual-admin-login-sid" placeholder="Steam ID 17 số..." class="form-input" style="padding: 4px 8px; font-size: 0.8rem; width: 170px;" onkeydown="if(event.key==='Enter') AdminPanel.manualLoginAdmin()">
+          <button onclick="AdminPanel.manualLoginAdmin()" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 4px 8px;">Đăng Nhập</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Access Denied Panel (Hiển thị khi chưa đăng nhập hoặc không phải Admin) -->
     <div id="access-denied-panel" style="display: none; background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1px solid #ef4444; border-radius: var(--radius-lg); padding: 50px 30px; text-align: center; margin: 40px auto; max-width: 650px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
@@ -203,9 +227,9 @@
         <a href="index.html" class="btn btn-secondary" style="font-weight: 700;">
           Quay Về Trang Chủ
         </a>
-        <a href="/api/player/steam/login?redirect=/cai-dat.html" class="btn btn-primary" style="background: #ef4444; border: none; font-weight: 700;">
-          🎮 Đăng Nhập Tài Khoản Admin
-        </a>
+        <button onclick="AdminPanel.quickSwitchAdmin('76561198354289789')" class="btn btn-primary" style="background: #ef4444; border: none; font-weight: 700;">
+          🎮 Đăng Nhập Admin Dol
+        </button>
       </div>
     </div>
 
@@ -465,6 +489,58 @@
       recentPlayers: [],
       currentAdminSteamId: null,
 
+      getActiveSteamId() {
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          const qId = urlParams.get('adminSteamId') || urlParams.get('steamId');
+          if (qId && /^\d{17}$/.test(qId.trim())) return qId.trim();
+
+          const stored = localStorage.getItem('st25_steam_user');
+          if (stored) {
+            const u = JSON.parse(stored);
+            if (u && u.steam_id && /^\d{17}$/.test(u.steam_id.trim())) return u.steam_id.trim();
+          }
+        } catch (_) {}
+        return null;
+      },
+
+      async quickSwitchAdmin(sid) {
+        if (!sid) return;
+        App.showToast('Đang đăng nhập phiên Admin...', 'info');
+        try {
+          const res = await fetch('/api/player/login-manual', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ steamId: sid })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            localStorage.setItem('st25_steam_user', JSON.stringify({
+              steam_id: data.steamId,
+              persona_name: data.personaName,
+              avatar: data.avatar,
+              isAdmin: data.isAdmin
+            }));
+            window.location.search = `?adminSteamId=${encodeURIComponent(sid)}`;
+          } else {
+            App.showToast(data.error || 'Đăng nhập Admin thất bại!', 'error');
+          }
+        } catch (e) {
+          console.error(e);
+          App.showToast('Lỗi kết nối máy chủ!', 'error');
+        }
+      },
+
+      manualLoginAdmin() {
+        const inp = document.getElementById('manual-admin-login-sid');
+        const sid = inp ? inp.value.trim() : '';
+        if (!sid || !/^\d{17}$/.test(sid)) {
+          App.showToast('Vui lòng nhập đúng 17 chữ số Steam ID của Quản Trị Viên!', 'error');
+          return;
+        }
+        this.quickSwitchAdmin(sid);
+      },
+
       async init() {
         const isAuthorizedAdmin = await this.checkAdminStatus();
         if (!isAuthorizedAdmin) {
@@ -492,15 +568,23 @@
       async checkAdminStatus() {
         const deniedBox = document.getElementById('access-denied-panel');
         const adminBox = document.getElementById('admin-authorized-content');
+        const headerName = document.getElementById('admin-auth-header-name');
+        const headerSid = document.getElementById('admin-auth-header-sid');
 
         try {
+          const sid = this.getActiveSteamId();
+          const url = sid ? `/api/player/me?steamId=${encodeURIComponent(sid)}` : '/api/player/me';
+          const hdrs = sid ? { 'x-steam-id': sid, 'x-admin-steam-id': sid } : {};
+
           // 1. Kiểm tra phiên đăng nhập người dùng từ server
-          const meRes = await fetch('/api/player/me');
+          const meRes = await fetch(url, { headers: hdrs });
           const meData = await meRes.json();
 
           if (!meData || !meData.isLoggedIn || !meData.steam_id || !meData.isAdmin) {
             if (deniedBox) deniedBox.style.display = 'block';
             if (adminBox) adminBox.style.display = 'none';
+            if (headerName) headerName.textContent = 'Chưa Đăng Nhập Admin';
+            if (headerSid) headerSid.textContent = 'Vui lòng chọn hoặc nhập Steam ID Admin bên phải';
             return false;
           }
 
@@ -509,6 +593,9 @@
 
           if (deniedBox) deniedBox.style.display = 'none';
           if (adminBox) adminBox.style.display = 'block';
+
+          if (headerName) headerName.textContent = `Admin: ${meData.persona_name}`;
+          if (headerSid) headerSid.textContent = `Steam ID: ${this.currentAdminSteamId} (Đã xác thực ✅)`;
 
           const nameEl = document.getElementById('admin-name');
           const sidEl = document.getElementById('admin-steamid');
@@ -659,9 +746,14 @@
         App.showToast("Đang xử lý lưu quyền và slot...", "info");
 
         try {
+          const hdrs = {
+            'Content-Type': 'application/json',
+            'x-steam-id': this.currentAdminSteamId,
+            'x-admin-steam-id': this.currentAdminSteamId
+          };
           const res = await fetch('/api/admin/assign-role-slots', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: hdrs,
             body: JSON.stringify({
               adminSteamId: this.currentAdminSteamId,
               targetSteamId,
@@ -693,9 +785,14 @@
         }
 
         try {
+          const hdrs = {
+            'Content-Type': 'application/json',
+            'x-steam-id': this.currentAdminSteamId,
+            'x-admin-steam-id': this.currentAdminSteamId
+          };
           const res = await fetch('/api/admin/remove-role-slots', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: hdrs,
             body: JSON.stringify({
               adminSteamId: this.currentAdminSteamId,
               targetSteamId
