@@ -383,17 +383,9 @@ const Garage = {
           </div>
 
           <div style="display: flex; flex-direction: column; gap: 8px;">
-            <button onclick="Garage.restoreDino('${s.id}', '${s.species}', ${s.growth})" class="btn btn-primary btn-sm" style="width: 100%; font-weight: 700;">
-              ⚔️ Đưa Ra Đảo (Restore)
+            <button onclick="Garage.startRestoreChanneling('${s.id}', '${s.species}', ${s.growth})" class="btn btn-primary btn-sm" style="width: 100%; font-weight: 800; padding: 10px 14px; font-size: 0.92rem; background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);">
+              ⚔️ Đưa Ra Đảo (Restore 30s)
             </button>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-              <button onclick="Garage.sellDino('${s.id}', '${s.species}', ${s.growth})" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; border-color: #f59e0b; color: #fbbf24;">
-                💰 Bán (Sell)
-              </button>
-              <a href="giao-dich.html" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; text-align: center;">
-                ⚖️ Rao Chợ
-              </a>
-            </div>
           </div>
         </div>
       `;
@@ -445,29 +437,96 @@ const Garage = {
     }
   },
 
-  async restoreDino(garageDinoId, species, growth) {
+  restoreChannelingTimer: null,
+  restoreRemainingSeconds: 30,
+  pendingRestoreDino: null,
+
+  async startRestoreChanneling(garageDinoId, species, growth) {
     if (this.cooldownSeconds > 0) {
       this.showActionAlert('⏳ Đang Trong Thời Gian Giãn Cách 30 Giây', `Vui lòng chờ thêm ${this.cooldownSeconds}s để bảo vệ an toàn dữ liệu nhân vật!`, 'warning');
       App.showToast(`Vui lòng chờ hết thời gian đệm (${this.cooldownSeconds}s) để bảo vệ dữ liệu!`, 'warn');
       return;
     }
 
-    if (!confirm(`Xác nhận đưa [${species} ${growth}%] ra đảo? Lưu ý: Nhân vật của bạn bắt buộc phải ở khu vực vắng vẻ, cách người chơi khác tối thiểu 100 mét!`)) {
+    if (!confirm(`Xác nhận đưa [${species} ${growth}%] ra đảo?\n\n⚠️ LƯU Ý QUAN TRỌNG TỪ MÁY CHỦ:\n• Hệ thống sẽ phát cảnh báo đến toàn bộ người chơi trong phạm vi 500 mét!\n• Quá trình chuẩn bị xuất hiện tốn đúng 30 giây.\n• Bạn phải giữ an toàn trong 30 giây này để khủng long xuất hiện an toàn!`)) {
       return;
     }
 
     const sid = this.getActiveSteamId();
+    this.pendingRestoreDino = { garageDinoId, species, growth, steamId: sid };
+    this.hideActionAlert();
+
+    // 1. Gửi tín hiệu chuẩn bị lên Server để phát cảnh báo 500m
     try {
-      this.hideActionAlert();
-      App.showToast(`Đang hồi phục [${species}] vào game server...`, 'info');
+      App.showToast(`Đang phát tín hiệu cảnh báo 500m cho [${species}]...`, 'info');
+      await fetch('/api/player/garage/restore-prepare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(sid ? { 'x-steam-id': sid } : {}) },
+        body: JSON.stringify({ garageDinoId, species, growth, steamId: sid })
+      });
+    } catch (_) {}
+
+    // 2. Mở Modal Đếm Ngược 30 Giây
+    const modal = document.getElementById('restore-channeling-modal');
+    const nameEl = document.getElementById('restore-modal-dino-name');
+    const countEl = document.getElementById('restore-countdown-big');
+    const progressEl = document.getElementById('restore-countdown-progress');
+
+    if (nameEl) nameEl.textContent = `${species} (${growth}% Growth)`;
+    if (countEl) countEl.textContent = '30s';
+    if (progressEl) progressEl.style.width = '100%';
+    if (modal) modal.style.display = 'flex';
+
+    this.restoreRemainingSeconds = 30;
+    if (this.restoreChannelingTimer) clearInterval(this.restoreChannelingTimer);
+
+    this.restoreChannelingTimer = setInterval(async () => {
+      this.restoreRemainingSeconds--;
+      if (countEl) countEl.textContent = `${this.restoreRemainingSeconds}s`;
+      if (progressEl) {
+        const pct = Math.max(0, (this.restoreRemainingSeconds / 30) * 100);
+        progressEl.style.width = `${pct}%`;
+      }
+
+      if (this.restoreRemainingSeconds <= 0) {
+        clearInterval(this.restoreChannelingTimer);
+        this.restoreChannelingTimer = null;
+        if (countEl) countEl.textContent = '0s';
+        await this.executeFinalRestore();
+      }
+    }, 1000);
+  },
+
+  cancelRestoreChanneling() {
+    if (this.restoreChannelingTimer) {
+      clearInterval(this.restoreChannelingTimer);
+      this.restoreChannelingTimer = null;
+    }
+    this.pendingRestoreDino = null;
+    const modal = document.getElementById('restore-channeling-modal');
+    if (modal) modal.style.display = 'none';
+    App.showToast('Đã hủy bỏ lệnh triệu hồi khủng long ra đảo.', 'info');
+  },
+
+  async executeFinalRestore() {
+    const d = this.pendingRestoreDino;
+    const modal = document.getElementById('restore-channeling-modal');
+    if (modal) modal.style.display = 'none';
+
+    if (!d) return;
+
+    const sid = d.steamId || this.getActiveSteamId();
+    App.showToast(`⏳ Hết 30 giây! Đang chính thức hồi phục [${d.species}] vào game server...`, 'info');
+
+    try {
       const res = await fetch('/api/player/garage/restore', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(sid ? { 'x-steam-id': sid } : {}) },
-        body: JSON.stringify({ garageDinoId, steamId: sid })
+        body: JSON.stringify({ garageDinoId: d.garageDinoId, steamId: sid })
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        App.showToast(data.message, 'success');
+        App.showToast(`🎉 XUẤT HIỆN THÀNH CÔNG: [${d.species} ${d.growth}%] đã ra đảo!`, 'success');
         this.hideActionAlert();
         localStorage.setItem('the_isle_garage_cooldown', Date.now() + 30000);
         this.cooldownSeconds = 30;
@@ -481,8 +540,11 @@ const Garage = {
       }
     } catch (e) {
       App.showToast('Lỗi mạng khi hồi phục khủng long!', 'error');
-      this.showActionAlert('Lỗi Kết Nối', 'Không thể kết nối máy chủ game. Vui lòng thử lại sau giây lát!', 'error');
+      this.showActionAlert('Lỗi Kết Nối', 'Không thể kết nối máy chủ game sau 30s. Vui lòng kiểm tra lại!', 'error');
+    } finally {
+      this.pendingRestoreDino = null;
     }
+  },
   },
 
   showActionAlert(title, message, type = 'error') {

@@ -304,7 +304,7 @@
             📦 Kho Lưu Trữ Gara (Cloud IslePilot)
           </h3>
           <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem;">
-            Danh sách khủng long đã cất an toàn. Bấm <strong>"Đưa Ra Đảo (Restore)"</strong> để thế chỗ nhân vật trong game hoặc <strong>"Bán (Sell)"</strong> để nhận Lúa 🌾.
+            Danh sách khủng long đã cất an toàn. Bấm <strong>"Đưa Ra Đảo (Restore)"</strong> để thế chỗ nhân vật trong game (cần 30 giây thời gian chờ và phát cảnh báo phạm vi 500m).
           </p>
         </div>
         <span class="rule-badge badge-warn" id="slots-capacity-summary">Đang nạp slots...</span>
@@ -316,6 +316,54 @@
     </section>
 
     </div> <!-- End of #garage-authenticated-content -->
+
+    <!-- MODAL ĐẾM NGƯỢC 30S ĐƯA RA ĐẢO (RESTORE CHANNELING & CẢNH BÁO 500M) -->
+    <div id="restore-channeling-modal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(10px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
+      <div style="background: linear-gradient(145deg, #1e293b, #0f172a); border: 2px solid #f59e0b; border-radius: 20px; max-width: 520px; width: 100%; padding: 32px; box-shadow: 0 20px 60px rgba(245, 158, 11, 0.35); text-align: center; position: relative;">
+        
+        <!-- Animated Pulse Icon -->
+        <div style="position: relative; width: 84px; height: 84px; margin: 0 auto 18px; display: flex; align-items: center; justify-content: center; background: rgba(245, 158, 11, 0.15); border: 2px dashed #f59e0b; border-radius: 50%;">
+          <span style="font-size: 3rem;" id="restore-modal-dino-icon">🦖</span>
+        </div>
+
+        <h3 style="color: #fff; font-size: 1.45rem; font-weight: 800; margin: 0 0 6px;">
+          ⏳ ĐANG CHUẨN BỊ ĐƯA RA ĐẢO
+        </h3>
+        <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px;">
+          Đang chuẩn bị hồi sinh khủng long <strong style="color: #fbbf24;" id="restore-modal-dino-name">Tyrannosaurus (100%)</strong> vào game server...
+        </p>
+
+        <!-- Big 30-Second Countdown Clock -->
+        <div style="background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 18px; margin-bottom: 20px;">
+          <div style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px; margin-bottom: 4px;">Thời Gian Chờ Xuất Hiện In-Game</div>
+          <div id="restore-countdown-big" style="font-size: 3.5rem; font-weight: 900; color: #fbbf24; font-family: monospace; line-height: 1; text-shadow: 0 0 20px rgba(245, 158, 11, 0.5);">
+            30s
+          </div>
+          
+          <!-- Progress Bar Track -->
+          <div style="background: rgba(255, 255, 255, 0.08); height: 10px; border-radius: 5px; margin-top: 14px; overflow: hidden;">
+            <div id="restore-countdown-progress" style="width: 100%; height: 100%; background: linear-gradient(90deg, #f59e0b, #ef4444); transition: width 1s linear;"></div>
+          </div>
+        </div>
+
+        <!-- 500m Warning Radar Alert Banner -->
+        <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; border-radius: 10px; padding: 12px 16px; margin-bottom: 24px; text-align: left; display: flex; gap: 12px; align-items: center;">
+          <span style="font-size: 1.8rem; line-height: 1;">📡</span>
+          <div style="font-size: 0.86rem; color: #fca5a5; line-height: 1.5;">
+            <strong style="color: #f87171; display: block;">📢 CẢNH BÁO BÁN KÍNH 500 MÉT:</strong>
+            Đã phát tín hiệu toàn khu vực! Người chơi xung quanh 500m sẽ thấy thông báo loài và % chuẩn bị xuất hiện. Bạn phải giữ an toàn trong suốt 30 giây!
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <div style="display: flex; gap: 10px; justify-content: center;">
+          <button type="button" onclick="Garage.cancelRestoreChanneling()" class="btn btn-secondary" style="width: 100%; padding: 12px; font-weight: 700; border-color: #64748b; color: #cbd5e1;">
+            ❌ Hủy Bỏ Lệnh Triệu Hồi
+          </button>
+        </div>
+
+      </div>
+    </div>
 
   </main>
 

@@ -636,9 +636,16 @@
             <button type="button" class="btn btn-secondary btn-sm" id="btn-filter-god" onclick="CombatInspector.setFilter('GOD_MODE')">🛡️ Bất Tử</button>
           </div>
 
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <input type="text" id="combat-search-input" placeholder="Tìm Steam ID / Tên / Loài..." class="form-input" style="padding: 6px 12px; font-size: 0.85rem; width: 230px;" oninput="CombatInspector.search(this.value)">
-            <button type="button" onclick="CombatInspector.loadLogs()" class="btn btn-secondary btn-sm" title="Tải lại nhật ký">🔄 Làm Mới</button>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <!-- Real-time Live Mode Toggle -->
+            <button type="button" id="btn-toggle-live-combat" onclick="CombatInspector.toggleLive()" class="btn btn-sm" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #6ee7b7; font-weight: 800; display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 8px;">
+              <span id="live-combat-dot" style="display: inline-block; width: 9px; height: 9px; background: #10b981; border-radius: 50%; box-shadow: 0 0 10px #10b981;"></span>
+              <span id="live-combat-status-text">🟢 REAL-TIME LIVE (3s)</span>
+            </button>
+            <span id="live-combat-time-text" style="font-size: 0.8rem; color: #94a3b8; font-family: monospace;">Cập nhật: --:--:--</span>
+            
+            <input type="text" id="combat-search-input" placeholder="Tìm Steam ID / Tên / Loài..." class="form-input" style="padding: 6px 12px; font-size: 0.85rem; width: 210px;" oninput="CombatInspector.search(this.value)">
+            <button type="button" onclick="CombatInspector.loadLogs(false)" class="btn btn-secondary btn-sm" title="Tải lại ngay">🔄 Nạp Lại</button>
           </div>
         </div>
       </div>
@@ -1348,6 +1355,9 @@
           if (btnRoles) btnRoles.classList.add('active');
           if (contentCombat) contentCombat.style.display = 'none';
           if (contentRoles) contentRoles.style.display = 'block';
+          if (typeof CombatInspector !== 'undefined' && CombatInspector.stopLive) {
+            CombatInspector.stopLive();
+          }
         }
       },
 
@@ -1413,22 +1423,82 @@
       }
     };
 
-    // Combat Inspector Controller
+    // Combat Inspector Controller (Real-time Live Radar & Anti-Cheat)
     const CombatInspector = {
       adminSteamId: null,
       rawLogs: [],
       filteredLogs: [],
       currentFilter: 'all',
       searchKeyword: '',
+      isLive: true,
+      liveTimer: null,
+      lastKnownTopLogId: null,
 
       init(adminSid) {
         this.adminSteamId = adminSid || AdminPanel.currentAdminSteamId || AdminPanel.getActiveSteamId() || '76561198354289789';
-        this.loadLogs();
+        this.loadLogs(false);
+        this.startLive();
       },
 
-      async loadLogs() {
+      startLive() {
+        this.stopLive();
+        this.isLive = true;
+        this.updateLiveUI();
+        this.liveTimer = setInterval(() => {
+          this.loadLogs(true);
+        }, 3000);
+      },
+
+      stopLive() {
+        if (this.liveTimer) {
+          clearInterval(this.liveTimer);
+          this.liveTimer = null;
+        }
+        this.isLive = false;
+        this.updateLiveUI();
+      },
+
+      toggleLive() {
+        if (this.isLive) {
+          this.stopLive();
+          App.showToast('Đã tạm dừng cập nhật trực tiếp.', 'info');
+        } else {
+          this.startLive();
+          App.showToast('Đã bật theo dõi thời gian thực (Live 3s)!', 'success');
+          this.loadLogs(false);
+        }
+      },
+
+      updateLiveUI() {
+        const btn = document.getElementById('btn-toggle-live-combat');
+        const textEl = document.getElementById('live-combat-status-text');
+        const dotEl = document.getElementById('live-combat-dot');
+        if (!btn || !textEl) return;
+
+        if (this.isLive) {
+          btn.style.background = 'rgba(16, 185, 129, 0.2)';
+          btn.style.borderColor = '#10b981';
+          btn.style.color = '#6ee7b7';
+          textEl.textContent = '🟢 REAL-TIME LIVE (3s)';
+          if (dotEl) {
+            dotEl.style.background = '#10b981';
+            dotEl.style.boxShadow = '0 0 10px #10b981';
+          }
+        } else {
+          btn.style.background = 'rgba(239, 68, 68, 0.15)';
+          btn.style.borderColor = '#ef4444';
+          btn.style.color = '#fca5a5';
+          textEl.textContent = '⏸️ ĐÃ TẠM DỪNG LIVE';
+          if (dotEl) {
+            dotEl.style.background = '#ef4444';
+            dotEl.style.boxShadow = 'none';
+          }
+        }
+      },
+
+      async loadLogs(isSilent = false) {
         const tbody = document.getElementById('combat-logs-tbody');
-        if (tbody) {
+        if (!isSilent && tbody) {
           tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;">Đang nạp dữ liệu đòn đánh...</td></tr>`;
         }
 
@@ -1451,6 +1521,23 @@
 
           const data = await res.json();
           const logsList = Array.isArray(data.logs) ? data.logs : (Array.isArray(data) ? data : []);
+
+          // Cập nhật nhãn thời gian thực
+          const timeClockEl = document.getElementById('live-combat-time-text');
+          if (timeClockEl) {
+            timeClockEl.textContent = `Cập nhật: ${new Date().toLocaleTimeString('vi-VN')}`;
+          }
+
+          // Kiểm tra xem có đòn đánh mới xuất hiện không
+          if (logsList.length > 0) {
+            const topLog = logsList[0];
+            if (this.lastKnownTopLogId && this.lastKnownTopLogId !== topLog.id) {
+              if (topLog.isAnomaly && topLog.flags && topLog.flags.length > 0) {
+                App.showToast(`🚨 PHÁT HIỆN BẤT THƯỜNG MỚI: [${topLog.attacker?.name}] gây dame bất thường cho [${topLog.victim?.name}]!`, 'error');
+              }
+            }
+            this.lastKnownTopLogId = topLog.id;
+          }
           
           this.rawLogs = logsList.map(l => ({
             id: l.id,
@@ -1480,7 +1567,9 @@
           this.applyFilterAndRender();
         } catch (e) {
           console.error(e);
-          if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #ef4444; padding: 30px;">Lỗi kết nối máy chủ khi nạp nhật ký chiến đấu!</td></tr>`;
+          if (!isSilent && tbody) {
+            tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #ef4444; padding: 30px;">Lỗi kết nối máy chủ khi nạp nhật ký chiến đấu!</td></tr>`;
+          }
         }
       },
 

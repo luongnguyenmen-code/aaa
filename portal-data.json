@@ -599,6 +599,65 @@
   },
   "combatLogs": [
     {
+      "id": "hit-1791389413781",
+      "timestamp": "23:10:13 7/10/2026",
+      "timestampMs": 1791389413781,
+      "attacker": {
+        "steamId": "76561198000000002",
+        "name": "Thần Săn Đầm Lầy",
+        "species": "Deinosuchus",
+        "growth": 100
+      },
+      "victim": {
+        "steamId": "76561198000000004",
+        "name": "VietPredator",
+        "species": "Ceratosaurus",
+        "growth": 100,
+        "hpBefore": 2200,
+        "hpAfter": 1762
+      },
+      "damage": 438,
+      "hitBox": "Thân",
+      "distance": 1.5,
+      "speed": 26,
+      "resolved": false,
+      "flags": [],
+      "isRealtimeLive": true
+    },
+    {
+      "id": "hit-1791389403752",
+      "timestamp": "23:10:03 7/10/2026",
+      "timestampMs": 1791389403752,
+      "attacker": {
+        "steamId": "76561198901234567",
+        "name": "SpeedRaptor_X",
+        "species": "Omniraptor",
+        "growth": 100
+      },
+      "victim": {
+        "steamId": "76561198354289789",
+        "name": "BinM",
+        "species": "Stegosaurus",
+        "growth": 100,
+        "hpBefore": 6000,
+        "hpAfter": 5667
+      },
+      "damage": 333,
+      "hitBox": "Đầu",
+      "distance": 10.3,
+      "speed": 46,
+      "resolved": false,
+      "flags": [
+        {
+          "type": "REACH_HACK",
+          "level": "danger",
+          "title": "🚨 TẦM ĐÁNH QUÁ XA (REACH/HITBOX HACK)",
+          "message": "Cắn trúng đối thủ ở khoảng cách 10.3 mét! (Tầm tối đa chỉ 4 - 5.2m)"
+        }
+      ],
+      "isRealtimeLive": true
+    },
+    {
       "id": "hit-101",
       "timestamp": "21:34:02 7/10/2026",
       "timestampMs": 1791383642336,

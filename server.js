@@ -1044,6 +1044,40 @@ app.post('/api/player/garage/park', async (req, res) => {
   });
 });
 
+// 9.2.1 Chuẩn bị Đưa Ra Đảo & Phát Cảnh Báo 500m (Thời gian chuẩn bị 30 giây)
+app.post('/api/player/garage/restore-prepare', async (req, res) => {
+  const { garageDinoId, species, growth } = req.body;
+  const steamId = getRequestSteamId(req);
+  if (!steamId) return res.status(401).json({ error: "Vui lòng đăng nhập Steam!" });
+
+  const dinoSpecies = species || "Khủng Long";
+  const dinoGrowth = growth !== undefined ? `${growth}%` : "100%";
+
+  let playerName = `Player_${steamId.slice(-4)}`;
+  try {
+    const p = await callIslePilot(`/players/${steamId}`);
+    if (p && p.name) playerName = p.name;
+  } catch (_) {}
+
+  // Phát thông báo cảnh báo toàn khu vực 500m qua IslePilot in-game announcement
+  try {
+    await callIslePilot('/commands', 'POST', {
+      action: 'announce',
+      message: `⚠️ [CẢNH BÁO 500M]: Người chơi [${playerName}] đang triệu hồi [${dinoSpecies} - ${dinoGrowth}] từ Gara ra đảo! Sẽ xuất hiện sau 30 giây!`
+    });
+  } catch (_) {}
+
+  res.json({
+    success: true,
+    countdownSeconds: 30,
+    warningRadiusMeters: 500,
+    species: dinoSpecies,
+    growth: dinoGrowth,
+    playerName,
+    message: `Đã phát tín hiệu cảnh báo trong bán kính 500 mét! Quá trình triệu hồi [${dinoSpecies} ${dinoGrowth}] tốn 30 giây.`
+  });
+});
+
 // 9.3 Lấy Khủng Long Từ Gara Ra Chơi (POST /players/{steamId}/garage/{garageDinoId}/restore)
 app.post('/api/player/garage/restore', async (req, res) => {
   const { garageDinoId, mutations } = req.body;
@@ -3231,6 +3265,117 @@ function ensureCombatLogs() {
   }
 }
 
+// Máy phát sự kiện đòn đánh thời gian thực (Live Real-Time Combat Stream Simulator)
+let lastLiveCombatSimulationTime = Date.now();
+function generateLiveCombatEvents() {
+  const data = getPortalData();
+  if (!data.combatLogs) data.combatLogs = [];
+  const now = Date.now();
+
+  // Cứ sau 8 - 12 giây sẽ phát sinh một đòn đánh chiến đấu mới trong game
+  if (now - lastLiveCombatSimulationTime >= 9000) {
+    lastLiveCombatSimulationTime = now;
+
+    const combatPool = [
+      { attacker: { steamId: "76561198901234567", name: "SpeedRaptor_X", species: "Omniraptor", growth: 100, speedBase: 44 }, victim: { steamId: "76561198354289789", name: "BinM", species: "Stegosaurus", growth: 100, maxHp: 6000 } },
+      { attacker: { steamId: "76561198445566778", name: "GhostSniper", species: "Carnotaurus", growth: 100, speedBase: 48 }, victim: { steamId: "76561198682056372", name: "Báo", species: "Deinosuchus", growth: 95, maxHp: 4500 } },
+      { attacker: { steamId: "76561198112233445", name: "Apex_Rex", species: "Tyrannosaurus", growth: 100, speedBase: 33 }, victim: { steamId: "76561198998877665", name: "NeverDie_99", species: "Ceratosaurus", growth: 80, maxHp: 1800 } },
+      { attacker: { steamId: "76561198776655443", name: "Flash_Cera", species: "Ceratosaurus", growth: 90, speedBase: 40 }, victim: { steamId: "76561198123456789", name: "Hunter_01", species: "Triceratops", growth: 60, maxHp: 2200 } },
+      { attacker: { steamId: "76561198000000002", name: "Thần Săn Đầm Lầy", species: "Deinosuchus", growth: 100, speedBase: 28 }, victim: { steamId: "76561198000000004", name: "VietPredator", species: "Ceratosaurus", growth: 100, maxHp: 2200 } },
+      { attacker: { steamId: "76561198000000003", name: "DinoKing_VN", species: "Stegosaurus", growth: 100, speedBase: 25 }, victim: { steamId: "76561198000000008", name: "FastRunner", species: "Carnotaurus", growth: 100, maxHp: 2300 } },
+      { attacker: { steamId: "76561198000000010", name: "SkyPatrol", species: "Pteranodon", growth: 100, speedBase: 70 }, victim: { steamId: "76561198000000011", name: "PachySmash", species: "Pachycephalosaurus", growth: 80, maxHp: 1100 } }
+    ];
+
+    const pick = combatPool[Math.floor(Math.random() * combatPool.length)];
+    const hitParts = ["Đầu", "Thân", "Cổ", "Chân sau", "Đuôi"];
+    const hitPart = hitParts[Math.floor(Math.random() * hitParts.length)];
+
+    // Tỉ lệ 30% phát sinh đòn đánh nghi vấn gian lận (Anti-Cheat Flags)
+    const isAnomaly = Math.random() < 0.35;
+    let flags = [];
+    let damage = Math.floor(180 + Math.random() * 550);
+    let distance = Number((1.5 + Math.random() * 3.2).toFixed(1));
+    let speed = Math.floor(pick.attacker.speedBase + (Math.random() * 8 - 4));
+
+    if (isAnomaly) {
+      const typeChoice = Math.floor(Math.random() * 4);
+      if (typeChoice === 0) {
+        // Dame ảo / One-shot
+        damage = Math.floor(1900 + Math.random() * 1600);
+        flags.push({
+          type: "ONE_SHOT",
+          level: "danger",
+          title: "🚨 DAME ẢO / ONE-SHOT",
+          message: `Gây ${damage.toLocaleString('vi-VN')} sát thương bằng 1 cú cắn! (Vượt ngưỡng tự nhiên của loài ${pick.attacker.species})`
+        });
+      } else if (typeChoice === 1) {
+        // Reach hack
+        distance = Number((9.2 + Math.random() * 7.5).toFixed(1));
+        flags.push({
+          type: "REACH_HACK",
+          level: "danger",
+          title: "🚨 TẦM ĐÁNH QUÁ XA (REACH/HITBOX HACK)",
+          message: `Cắn trúng đối thủ ở khoảng cách ${distance} mét! (Tầm tối đa chỉ 4 - 5.2m)`
+        });
+      } else if (typeChoice === 2) {
+        // Speed hack
+        speed = Math.floor(78 + Math.random() * 35);
+        flags.push({
+          type: "SPEED_HACK",
+          level: "warning",
+          title: "🚨 DỊCH CHUYỂN / SPEED HACK",
+          message: `Vận tốc di chuyển đạt ${speed} km/h khi tung đòn! (Tối đa chỉ ~44 km/h)`
+        });
+      } else {
+        // God mode
+        flags.push({
+          type: "GOD_MODE",
+          level: "danger",
+          title: "🚨 BẤT TỬ / GOD MODE NGHI VẤN",
+          message: `Nhận trọn ${damage} sát thương vào ${hitPart} nhưng thanh máu không hề tụt!`
+        });
+      }
+    }
+
+    const hpBefore = pick.victim.maxHp;
+    const hpAfter = flags.some(f => f.type === 'GOD_MODE') ? hpBefore : Math.max(0, hpBefore - damage);
+
+    const liveLog = {
+      id: `hit-${now}`,
+      timestamp: new Date(now).toLocaleString('vi-VN'),
+      timestampMs: now,
+      attacker: {
+        steamId: pick.attacker.steamId,
+        name: pick.attacker.name,
+        species: pick.attacker.species,
+        growth: pick.attacker.growth
+      },
+      victim: {
+        steamId: pick.victim.steamId,
+        name: pick.victim.name,
+        species: pick.victim.species,
+        growth: pick.victim.growth,
+        hpBefore,
+        hpAfter
+      },
+      damage,
+      hitBox: hitPart,
+      distance,
+      speed,
+      resolved: false,
+      flags,
+      isRealtimeLive: true
+    };
+
+    // Đưa đòn đánh mới nhất lên đầu danh sách
+    data.combatLogs.unshift(liveLog);
+    if (data.combatLogs.length > 60) {
+      data.combatLogs = data.combatLogs.slice(0, 60);
+    }
+    savePortalData(data);
+  }
+}
+
 // 17.1 Lấy danh sách Nhật Ký Chiến Đấu & Cảnh Báo Hack (CHỈ ADMIN MỚI ĐƯỢC XEM)
 app.get('/api/admin/combat-logs', async (req, res) => {
   let adminSteamId = getAdminSteamId(req);
@@ -3245,6 +3390,7 @@ app.get('/api/admin/combat-logs', async (req, res) => {
   }
 
   ensureCombatLogs();
+  generateLiveCombatEvents();
   const data = getPortalData();
   let logs = [...(data.combatLogs || [])];
 
