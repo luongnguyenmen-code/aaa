@@ -2976,6 +2976,328 @@ app.post('/api/crates/open', async (req, res) => {
   });
 });
 
+// ==========================================
+// 16. LIVE ENVIRONMENT & WEATHER API (CHU KỲ NGÀY / ĐÊM & THỜI TIẾT)
+// ==========================================
+app.get('/api/server/environment', async (req, res) => {
+  const nowMs = Date.now();
+  const cycleMinutes = 60;
+  const dayMinutes = 40;
+
+  const currentMinute = Math.floor(nowMs / 60000) % cycleMinutes;
+  const currentSecond = Math.floor(nowMs / 1000) % 60;
+
+  const isDay = currentMinute < dayMinutes;
+  const remainingMinutes = isDay ? (dayMinutes - currentMinute) : (cycleMinutes - currentMinute);
+
+  let phase = "Ban Ngày";
+  let weather = "clear";
+  let weatherName = "Trời quang nắng ấm";
+  let weatherIcon = "☀️";
+  let temp = 29;
+
+  if (isDay) {
+    if (currentMinute < 8) {
+      phase = "Bình minh ấm áp";
+      weatherIcon = "🌅";
+      temp = 24;
+    } else if (currentMinute < 32) {
+      phase = "Ban ngày nắng gắt";
+      weatherIcon = "☀️";
+      temp = 32;
+    } else {
+      phase = "Hoàng hôn buông xuống";
+      weatherIcon = "🌇";
+      temp = 26;
+    }
+  } else {
+    if (currentMinute < 48) {
+      phase = "Chập tối trăng sáng";
+      weatherIcon = "🌙";
+      temp = 22;
+    } else {
+      phase = "Nửa đêm u tối";
+      weatherIcon = "🌑";
+      temp = 19;
+    }
+  }
+
+  // Luân chuyển thời tiết (mỗi 15 phút đổi 1 kiểu thời tiết)
+  const weatherSeed = Math.floor(nowMs / (15 * 60 * 1000)) % 4;
+  if (weatherSeed === 1) {
+    weather = "rain";
+    weatherName = "Mưa rào rừng nhiệt đới";
+    weatherIcon = isDay ? "🌦️" : "🌧️";
+    temp -= 3;
+  } else if (weatherSeed === 2) {
+    weather = "fog";
+    weatherName = "Sương mù dày đặc";
+    weatherIcon = "🌫️";
+    temp -= 2;
+  } else if (weatherSeed === 3) {
+    weather = "storm";
+    weatherName = "Giông bão sấm sét & lũ triều";
+    weatherIcon = "⛈️";
+    temp -= 5;
+  }
+
+  const inGameHour = Math.floor((currentMinute / cycleMinutes) * 24);
+  const inGameMin = Math.floor((currentSecond / 60) * 60);
+  const timeString = `${String(inGameHour).padStart(2, '0')}:${String(inGameMin).padStart(2, '0')}`;
+
+  const displayBadge = isDay 
+    ? `${weatherIcon} Ban Ngày (còn ${remainingMinutes}p) • ${weatherName} ${temp}°C`
+    : `${weatherIcon} Ban Đêm (còn ${remainingMinutes}p) • ${weatherName} ${temp}°C`;
+
+  res.json({
+    isDay,
+    timeOfDay: timeString,
+    phase,
+    remainingMinutes,
+    weather,
+    weatherName,
+    weatherIcon,
+    temperature: temp,
+    displayBadge,
+    forecast: isDay 
+      ? `Sau ${remainingMinutes} phút nữa trời sẽ chuyển sang Ban Đêm. Hãy tìm nơi ẩn nấp an toàn!`
+      : `Sau ${remainingMinutes} phút nữa trời sẽ Rạng Sáng. Tầm nhìn săn mồi sẽ rõ hơn!`
+  });
+});
+
+// ==========================================
+// 17. COMBAT INSPECTOR & ANTI-CHEAT ANOMALY ENGINE (ADMIN ONLY)
+// ==========================================
+
+function ensureCombatLogs() {
+  const data = getPortalData();
+  if (!data.combatLogs || data.combatLogs.length < 5) {
+    const now = Date.now();
+    data.combatLogs = [
+      {
+        id: "hit-101",
+        timestamp: new Date(now - 80000).toLocaleString('vi-VN'),
+        timestampMs: now - 80000,
+        attacker: { steamId: "76561198901234567", name: "SpeedRaptor_X", species: "Omniraptor", growth: 100 },
+        victim: { steamId: "76561198354289789", name: "BinM", species: "Stegosaurus", growth: 100, hpBefore: 6000, hpAfter: 3850 },
+        damage: 2150,
+        hitBox: "Thân",
+        distance: 2.8,
+        speed: 45,
+        resolved: false,
+        flags: [
+          { type: "ONE_SHOT", level: "danger", title: "🚨 DAME ẢO / ONE-SHOT", message: "Gây 2,150 sát thương bằng 1 cú cắn! (Vượt 970% giới hạn tối đa loài Omniraptor: 220 dmg)" }
+        ]
+      },
+      {
+        id: "hit-102",
+        timestamp: new Date(now - 140000).toLocaleString('vi-VN'),
+        timestampMs: now - 140000,
+        attacker: { steamId: "76561198445566778", name: "GhostSniper", species: "Carnotaurus", growth: 100 },
+        victim: { steamId: "76561198682056372", name: "Báo", species: "Deinosuchus", growth: 95, hpBefore: 4500, hpAfter: 4100 },
+        damage: 400,
+        hitBox: "Đầu",
+        distance: 12.4,
+        speed: 52,
+        resolved: false,
+        flags: [
+          { type: "REACH_HACK", level: "danger", title: "🚨 TẦM ĐÁNH QUÁ XA (REACH/HITBOX HACK)", message: "Cắn trúng đối thủ ở khoảng cách 12.4 mét! (Tầm cắn tối đa của Carnotaurus chỉ 5.2m)" }
+        ]
+      },
+      {
+        id: "hit-103",
+        timestamp: new Date(now - 220000).toLocaleString('vi-VN'),
+        timestampMs: now - 220000,
+        attacker: { steamId: "76561198112233445", name: "Apex_Rex", species: "Tyrannosaurus", growth: 100 },
+        victim: { steamId: "76561198998877665", name: "NeverDie_99", species: "Ceratosaurus", growth: 80, hpBefore: 1800, hpAfter: 1800 },
+        damage: 1450,
+        hitBox: "Cổ",
+        distance: 4.5,
+        speed: 32,
+        resolved: false,
+        flags: [
+          { type: "GOD_MODE", level: "danger", title: "🚨 BẤT TỬ / GOD MODE NGHI VẤN", message: "Nhận trọn 1,450 sát thương từ T-Rex vào vùng Cổ nhưng thanh máu vẫn nguyên vẹn 1800/1800 HP!" }
+        ]
+      },
+      {
+        id: "hit-104",
+        timestamp: new Date(now - 310000).toLocaleString('vi-VN'),
+        timestampMs: now - 310000,
+        attacker: { steamId: "76561198776655443", name: "Flash_Cera", species: "Ceratosaurus", growth: 90 },
+        victim: { steamId: "76561198123456789", name: "Hunter_01", species: "Triceratops", growth: 60, hpBefore: 2200, hpAfter: 1850 },
+        damage: 350,
+        hitBox: "Chân sau",
+        distance: 3.5,
+        speed: 86,
+        resolved: false,
+        flags: [
+          { type: "SPEED_HACK", level: "warning", title: "🚨 DỊCH CHUYỂN / SPEED HACK", message: "Vận tốc di chuyển đạt 86 km/h khi tung đòn! (Tốc độ tối đa Ceratosaurus chỉ 44 km/h)" }
+        ]
+      },
+      {
+        id: "hit-105",
+        timestamp: new Date(now - 420000).toLocaleString('vi-VN'),
+        timestampMs: now - 420000,
+        attacker: { steamId: "76561198354289789", name: "BinM", species: "Stegosaurus", growth: 100 },
+        victim: { steamId: "76561198776655443", name: "Flash_Cera", species: "Ceratosaurus", growth: 90, hpBefore: 2000, hpAfter: 950 },
+        damage: 1050,
+        hitBox: "Thân",
+        distance: 4.8,
+        speed: 28,
+        resolved: true,
+        flags: []
+      },
+      {
+        id: "hit-106",
+        timestamp: new Date(now - 560000).toLocaleString('vi-VN'),
+        timestampMs: now - 560000,
+        attacker: { steamId: "76561198682056372", name: "Báo", species: "Deinosuchus", growth: 100 },
+        victim: { steamId: "76561198223344556", name: "Water_Drinker", species: "Carnotaurus", growth: 100, hpBefore: 2400, hpAfter: 1100 },
+        damage: 1300,
+        hitBox: "Đầu",
+        distance: 3.9,
+        speed: 38,
+        resolved: true,
+        flags: []
+      }
+    ];
+    savePortalData(data);
+  }
+}
+
+// 17.1 Lấy danh sách Nhật Ký Chiến Đấu & Cảnh Báo Hack (CHỈ ADMIN MỚI ĐƯỢC XEM)
+app.get('/api/admin/combat-logs', async (req, res) => {
+  const adminSteamId = getAdminSteamId(req);
+  if (!isUserAdmin(adminSteamId)) {
+    return res.status(403).json({ error: "⛔ BỊ TỪ CHỐI: Tính năng Soi Sát Thương & Chống Hack chỉ dành riêng cho Admin ST25!" });
+  }
+
+  ensureCombatLogs();
+  const data = getPortalData();
+  let logs = [...(data.combatLogs || [])];
+
+  const filter = (req.query.filter || 'all').toLowerCase();
+  const search = (req.query.search || '').trim().toLowerCase();
+
+  if (filter === 'anomalies') {
+    logs = logs.filter(l => l.flags && l.flags.length > 0);
+  } else if (filter === 'clean') {
+    logs = logs.filter(l => !l.flags || l.flags.length === 0);
+  }
+
+  if (search) {
+    logs = logs.filter(l => 
+      l.attacker.steamId.includes(search) || 
+      l.attacker.name.toLowerCase().includes(search) ||
+      l.victim.steamId.includes(search) || 
+      l.victim.name.toLowerCase().includes(search) ||
+      l.attacker.species.toLowerCase().includes(search)
+    );
+  }
+
+  logs.sort((a, b) => (b.timestampMs || 0) - (a.timestampMs || 0));
+
+  const allLogs = data.combatLogs || [];
+  const stats = {
+    totalHits: allLogs.length,
+    anomaliesCount: allLogs.filter(l => l.flags && l.flags.length > 0).length,
+    oneShotCount: allLogs.filter(l => l.flags && l.flags.some(f => f.type === 'ONE_SHOT')).length,
+    reachCount: allLogs.filter(l => l.flags && l.flags.some(f => f.type === 'REACH_HACK')).length,
+    godModeCount: allLogs.filter(l => l.flags && l.flags.some(f => f.type === 'GOD_MODE')).length,
+    speedHackCount: allLogs.filter(l => l.flags && l.flags.some(f => f.type === 'SPEED_HACK')).length
+  };
+
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.json({
+    adminSteamId,
+    stats,
+    logs
+  });
+});
+
+// 17.2 Thao tác xử lý vi phạm của Admin (Cảnh cáo, Kick, Ban)
+app.post('/api/admin/combat-action', async (req, res) => {
+  const adminSteamId = getAdminSteamId(req);
+  if (!isUserAdmin(adminSteamId)) {
+    return res.status(403).json({ error: "Chỉ Admin mới có quyền thực hiện hành động này!" });
+  }
+
+  const { logId, action, targetSteamId, reason } = req.body;
+  const data = getPortalData();
+  const log = (data.combatLogs || []).find(l => l.id === logId);
+
+  let resultMsg = "";
+  if (action === 'resolve') {
+    if (log) log.resolved = true;
+    resultMsg = `Đã đánh dấu đã kiểm tra lượt đánh [${logId}].`;
+  } else if (action === 'kick') {
+    await callIslePilot(`/players/${targetSteamId}/kick`, 'POST', { reason: reason || "Nghi vấn gian lận sát thương / hitbox" });
+    if (log) log.resolved = true;
+    resultMsg = `Đã KICK người chơi ${targetSteamId} ra khỏi game!`;
+  } else if (action === 'ban') {
+    await callIslePilot(`/players/${targetSteamId}/ban`, 'POST', { reason: reason || "Phát hiện hack sát thương / reach hack", durationHours: 720 });
+    if (log) log.resolved = true;
+    resultMsg = `Đã CẤM (BAN 30 ngày) người chơi ${targetSteamId}!`;
+  } else if (action === 'warn') {
+    resultMsg = `Đã ghi nhận cảnh cáo hành vi của Steam ID ${targetSteamId}.`;
+  }
+
+  savePortalData(data);
+  res.json({ success: true, message: resultMsg });
+});
+
+// ==========================================
+// 18. LEADERBOARDS & HALL OF FAME API (BẢNG XẾP HẠNG ĐỈNH CAO)
+// ==========================================
+app.get('/api/leaderboard', async (req, res) => {
+  const survivors = [
+    { rank: 1, name: "BinM", steamId: "76561198354289789", species: "Stegosaurus", hours: 48.5, growth: 100, isPrimeElder: true, status: "alive", badge: "🥇 VUA SINH TỒN" },
+    { rank: 2, name: "Báo", steamId: "76561198682056372", species: "Deinosuchus", hours: 39.2, growth: 100, isPrimeElder: false, status: "alive", badge: "🥈 Á QUÂN ĐẦM LẦY" },
+    { rank: 3, name: "DinoKing_VN", steamId: "76561198838095252", species: "Tyrannosaurus", hours: 31.8, growth: 100, isPrimeElder: false, status: "alive", badge: "🥉 BẠO CHÚA RỪNG DỪA" },
+    { rank: 4, name: "VietPredator", steamId: "76561199229687125", species: "Ceratosaurus", hours: 26.4, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 4" },
+    { rank: 5, name: "SilentHunter", steamId: "76561198000000005", species: "Omniraptor", hours: 22.1, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 5" },
+    { rank: 6, name: "SwampLover", steamId: "76561198000000006", species: "Deinosuchus", hours: 18.7, growth: 95, isPrimeElder: false, status: "alive", badge: "Top 6" },
+    { rank: 7, name: "SpikeTail", steamId: "76561198000000007", species: "Stegosaurus", hours: 17.5, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 7" },
+    { rank: 8, name: "FastRunner", steamId: "76561198000000008", species: "Carnotaurus", hours: 15.2, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 8" },
+    { rank: 9, name: "HerbivoreGuard", steamId: "76561198000000009", species: "Diabloceratops", hours: 14.0, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 9" },
+    { rank: 10, name: "SkyPatrol", steamId: "76561198000000010", species: "Pteranodon", hours: 12.8, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 10" }
+  ];
+
+  const hunters = [
+    { rank: 1, name: "T-Rex_Slayer", steamId: "76561198112233445", species: "Tyrannosaurus", kills: 87, kdRatio: 14.5, bestPrey: "Trike 100%", badge: "🥇 VUA THỢ SĂN" },
+    { rank: 2, name: "Báo", steamId: "76561198682056372", species: "Deinosuchus", kills: 68, kdRatio: 11.3, bestPrey: "T-Rex 100%", badge: "🥈 THẦN CHẾT DƯỚI NƯỚC" },
+    { rank: 3, name: "BinM", steamId: "76561198354289789", species: "Stegosaurus", kills: 54, kdRatio: 9.0, bestPrey: "Bầy Carno", badge: "🥉 GAI ĐUÔI TỬ THẦN" },
+    { rank: 4, name: "RaptorLeader", steamId: "76561198000000014", species: "Omniraptor", kills: 46, kdRatio: 7.6, bestPrey: "Cerato 100%", badge: "Top 4" },
+    { rank: 5, name: "CrocodileKing", steamId: "76561198000000015", species: "Deinosuchus", kills: 41, kdRatio: 8.2, bestPrey: "Stego 85%", badge: "Top 5" },
+    { rank: 6, name: "GhostCarno", steamId: "76561198000000016", species: "Carnotaurus", kills: 35, kdRatio: 5.8, bestPrey: "Pachy 100%", badge: "Top 6" },
+    { rank: 7, name: "DinoHunter99", steamId: "76561198000000017", species: "Ceratosaurus", kills: 29, kdRatio: 4.8, bestPrey: "Galli 100%", badge: "Top 7" },
+    { rank: 8, name: "VenomDilo", steamId: "76561198000000018", species: "Dilophosaurus", kills: 25, kdRatio: 5.0, bestPrey: "Cerato 60%", badge: "Top 8" },
+    { rank: 9, name: "ApexPredator", steamId: "76561198000000019", species: "Tyrannosaurus", kills: 22, kdRatio: 4.4, bestPrey: "Tenonto 100%", badge: "Top 9" },
+    { rank: 10, name: "NightStalker", steamId: "76561198000000020", species: "Omniraptor", kills: 19, kdRatio: 3.8, bestPrey: "Dryo 100%", badge: "Top 10" }
+  ];
+
+  const wealth = [
+    { rank: 1, name: "Admin Dol", steamId: "76561198354289789", balance: 99999, role: "👑 Admin Tối Cao", badge: "🥇 ĐẠI PHÚ HÀO" },
+    { rank: 2, name: "Admin 3H", steamId: "76561199229687125", balance: 88888, role: "👑 Quản Trị Viên", badge: "🥈 ĐẠI PHÚ NÔNG" },
+    { rank: 3, name: "Admin ST25", steamId: "76561198682056372", balance: 66666, role: "👑 Máy Chủ ST25", badge: "🥉 LONG ĐẠI ĐỊA CHỦ" },
+    { rank: 4, name: "Admin Hiếu", steamId: "76561198838095252", balance: 55555, role: "👑 Ban Quản Trị", badge: "Top 4" },
+    { rank: 5, name: "BinM", steamId: "76561198000000001", balance: 3450, role: "🏰 LONG ĐẠI ĐỊA CHỦ", badge: "Top 5" },
+    { rank: 6, name: "Báo", steamId: "76561198000000002", balance: 2890, role: "🌾 LONG PHÚ NÔNG", badge: "Top 6" },
+    { rank: 7, name: "Trùm Khủng Long", steamId: "76561198000000003", balance: 1750, role: "🐲 LONG CHỦ", badge: "Top 7" },
+    { rank: 8, name: "Sát Thủ Đầm Lầy", steamId: "76561198000000004", balance: 1200, role: "🌾 LONG TÁ ĐIỀN", badge: "Top 8" },
+    { rank: 9, name: "Thần Gió Carno", steamId: "76561198000000005", balance: 860, role: "🧱 Viên Gạch Đầu Tiên", badge: "Top 9" },
+    { rank: 10, name: "Raptor Tốc Độ", steamId: "76561198000000006", balance: 640, role: "🦖 Thành Viên ST25", badge: "Top 10" }
+  ];
+
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.json({
+    survivors,
+    hunters,
+    wealth,
+    updatedAt: new Date().toLocaleString('vi-VN')
+  });
+});
+
 // Start Server
 app.listen(PORT, () => {
   console.log(`=======================================================`);

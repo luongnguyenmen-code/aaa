@@ -6,8 +6,68 @@ const App = {
   async init() {
     this.bindEvents();
     await this.loadConfig();
+    await this.loadEnvironment();
     await this.checkAuth();
     this.updateUI();
+
+    // Tự động làm mới thời tiết & ngày/đêm mỗi 30s
+    setInterval(() => this.loadEnvironment(), 30000);
+  },
+
+  async loadEnvironment() {
+    try {
+      const res = await fetch('/api/server/environment');
+      if (res.ok) {
+        const env = await res.json();
+        this.renderWeatherWidget(env);
+      }
+    } catch (e) {
+      // offline fallback
+    }
+  },
+
+  renderWeatherWidget(env) {
+    if (!env) return;
+
+    // 1. Cập nhật hoặc tạo pill trên site-header
+    let headerPill = document.getElementById('live-weather-header-pill');
+    if (!headerPill) {
+      const headerContainer = document.querySelector('.site-header .header-container') || document.querySelector('.site-header .container');
+      if (headerContainer) {
+        headerPill = document.createElement('div');
+        headerPill.id = 'live-weather-header-pill';
+        headerPill.style.display = 'inline-flex';
+        headerPill.style.alignItems = 'center';
+        headerPill.style.gap = '8px';
+        headerPill.style.fontSize = '0.8rem';
+        headerPill.style.fontWeight = '700';
+        headerPill.style.padding = '5px 12px';
+        headerPill.style.borderRadius = '20px';
+        headerPill.style.background = 'rgba(15, 23, 42, 0.85)';
+        headerPill.style.border = '1px solid rgba(251, 191, 36, 0.35)';
+        headerPill.style.color = '#e2e8f0';
+        headerPill.style.backdropFilter = 'blur(6px)';
+        headerPill.style.cursor = 'default';
+        headerPill.style.whiteSpace = 'nowrap';
+        headerPill.title = `Chu kỳ game: ${env.phaseDesc}. Thời tiết: ${env.weatherDesc} (${env.temperature}°C)`;
+
+        const navActions = headerContainer.querySelector('.nav-actions');
+        if (navActions) {
+          headerContainer.insertBefore(headerPill, navActions);
+        } else {
+          headerContainer.appendChild(headerPill);
+        }
+      }
+    }
+
+    if (headerPill) {
+      const isNight = env.phase === 'NIGHT';
+      headerPill.style.borderColor = isNight ? 'rgba(168, 85, 247, 0.4)' : 'rgba(251, 191, 36, 0.4)';
+      headerPill.innerHTML = `
+        <span style="font-size: 1rem;">${env.weatherIcon || '☀️'}</span>
+        <span>${env.displayBadge}</span>
+      `;
+    }
   },
 
   async loadConfig() {

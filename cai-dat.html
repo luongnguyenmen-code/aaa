@@ -181,6 +181,93 @@
       color: #fca5a5;
     }
     .btn-action-del:hover { background: #ef4444; color: #fff; }
+
+    /* Admin Nav Tabs */
+    .admin-nav-tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 4px;
+    }
+    .admin-tab-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 1.05rem;
+      font-weight: 700;
+      padding: 12px 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: 8px 8px 0 0;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    .admin-tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .admin-tab-btn.active {
+      color: #fbbf24;
+      background: rgba(245, 158, 11, 0.12);
+    }
+    .admin-tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: #fbbf24;
+      border-radius: 3px 3px 0 0;
+      box-shadow: 0 0 10px #fbbf24;
+    }
+    .admin-tab-btn.tab-danger.active {
+      color: #f87171;
+      background: rgba(239, 68, 68, 0.15);
+    }
+    .admin-tab-btn.tab-danger.active::after {
+      background: #ef4444;
+      box-shadow: 0 0 10px #ef4444;
+    }
+
+    /* Combat Inspector Badges & Cards */
+    .flag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .flag-badge.danger {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid #ef4444;
+      color: #fca5a5;
+    }
+    .flag-badge.warning {
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid #f59e0b;
+      color: #fcd34d;
+    }
+    .flag-badge.clean {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid #10b981;
+      color: #6ee7b7;
+    }
+    .combat-stat-pill {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
   </style>
 </head>
 <body>
@@ -195,6 +282,7 @@
 
       <ul class="nav-links">
         <li><a href="index.html" class="nav-link">🌾 Trang chủ</a></li>
+        <li><a href="bxh.html" class="nav-link">🏆 Bảng Xếp Hạng</a></li>
         <li><a href="bando.html" class="nav-link">🗺️ Bản đồ</a></li>
         <li><a href="nhiem-vu.html" class="nav-link">🌾 Kho Lúa</a></li>
         <li><a href="giao-dich.html" class="nav-link">⚖️ Giao Dịch</a></li>
@@ -301,6 +389,20 @@
         </div>
       </div>
     </div>
+
+    <!-- Navigation Tabs (Role Management vs Combat Inspector) -->
+    <div class="admin-nav-tabs">
+      <button type="button" class="admin-tab-btn active" id="tab-btn-roles" onclick="AdminPanel.switchTab('roles')">
+        <span>👑 Cấp Role & Slot Gara</span>
+      </button>
+      <button type="button" class="admin-tab-btn tab-danger" id="tab-btn-combat" onclick="AdminPanel.switchTab('combat')">
+        <span>🛡️ Soi Sát Thương & Chống Hack (Admin Only)</span>
+        <span class="flag-badge danger" id="tab-combat-alert-badge" style="display: none;">0 Nghi Vấn</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: CẤP ROLE & SLOT GARA -->
+    <div id="tab-content-roles">
 
     <!-- Main Form Grid -->
     <div class="admin-grid">
@@ -491,6 +593,83 @@
         </table>
       </div>
     </section>
+
+    </div> <!-- End of #tab-content-roles -->
+
+    <!-- TAB 2: SOI SÁT THƯƠNG & CHỐNG HACK (ADMIN ONLY) -->
+    <div id="tab-content-combat" style="display: none;">
+      <!-- Combat Header & Stat Overview -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px;">
+        <div class="combat-stat-pill">
+          <span style="color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; font-weight: 700;">Tổng đòn đánh ghi nhận</span>
+          <div style="font-size: 1.8rem; font-weight: 800; color: #fff;" id="stat-total-hits">0</div>
+          <small style="color: #64748b; font-size: 0.75rem;">Cập nhật theo thời gian thực</small>
+        </div>
+        <div class="combat-stat-pill" style="border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.08);">
+          <span style="color: #fca5a5; font-size: 0.8rem; text-transform: uppercase; font-weight: 700;">🚨 Nghi Vấn Hack</span>
+          <div style="font-size: 1.8rem; font-weight: 800; color: #ef4444;" id="stat-flagged-hits">0</div>
+          <small style="color: #f87171; font-size: 0.75rem;">Reach / One-shot / God / Speed</small>
+        </div>
+        <div class="combat-stat-pill" style="border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.08);">
+          <span style="color: #fcd34d; font-size: 0.8rem; text-transform: uppercase; font-weight: 700;">⚠️ Tầm Đánh Bất Thường</span>
+          <div style="font-size: 1.8rem; font-weight: 800; color: #f59e0b;" id="stat-reach-hits">0</div>
+          <small style="color: #fbbf24; font-size: 0.75rem;">Hitbox Reach > 8 - 10m</small>
+        </div>
+        <div class="combat-stat-pill" style="border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.08);">
+          <span style="color: #6ee7b7; font-size: 0.8rem; text-transform: uppercase; font-weight: 700;">🟢 Đòn Đánh Hợp Lệ</span>
+          <div style="font-size: 1.8rem; font-weight: 800; color: #10b981;" id="stat-clean-hits">0</div>
+          <small style="color: #34d399; font-size: 0.75rem;">Sát thương chuẩn theo loài</small>
+        </div>
+      </div>
+
+      <!-- Combat Filter Bar -->
+      <div class="admin-card" style="margin-bottom: 20px; padding: 14px 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <span style="color: #94a3b8; font-size: 0.85rem; font-weight: 700;">Bộ Lọc:</span>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-filter-all" onclick="CombatInspector.setFilter('all')" style="font-weight: 700;">Tất Cả</button>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-filter-flagged" onclick="CombatInspector.setFilter('flagged')" style="background: #ef4444; border: none; font-weight: 700;">🚨 Chỉ Nghi Vấn Hack</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-filter-clean" onclick="CombatInspector.setFilter('clean')">🟢 Hợp Lệ</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-filter-oneshot" onclick="CombatInspector.setFilter('ONE_SHOT')">💥 Dame Ảo</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-filter-reach" onclick="CombatInspector.setFilter('REACH_HACK')">📏 Hitbox Hack</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-filter-speed" onclick="CombatInspector.setFilter('SPEED_HACK')">⚡ Speed Hack</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-filter-god" onclick="CombatInspector.setFilter('GOD_MODE')">🛡️ Bất Tử</button>
+          </div>
+
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="combat-search-input" placeholder="Tìm Steam ID / Tên / Loài..." class="form-input" style="padding: 6px 12px; font-size: 0.85rem; width: 230px;" oninput="CombatInspector.search(this.value)">
+            <button type="button" onclick="CombatInspector.loadLogs()" class="btn btn-secondary btn-sm" title="Tải lại nhật ký">🔄 Làm Mới</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Combat Logs Table -->
+      <div class="table-container">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width: 50px;">#</th>
+              <th>Thời Gian</th>
+              <th>Kẻ Tấn Công (Attacker)</th>
+              <th>Nạn Nhân (Victim)</th>
+              <th>Sát Thương (Dame)</th>
+              <th>Bộ Phận</th>
+              <th>Khoảng Cách</th>
+              <th>Tốc Độ</th>
+              <th>Cảnh Báo (Anti-Cheat)</th>
+              <th style="text-align: right;">Xử Lý Admin</th>
+            </tr>
+          </thead>
+          <tbody id="combat-logs-tbody">
+            <tr>
+              <td colspan="10" style="text-align: center; padding: 40px; color: #64748b;">
+                Đang tải nhật ký chiến đấu...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div> <!-- End of #tab-content-combat -->
 
     </div> <!-- End of #admin-authorized-content -->
 
@@ -1104,6 +1283,26 @@
         }, 60);
       },
 
+      switchTab(tabName) {
+        const btnRoles = document.getElementById('tab-btn-roles');
+        const btnCombat = document.getElementById('tab-btn-combat');
+        const contentRoles = document.getElementById('tab-content-roles');
+        const contentCombat = document.getElementById('tab-content-combat');
+
+        if (tabName === 'combat') {
+          if (btnRoles) btnRoles.classList.remove('active');
+          if (btnCombat) btnCombat.classList.add('active');
+          if (contentRoles) contentRoles.style.display = 'none';
+          if (contentCombat) contentCombat.style.display = 'block';
+          CombatInspector.init(this.currentAdminSteamId);
+        } else {
+          if (btnCombat) btnCombat.classList.remove('active');
+          if (btnRoles) btnRoles.classList.add('active');
+          if (contentCombat) contentCombat.style.display = 'none';
+          if (contentRoles) contentRoles.style.display = 'block';
+        }
+      },
+
       filterTable(keyword) {
         const clean = keyword.toLowerCase().trim();
         const rows = document.querySelectorAll('#assigned-users-tbody tr');
@@ -1163,6 +1362,240 @@
           </tr>
         `;
         }).join('');
+      }
+    };
+
+    // Combat Inspector Controller
+    const CombatInspector = {
+      adminSteamId: null,
+      rawLogs: [],
+      filteredLogs: [],
+      currentFilter: 'all',
+      searchKeyword: '',
+
+      init(adminSid) {
+        this.adminSteamId = adminSid || AdminPanel.currentAdminSteamId;
+        this.loadLogs();
+      },
+
+      async loadLogs() {
+        const tbody = document.getElementById('combat-logs-tbody');
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;">Đang nạp dữ liệu đòn đánh...</td></tr>`;
+        }
+
+        try {
+          const hdrs = {
+            'Content-Type': 'application/json',
+            'x-steam-id': this.adminSteamId || AdminPanel.currentAdminSteamId,
+            'x-admin-steam-id': this.adminSteamId || AdminPanel.currentAdminSteamId
+          };
+          const res = await fetch(`/api/admin/combat-logs?adminSteamId=${encodeURIComponent(this.adminSteamId || '')}`, {
+            headers: hdrs
+          });
+
+          if (res.status === 403) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #ef4444; padding: 30px;">⛔ Bạn không có quyền Admin để truy cập nhật ký chiến đấu!</td></tr>`;
+            return;
+          }
+
+          const data = await res.json();
+          if (data && data.success && Array.isArray(data.logs)) {
+            this.rawLogs = data.logs;
+            this.updateStats(data.summary);
+            this.applyFilterAndRender();
+          } else {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #ef4444; padding: 30px;">Không thể tải nhật ký chiến đấu: ${data.error || 'Lỗi không xác định'}</td></tr>`;
+          }
+        } catch (e) {
+          console.error(e);
+          if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #ef4444; padding: 30px;">Lỗi kết nối máy chủ!</td></tr>`;
+        }
+      },
+
+      updateStats(summary) {
+        if (!summary) return;
+        const totalEl = document.getElementById('stat-total-hits');
+        const flagEl = document.getElementById('stat-flagged-hits');
+        const reachEl = document.getElementById('stat-reach-hits');
+        const cleanEl = document.getElementById('stat-clean-hits');
+        const badgeTab = document.getElementById('tab-combat-alert-badge');
+
+        if (totalEl) totalEl.textContent = summary.totalLogs || 0;
+        if (flagEl) flagEl.textContent = summary.flaggedLogs || 0;
+        if (reachEl) reachEl.textContent = summary.reachAnomalies || 0;
+        if (cleanEl) cleanEl.textContent = summary.cleanLogs || 0;
+
+        if (badgeTab) {
+          if (summary.flaggedLogs > 0) {
+            badgeTab.textContent = `🚨 ${summary.flaggedLogs} Nghi Vấn`;
+            badgeTab.style.display = 'inline-flex';
+          } else {
+            badgeTab.style.display = 'none';
+          }
+        }
+      },
+
+      setFilter(filterType) {
+        this.currentFilter = filterType;
+        const filterBtns = ['all', 'flagged', 'clean', 'ONE_SHOT', 'REACH_HACK', 'SPEED_HACK', 'GOD_MODE'];
+        filterBtns.forEach(f => {
+          const btn = document.getElementById(`btn-filter-${f.toLowerCase()}`);
+          if (btn) {
+            if (f === filterType) {
+              btn.className = 'btn btn-primary btn-sm';
+              btn.style.fontWeight = '700';
+            } else {
+              btn.className = 'btn btn-secondary btn-sm';
+              btn.style.fontWeight = 'normal';
+            }
+          }
+        });
+        this.applyFilterAndRender();
+      },
+
+      search(keyword) {
+        this.searchKeyword = (keyword || '').toLowerCase().trim();
+        this.applyFilterAndRender();
+      },
+
+      applyFilterAndRender() {
+        let list = [...this.rawLogs];
+
+        // Lọc theo tag
+        if (this.currentFilter === 'flagged') {
+          list = list.filter(l => l.isAnomaly);
+        } else if (this.currentFilter === 'clean') {
+          list = list.filter(l => !l.isAnomaly);
+        } else if (['ONE_SHOT', 'REACH_HACK', 'SPEED_HACK', 'GOD_MODE'].includes(this.currentFilter)) {
+          list = list.filter(l => Array.isArray(l.flags) && l.flags.some(f => f.type === this.currentFilter));
+        }
+
+        // Lọc theo từ khóa tìm kiếm
+        if (this.searchKeyword) {
+          list = list.filter(l => {
+            const txt = `${l.attacker?.steamId} ${l.attacker?.name} ${l.attacker?.species} ${l.victim?.steamId} ${l.victim?.name} ${l.victim?.species}`.toLowerCase();
+            return txt.includes(this.searchKeyword);
+          });
+        }
+
+        this.filteredLogs = list;
+        this.renderTable();
+      },
+
+      renderTable() {
+        const tbody = document.getElementById('combat-logs-tbody');
+        if (!tbody) return;
+
+        if (!this.filteredLogs.length) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="10" style="text-align: center; padding: 40px; color: #64748b;">
+                Không tìm thấy đòn đánh nào phù hợp với bộ lọc hiện tại.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = this.filteredLogs.map((log, idx) => {
+          const isSus = log.isAnomaly;
+          const rowBg = isSus ? 'background: rgba(239, 68, 68, 0.08);' : '';
+          
+          const flagsHtml = (log.flags || []).map(f => {
+            const cls = f.severity === 'critical' ? 'danger' : 'warning';
+            return `<span class="flag-badge ${cls}" title="${f.desc}">${f.icon || '🚨'} ${f.desc}</span>`;
+          }).join(' ');
+
+          const timeStr = log.timestamp ? new Date(log.timestamp).toLocaleTimeString('vi-VN') : '—';
+          const dateStr = log.timestamp ? new Date(log.timestamp).toLocaleDateString('vi-VN') : '';
+
+          return `
+            <tr style="${rowBg}">
+              <td style="color: #64748b; font-weight: 700;">#${idx + 1}</td>
+              <td style="font-size: 0.8rem; white-space: nowrap;">
+                <strong style="color: #cbd5e1;">${timeStr}</strong><br>
+                <small style="color: #64748b;">${dateStr}</small>
+              </td>
+              <td>
+                <div style="font-weight: 700; color: #fff;">${log.attacker?.name || 'Vô Danh'}</div>
+                <div style="font-size: 0.75rem; color: #fbbf24; font-family: monospace;">${log.attacker?.species || 'Dino'}</div>
+                <small style="color: #64748b; font-family: monospace;">${log.attacker?.steamId || ''}</small>
+              </td>
+              <td>
+                <div style="font-weight: 700; color: #fff;">${log.victim?.name || 'Vô Danh'}</div>
+                <div style="font-size: 0.75rem; color: #38bdf8; font-family: monospace;">${log.victim?.species || 'Dino'}</div>
+                <small style="color: #64748b; font-family: monospace;">${log.victim?.steamId || ''}</small>
+              </td>
+              <td>
+                <span style="font-size: 1.05rem; font-weight: 800; color: ${isSus ? '#ef4444' : '#fbbf24'};">${log.damageDealt}</span>
+                <small style="color: #94a3b8; display: block; font-size: 0.72rem;">Máu nạn nhân: ${log.victim?.hpAfter || 0}/${log.victim?.hpBefore || 0}</small>
+              </td>
+              <td>
+                <span class="badge-slot" style="font-size: 0.75rem; padding: 2px 6px;">${log.hitPart || 'Thân'}</span>
+              </td>
+              <td>
+                <strong style="color: ${log.distanceMeters > 7 ? '#ef4444' : '#10b981'}; font-size: 0.9rem;">${log.distanceMeters}m</strong>
+              </td>
+              <td>
+                <span style="color: ${log.attacker?.speedKmh > 50 ? '#ef4444' : '#94a3b8'}; font-size: 0.85rem;">${log.attacker?.speedKmh || 0} km/h</span>
+              </td>
+              <td>
+                ${flagsHtml || '<span class="flag-badge clean">🟢 Chuẩn Hợp Lệ</span>'}
+              </td>
+              <td style="text-align: right; white-space: nowrap;">
+                ${isSus ? `
+                  <button onclick="CombatInspector.takeAction('${log.id}', '${log.attacker?.steamId}', 'warn')" class="btn-action-sm" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fcd34d;" title="Cảnh cáo">⚠️ Cảnh Cáo</button>
+                  <button onclick="CombatInspector.takeAction('${log.id}', '${log.attacker?.steamId}', 'kick')" class="btn-action-sm btn-action-del" title="Kick khỏi server">👢 Kick</button>
+                  <button onclick="CombatInspector.takeAction('${log.id}', '${log.attacker?.steamId}', 'ban')" class="btn-action-sm" style="background: #ef4444; color: #fff;" title="Ban vĩnh viễn">🔨 Ban</button>
+                ` : `
+                  <span style="color: #64748b; font-size: 0.8rem;">Đã an toàn</span>
+                `}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      },
+
+      async takeAction(logId, targetSteamId, action) {
+        const actionNames = {
+          warn: 'CẢNH CÁO người chơi',
+          kick: 'KICK người chơi khỏi máy chủ',
+          ban: 'BAN VĨNH VIỄN người chơi'
+        };
+        const actionDesc = actionNames[action] || action;
+        if (!confirm(`Bạn có chắc chắn muốn thực hiện [${actionDesc}] đối với Steam ID ${targetSteamId}?`)) {
+          return;
+        }
+
+        try {
+          const hdrs = {
+            'Content-Type': 'application/json',
+            'x-steam-id': this.adminSteamId || AdminPanel.currentAdminSteamId,
+            'x-admin-steam-id': this.adminSteamId || AdminPanel.currentAdminSteamId
+          };
+          const res = await fetch('/api/admin/combat-action', {
+            method: 'POST',
+            headers: hdrs,
+            body: JSON.stringify({
+              adminSteamId: this.adminSteamId || AdminPanel.currentAdminSteamId,
+              logId,
+              targetSteamId,
+              action
+            })
+          });
+
+          const data = await res.json();
+          if (res.ok && data.success) {
+            App.showToast(data.message, 'success');
+            this.loadLogs();
+          } else {
+            App.showToast(data.error || 'Lỗi khi thực hiện hành động!', 'error');
+          }
+        } catch (e) {
+          console.error(e);
+          App.showToast('Lỗi kết nối máy chủ!', 'error');
+        }
       }
     };
 
