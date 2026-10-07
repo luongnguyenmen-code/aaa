@@ -355,14 +355,25 @@
       const sGrid = document.getElementById('server-quests-grid');
       const countBadge = document.getElementById('server-quest-count');
 
+      // Nút nhận tất cả Lúa nếu có nhiệm vụ đủ điều kiện
+      let claimAllBtnHtml = '';
+      if (data.claimableCount > 0) {
+        claimAllBtnHtml = `
+          <button onclick="claimAllQuests()" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35); padding: 6px 14px; margin-left: 10px;">
+            🎁 Nhận Tất Cả (+${data.totalClaimableLua} Lúa) 🌾
+          </button>
+        `;
+      }
+
       if (data.serverQuests && data.serverQuests.length > 0) {
-        if (countBadge) countBadge.textContent = `${data.serverQuests.length} Nhiệm vụ`;
+        if (countBadge) {
+          countBadge.innerHTML = `<span>${data.serverQuests.length} Nhiệm vụ</span> ${claimAllBtnHtml}`;
+        }
 
         sGrid.innerHTML = data.serverQuests.map(q => {
           const isDone = q.completed || q.claimed;
-          const rewardText = q.rewards && q.rewards.length 
-            ? q.rewards.map(r => `+${r.amount} ${r.kind.includes('Lúa') ? r.kind : r.kind + ' 🌾'}`).join(', ') 
-            : `+${q.xp || 50} XP`;
+          const rewardAmount = q.rewardAmount || 5;
+          const rewardText = `+${rewardAmount} Lúa 🌾`;
           const periodLabel = q.period === 'daily' ? 'Hằng Ngày' : (q.period === 'weekly' ? 'Hằng Tuần' : 'Hằng Tháng');
 
           let progressStr = '';
@@ -374,16 +385,24 @@
           } else if (q.config && q.config.days) {
             progressStr = `${q.progress} / ${q.config.days} ngày đăng nhập`;
             progressPercent = Math.min(100, Math.round((q.progress / q.config.days) * 100));
+          } else if (q.config && q.config.count) {
+            progressStr = `${q.progress} / ${q.config.count}`;
+            progressPercent = Math.min(100, Math.round((q.progress / q.config.count) * 100));
           } else if (isDone) {
             progressPercent = 100;
           }
 
+          const canClaim = q.canClaim;
+          const isClaimed = q.claimed;
+
           return `
-            <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-color: ${canClaim ? '#fbbf24' : 'var(--border-color)'}; box-shadow: ${canClaim ? '0 4px 20px rgba(245, 158, 11, 0.15)' : 'none'};">
               <div>
                 <div class="card-header" style="margin-bottom: 10px;">
                   <span class="rule-badge ${q.period === 'daily' ? 'badge-allow' : 'badge-blue'}">${periodLabel}</span>
-                  <span class="rule-badge ${isDone ? 'badge-allow' : 'badge-orange'}">${isDone ? 'ĐÃ HOÀN THÀNH' : 'ĐANG THỰC HIỆN'}</span>
+                  <span class="rule-badge ${isClaimed ? 'badge-allow' : (canClaim ? 'badge-warn' : 'badge-orange')}">
+                    ${isClaimed ? '✓ ĐÃ NHẬN THƯỞNG' : (isDone ? '🎁 ĐỦ ĐIỀU KIỆN' : 'ĐANG THỰC HIỆN')}
+                  </span>
                 </div>
                 <h3 class="card-title" style="font-size: 1.1rem; margin-bottom: 8px;">${q.name}</h3>
                 <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">${q.description}</p>
@@ -392,20 +411,21 @@
               <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; margin-top: 12px;">
                 <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px;">
                   <span style="color: var(--text-muted);">Tiến độ: <strong>${progressStr || (isDone ? '100%' : 'Chưa hoàn thành')}</strong></span>
-                  <strong style="color: var(--accent-amber); font-size: 0.9rem;">${rewardText}</strong>
+                  <strong style="color: var(--accent-amber); font-size: 0.95rem;">${rewardText}</strong>
                 </div>
 
                 <!-- Progress Bar -->
-                <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
-                  <div style="width: ${progressPercent}%; height: 100%; background: ${isDone ? 'var(--accent-emerald)' : 'var(--accent-amber)'}; border-radius: 3px;"></div>
+                <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 10px;">
+                  <div style="width: ${progressPercent}%; height: 100%; background: ${isClaimed ? 'var(--accent-emerald)' : (canClaim ? 'linear-gradient(90deg, #f59e0b, #10b981)' : 'var(--accent-amber)')}; border-radius: 3px;"></div>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem;">
-                  ${q.claimed 
-                    ? '<span style="color: var(--accent-emerald-light);">✓ Đã nhận thưởng về ví</span>' 
-                    : (isDone 
-                        ? '<span style="color: var(--accent-amber); font-weight: 700;">🎁 Đủ điều kiện nhận thưởng</span>' 
-                        : '<span style="color: var(--text-muted);">Tiếp tục sinh tồn để hoàn tất</span>')}
+                <!-- Action / Status -->
+                <div>
+                  ${isClaimed 
+                    ? '<div style="color: #6ee7b7; font-size: 0.8rem; font-weight: 600; text-align: center; padding: 6px 0;">✓ Đã nhận thưởng về ví Lúa</div>' 
+                    : (canClaim 
+                        ? `<button onclick="claimSingleQuest('${q.id}', '${q.name.replace(/'/g, "\\'")}', ${rewardAmount})" class="btn btn-primary btn-sm" style="width: 100%; font-weight: 800; background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);">🌾 Nhận +${rewardAmount} Lúa Thưởng Ngay 🚀</button>` 
+                        : '<div style="color: var(--text-muted); font-size: 0.78rem; text-align: center; padding: 4px 0;">Tiếp tục sinh tồn in-game để hoàn tất</div>')}
                 </div>
               </div>
             </div>
@@ -453,6 +473,66 @@
         `).join('');
       } else {
         pGrid.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem; grid-column: 1 / -1;">Chưa có thông tin Prime Quests cho loài khủng long này.</p>';
+      }
+    }
+
+    function getAuthHeaders() {
+      const headers = { 'Content-Type': 'application/json' };
+      try {
+        const stored = localStorage.getItem('st25_steam_user');
+        if (stored) {
+          const u = JSON.parse(stored);
+          if (u && u.steam_id) headers['x-steam-id'] = u.steam_id;
+        }
+      } catch (_) {}
+      return headers;
+    }
+
+    async function claimSingleQuest(questId, questName, reward) {
+      try {
+        const res = await fetch('/api/player/quests/claim', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          credentials: 'include',
+          body: JSON.stringify({ questId })
+        });
+        const result = await res.json();
+        if (res.ok && result.success) {
+          App.showToast(result.message || `Đã nhận +${reward} Lúa 🌾 thành công!`, 'success');
+          if (result.newBalance !== undefined) {
+            document.getElementById('player-coins-amount').innerHTML = `🌾 ${result.newBalance.toLocaleString()} <span style="font-size: 1.1rem; color: #fef08a;">Lúa</span>`;
+          }
+          await loadPersonalQuests(currentSteamId);
+        } else {
+          App.showToast(result.error || 'Nhận thưởng thất bại!', 'error');
+        }
+      } catch (e) {
+        console.error(e);
+        App.showToast('Lỗi mạng khi nhận thưởng nhiệm vụ!', 'error');
+      }
+    }
+
+    async function claimAllQuests() {
+      try {
+        const res = await fetch('/api/player/quests/claim-all', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          credentials: 'include',
+          body: JSON.stringify({})
+        });
+        const result = await res.json();
+        if (res.ok && result.success) {
+          App.showToast(result.message, 'success');
+          if (result.newBalance !== undefined) {
+            document.getElementById('player-coins-amount').innerHTML = `🌾 ${result.newBalance.toLocaleString()} <span style="font-size: 1.1rem; color: #fef08a;">Lúa</span>`;
+          }
+          await loadPersonalQuests(currentSteamId);
+        } else {
+          App.showToast(result.error || result.message || 'Không có nhiệm vụ để nhận thưởng!', 'info');
+        }
+      } catch (e) {
+        console.error(e);
+        App.showToast('Lỗi mạng khi nhận thưởng!', 'error');
       }
     }
   </script>

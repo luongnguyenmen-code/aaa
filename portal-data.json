@@ -4,7 +4,7 @@
     "76561198354289789": 10234,
     "76561198838095252": 586,
     "76561199229687125": 22,
-    "76561198789527189": 226
+    "76561198789527189": 302
   },
   "userInventory": {
     "76561198636766540": [
@@ -740,5 +740,31 @@
     }
   ],
   "claimedCodeHistory": [],
-  "claimedCodesPerUser": {}
+  "claimedCodesPerUser": {},
+  "claimedQuests": {
+    "76561198789527189": {
+      "cmuvilrra0b7npo01yc012pp1": {
+        "claimedAt": "2026-10-07T17:43:49.526Z",
+        "amount": 12,
+        "questName": "Bậc Thầy Sinh Tồn (Survive 120 Mins)"
+      },
+      "cmuvilqyd00sut301xvqmajc8": {
+        "claimedAt": "2026-10-07T17:43:58.388Z",
+        "amount": 6,
+        "questName": "Sống Sót Kiên Cường (Survive 60 Mins)"
+      },
+      "cmuvilv7b0b8cpo01qrkcl58t": {
+        "claimedAt": "2026-10-07T17:43:58.388Z",
+        "amount": 8,
+        "questName": "Tuần Tra Lãnh Thổ (Patrol Zones)"
+      },
+      "cmuvg7q1o0pnmo40186z1eeh3": {
+        "claimedAt": "2026-10-07T17:43:58.388Z",
+        "amount": 50,
+        "questName": "Di CHUYỂN"
+      }
+    }
+  },
+  "lockedInviteCodes": [],
+  "userCustomInviteCodes": {}
 }

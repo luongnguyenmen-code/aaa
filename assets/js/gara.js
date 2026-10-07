@@ -149,12 +149,17 @@ const Garage = {
         } catch (_) { return null; }
       })();
 
+      const effectiveSid = sid || (storedUser && storedUser.steam_id && /^\d{17}$/.test(String(storedUser.steam_id).trim()) ? String(storedUser.steam_id).trim() : null);
+
       const hdrs = {};
+      if (effectiveSid) {
+        hdrs['x-steam-id'] = effectiveSid;
+      }
       if (storedUser && storedUser.isAdmin && storedUser.steam_id) {
         hdrs['x-admin-steam-id'] = storedUser.steam_id;
       }
 
-      const url = sid ? `/api/player/garage?steamId=${encodeURIComponent(sid)}` : '/api/player/garage';
+      const url = effectiveSid ? `/api/player/garage?steamId=${encodeURIComponent(effectiveSid)}` : '/api/player/garage';
       const res = await fetch(url, { headers: hdrs });
       if (res.ok) {
         const data = await res.json();
@@ -179,9 +184,6 @@ const Garage = {
             { slot: 2, empty: true },
             { slot: 3, empty: true }
           ];
-          
-          // Dọn dẹp localStorage để tránh dính tài khoản cũ
-          localStorage.removeItem('st25_steam_user');
 
           // Hiển thị khung mời đăng nhập và LUÔN GIỮ HIỂN THỊ GARA
           const loginPanel = document.getElementById('login-required-panel');
@@ -189,9 +191,9 @@ const Garage = {
           if (loginPanel) loginPanel.style.display = 'block';
           if (garagePanel) garagePanel.style.display = 'block';
 
-          // Để trắng ô nhập Steam ID
+          // Để trắng ô nhập Steam ID nếu chưa có
           const manualInp = document.getElementById('manual-login-steamid');
-          if (manualInp) manualInp.value = '';
+          if (manualInp && !manualInp.value) manualInp.value = '';
 
           // Ẩn tất cả công cụ và liên kết Admin
           this.setAdminVisibility(false);

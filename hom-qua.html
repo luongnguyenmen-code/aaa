@@ -633,7 +633,11 @@
           🦖 <strong style="color: #fbbf24;">Khủng long [${result.reward.name}]</strong> đã được tự động cất thẳng vào <strong>Gara</strong> của bạn!<br>
           <span style="color: #94a3b8; font-size: 0.85rem; display: block; margin-top: 6px;">Bạn có thể mở Gara để đưa ra đảo chơi bất cứ lúc nào!</span>
         `;
-        if (garageBtn) garageBtn.style.display = 'block';
+        if (garageBtn) {
+          garageBtn.style.display = 'block';
+          const activeSid = getActiveSteamId();
+          garageBtn.href = activeSid ? `gara.html?steamId=${encodeURIComponent(activeSid)}` : 'gara.html';
+        }
       } else if (result.reward.type === 'lua') {
         document.getElementById('modal-reward-desc').textContent = `Chúc mừng bạn đã nhận được ${result.reward.amount} Lúa 🌾 cộng trực tiếp vào ví!`;
         if (garageBtn) garageBtn.style.display = 'none';

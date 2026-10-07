@@ -80,17 +80,27 @@
       <span class="rule-badge badge-allow" style="font-size: 0.85rem;">🌾 CHƯƠNG TRÌNH ĐỒNG ĐỘI ST25 🦖</span>
       <h1 style="color: #fff; font-size: 2.2rem; margin: 12px 0 6px;">MỜI BẠN CÙNG CHƠI — NHẬN NGAY +50 LÚA 🌾</h1>
       <p style="color: var(--text-secondary); max-width: 650px; margin: 0 auto 15px; font-size: 0.95rem;">
-        Chia sẻ mã giới thiệu cho bạn bè. Khi bạn bè liên kết tài khoản Steam và nhập mã, cả <strong>Bạn</strong> và <strong>Bạn Bè</strong> đều nhận ngay <strong>50 Lúa 🌾</strong> vào ví sinh tồn!
+        Chia sẻ mã giới thiệu cho bạn bè. Khi bạn bè liên kết tài khoản Steam và nhập mã, cả <strong>Bạn</strong> và <strong>Bạn Bè</strong> đều nhận ngay <strong>50 Lúa 🌾</strong> vào ví sinh tồn!<br>
+        <span style="color: #fbbf24; font-size: 0.85rem; font-weight: 600;">🔒 Lưu ý: Mỗi mã mời chỉ dùng được đúng 1 lần duy nhất, sau 1 lần sẽ bị khóa vĩnh viễn toàn server.</span>
       </p>
 
-      <div class="code-box">
+      <div class="code-box" id="code-box-container">
         <span class="code-text" id="my-ref-code">ST25-XXXXX</span>
         <button onclick="copyRefCode()" class="btn btn-primary btn-sm" id="btn-copy-code">
           📋 Sao Chép Mã
         </button>
       </div>
 
-      <div>
+      <div id="code-locked-notice" style="display: none; margin-top: 12px;">
+        <span class="rule-badge badge-deny" style="font-size: 0.85rem; padding: 5px 12px;">🔒 Mã mời này đã có bạn bè sử dụng và đã bị khóa vĩnh viễn (1 lần duy nhất)</span>
+        <div style="margin-top: 10px;">
+          <button onclick="generateNewInviteCode()" class="btn btn-primary btn-sm" id="btn-gen-code" style="background: linear-gradient(135deg, #10b981, #059669); border: none;">
+            🔄 Tạo Mã Mới Cho Bạn Bè Khác
+          </button>
+        </div>
+      </div>
+
+      <div style="margin-top: 12px;">
         <button onclick="copyShareLink()" class="btn btn-secondary btn-sm" id="btn-copy-link">
           🔗 Sao Chép Link Giới Thiệu Nhanh
         </button>
@@ -230,16 +240,33 @@
 
         isUserLoggedIn = !!data.loggedIn;
 
+        const codeEl = document.getElementById('my-ref-code');
+        const copyCodeBtn = document.getElementById('btn-copy-code');
+        const copyLinkBtn = document.getElementById('btn-copy-link');
+        const lockedNotice = document.getElementById('code-locked-notice');
+
         if (data.loggedIn && data.referralCode) {
           myCode = data.referralCode;
-          document.getElementById('my-ref-code').textContent = myCode;
-          document.getElementById('btn-copy-code').style.display = 'inline-block';
-          document.getElementById('btn-copy-link').style.display = 'inline-block';
+          codeEl.textContent = myCode;
+          copyCodeBtn.style.display = 'inline-block';
+          copyLinkBtn.style.display = 'inline-block';
+
+          if (data.isCodeLocked) {
+            codeEl.style.textDecoration = 'line-through';
+            codeEl.style.color = '#ef4444';
+            if (lockedNotice) lockedNotice.style.display = 'block';
+          } else {
+            codeEl.style.textDecoration = 'none';
+            codeEl.style.color = '#fff';
+            if (lockedNotice) lockedNotice.style.display = 'none';
+          }
         } else {
           myCode = '';
-          document.getElementById('my-ref-code').innerHTML = `<span style="font-size: 1.2rem; color: #94a3b8;">Chưa Đăng Nhập Steam</span>`;
-          document.getElementById('btn-copy-code').style.display = 'none';
-          document.getElementById('btn-copy-link').style.display = 'none';
+          codeEl.innerHTML = `<span style="font-size: 1.2rem; color: #94a3b8;">Chưa Đăng Nhập Steam</span>`;
+          codeEl.style.textDecoration = 'none';
+          copyCodeBtn.style.display = 'none';
+          copyLinkBtn.style.display = 'none';
+          if (lockedNotice) lockedNotice.style.display = 'none';
         }
 
         document.getElementById('stat-count').textContent = data.invitedCount || 0;
@@ -257,6 +284,26 @@
 
       } catch (e) {
         console.error('Error loading referral info:', e);
+      }
+    }
+
+    async function generateNewInviteCode() {
+      try {
+        App.showToast('Đang tạo mã mời mới...', 'info');
+        const res = await fetch('/api/referral/generate-code', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          credentials: 'include'
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          App.showToast(data.message, 'success');
+          await loadReferralData();
+        } else {
+          App.showToast(data.error || 'Không thể tạo mã mời mới!', 'error');
+        }
+      } catch (e) {
+        App.showToast('Lỗi kết nối máy chủ!', 'error');
       }
     }
 
