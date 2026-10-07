@@ -1071,13 +1071,26 @@ app.get('/api/admin/check', (req, res) => {
   });
 });
 
-// Lấy danh sách Roles, danh sách thành viên đã phân quyền & người chơi gần đây
-app.get('/api/admin/roles-slots', async (req, res) => {
-  const adminSteamId = getAdminSteamId(req);
-  if (!isUserAdmin(adminSteamId)) {
-    return res.status(403).json({ error: "Chỉ Quản Trị Viên (Admin) mới có quyền truy cập!" });
-  }
+const ROLE_NAME_MAP = {
+  "admin": "👑 Quản Trị Viên (Admin)",
+  ".": "👑 BQT Cấp Cao (.)",
+  "mod": "🛡️ Điều Hành Viên (Mod)",
+  "dev": "💻 DEV (Phát Triển)",
+  "long_dai_dia_chu": "🏰 LONG ĐẠI ĐỊA CHỦ",
+  "long_phu_nong": "🌾 LONG PHÚ NÔNG",
+  "long_chu": "🐲 LONG CHỦ",
+  "long_ta_dien": "🌾 LONG TÁ ĐIỀN",
+  "vien_gach_dau_tien": "🧱 Viên Gạch Đầu Tiên",
+  "long_khung_quang_cao": "📢 LONG KHỦNG (QUẢNG CÁO)",
+  "booster": "🚀 Máy chủ - Bộ khuếch đại",
+  "may_chu_bo_khuech_dai": "🚀 Máy chủ - Bộ khuếch đại",
+  "streamer": "🎙️ Streamer",
+  "bot": "🤖 BOT",
+  "default": "🦖 Thành Viên ST25"
+};
 
+// Helper: Lấy toàn bộ danh sách thành viên đã phân quyền, sắp xếp người mới nhất lên đầu
+function getAllAssignedUsers() {
   const cfg = getConfig();
   const garageCfg = cfg.garage || {};
   const roleLimits = garageCfg.role_limits || {};
@@ -1086,35 +1099,11 @@ app.get('/api/admin/roles-slots', async (req, res) => {
   const portalData = getPortalData();
   const dynamicAssignments = portalData.adminAssignments || {};
 
-  const roleNameMap = {
-    "admin": "👑 Quản Trị Viên (Admin)",
-    ".": "👑 BQT Cấp Cao (.)",
-    "mod": "🛡️ Điều Hành Viên (Mod)",
-    "dev": "💻 DEV (Phát Triển)",
-    "long_dai_dia_chu": "🏰 LONG ĐẠI ĐỊA CHỦ",
-    "long_phu_nong": "🌾 LONG PHÚ NÔNG",
-    "long_chu": "🐲 LONG CHỦ",
-    "long_ta_dien": "🌾 LONG TÁ ĐIỀN",
-    "vien_gach_dau_tien": "🧱 Viên Gạch Đầu Tiên",
-    "long_khung_quang_cao": "📢 LONG KHỦNG (QUẢNG CÁO)",
-    "booster": "🚀 Máy chủ - Bộ khuếch đại",
-    "may_chu_bo_khuech_dai": "🚀 Máy chủ - Bộ khuếch đại",
-    "streamer": "🎙️ Streamer",
-    "bot": "🤖 BOT",
-    "default": "🦖 Thành Viên ST25"
-  };
-
-  const rolesList = Object.keys(roleLimits).map(key => ({
-    key,
-    name: roleNameMap[key] || `Vai trò ${key.toUpperCase()}`,
-    defaultSlots: roleLimits[key]
-  }));
-
   // Hợp nhất danh sách tất cả các Steam ID đã được gán role hoặc slot
   const allSteamIds = Array.from(new Set([
-    ...Object.keys(userRoles),
-    ...Object.keys(customSlots),
     ...Object.keys(dynamicAssignments),
+    ...Object.keys(customSlots),
+    ...Object.keys(userRoles),
     ...SUPER_ADMINS
   ]));
 
@@ -1125,15 +1114,48 @@ app.get('/api/admin/roles-slots', async (req, res) => {
     return {
       steamId: sid,
       roleKey,
-      roleName: roleNameMap[roleKey] || roleKey,
+      roleName: ROLE_NAME_MAP[roleKey] || `Vai trò ${roleKey.toUpperCase()}`,
       slots: Number(slots),
       isSuperAdmin: SUPER_ADMINS.includes(sid),
       updatedAt: dyn.updatedAt || null,
+      updatedAtTimestamp: dyn.updatedAtTimestamp || (dyn.updatedAt ? new Date(dyn.updatedAt).getTime() : 0),
       notes: dyn.notes || ""
     };
   });
 
-  // Lấy danh sách thành viên online/gần đây từ IslePilot
+  // Sắp xếp: Ai vừa được cập nhật gần nhất sẽ lên đứng đầu bảng #1
+  assignedUsers.sort((a, b) => {
+    const timeA = a.updatedAtTimestamp || 0;
+    const timeB = b.updatedAtTimestamp || 0;
+    if (timeA !== timeB) return timeB - timeA;
+    if (a.isSuperAdmin && !b.isSuperAdmin) return -1;
+    if (!a.isSuperAdmin && b.isSuperAdmin) return 1;
+    return a.steamId.localeCompare(b.steamId);
+  });
+
+  return assignedUsers;
+}
+
+// Lấy danh sách Roles, danh sách thành viên đã phân quyền & người chơi gần đây
+app.get('/api/admin/roles-slots', async (req, res) => {
+  const adminSteamId = getAdminSteamId(req);
+  if (!isUserAdmin(adminSteamId)) {
+    return res.status(403).json({ error: "Chỉ Quản Trị Viên (Admin) mới có quyền truy cập!" });
+  }
+
+  const cfg = getConfig();
+  const garageCfg = cfg.garage || {};
+  const roleLimits = garageCfg.role_limits || {};
+
+  const rolesList = Object.keys(roleLimits).map(key => ({
+    key,
+    name: ROLE_NAME_MAP[key] || `Vai trò ${key.toUpperCase()}`,
+    defaultSlots: roleLimits[key]
+  }));
+
+  const assignedUsers = getAllAssignedUsers();
+
+  // Lấy danh sách thành viên online/gần đây từ IslePilot (sử dụng cache nội bộ để phản hồi siêu tốc)
   let recentPlayers = [];
   try {
     const pilotPlayers = await callIslePilot('/players');
@@ -1226,13 +1248,15 @@ app.post('/api/admin/assign-role-slots', async (req, res) => {
   saveConfig(cfg);
 
   // 2. Lưu bền vững vào portal-data.json
+  const now = new Date();
   const data = getPortalData();
   if (!data.adminAssignments) data.adminAssignments = {};
   data.adminAssignments[cleanSteamId] = {
     roleKey: cleanRole,
     slots: finalSlots,
     updatedBy: adminSteamId,
-    updatedAt: new Date().toLocaleString('vi-VN'),
+    updatedAt: now.toLocaleString('vi-VN'),
+    updatedAtTimestamp: now.getTime(),
     notes: notes || ""
   };
   savePortalData(data);
@@ -1243,12 +1267,14 @@ app.post('/api/admin/assign-role-slots', async (req, res) => {
 
   // Kiểm tra ngay kết quả sau khi lưu
   const updatedStatus = await getPlayerGarageStatus(cleanSteamId);
+  const updatedAssignments = getAllAssignedUsers();
 
   res.json({
     success: true,
     message: `Đã cấp thành công Role [${updatedStatus.roleName}] với [${updatedStatus.maxSlots} Slots Gara] cho Steam ID ${cleanSteamId}! Dữ liệu đã lưu vĩnh viễn và có hiệu lực ngay lập tức.`,
     steamId: cleanSteamId,
-    garageStatus: updatedStatus
+    garageStatus: updatedStatus,
+    assignedUsers: updatedAssignments
   });
 });
 
@@ -1285,9 +1311,12 @@ app.post('/api/admin/remove-role-slots', async (req, res) => {
   clearPlayerCache(cleanSteamId);
   clearPlayerCache(adminSteamId);
 
+  const updatedAssignments = getAllAssignedUsers();
+
   res.json({
     success: true,
-    message: `Đã xóa thiết lập riêng cho Steam ID ${cleanSteamId}. Người chơi trở về vai trò mặc định của server.`
+    message: `Đã xóa thiết lập riêng cho Steam ID ${cleanSteamId}. Người chơi trở về vai trò mặc định của server.`,
+    assignedUsers: updatedAssignments
   });
 });
 

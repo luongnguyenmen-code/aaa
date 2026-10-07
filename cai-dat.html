@@ -75,6 +75,29 @@
       border-color: #38bdf8;
       color: #fff;
     }
+    .btn-quick-slot.active {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.45), rgba(217, 119, 6, 0.35)) !important;
+      border-color: #f59e0b !important;
+      color: #fbbf24 !important;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+      font-weight: 700;
+    }
+    .btn-preset {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #cbd5e1;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-preset:hover, .btn-preset.active {
+      background: rgba(245, 158, 11, 0.35) !important;
+      border-color: #f59e0b !important;
+      color: #fbbf24 !important;
+      font-weight: 700;
+    }
     .player-preview-card {
       background: rgba(0, 0, 0, 0.35);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -340,17 +363,17 @@
           <!-- Garage Slots -->
           <div class="form-group">
             <label class="form-label" for="custom-slots">Số Lượng Slot Gara Muốn Cấp:</label>
-            <input type="number" id="custom-slots" class="form-input" min="1" max="100" value="3" required>
+            <input type="number" id="custom-slots" class="form-input" min="1" max="100" value="3" required oninput="AdminPanel.updateQuickSlotButtons(this.value)">
             
             <div class="quick-slot-btns">
               <span style="font-size: 0.8rem; color: #94a3b8; align-self: center; margin-right: 4px;">Chọn nhanh:</span>
-              <button type="button" class="btn-quick-slot" onclick="AdminPanel.setSlots(3)">3 Slots (Mặc định)</button>
-              <button type="button" class="btn-quick-slot" onclick="AdminPanel.setSlots(5)">5 Slots</button>
-              <button type="button" class="btn-quick-slot" onclick="AdminPanel.setSlots(8)">8 Slots (Long Chủ)</button>
-              <button type="button" class="btn-quick-slot" onclick="AdminPanel.setSlots(12)">12 Slots (Long Tá Điền)</button>
-              <button type="button" class="btn-quick-slot" onclick="AdminPanel.setSlots(18)">18 Slots (Long Phú Nông)</button>
-              <button type="button" class="btn-quick-slot" onclick="AdminPanel.setSlots(20)">20 Slots (Admin/Đại Địa Chủ)</button>
-              <button type="button" class="btn-quick-slot" onclick="AdminPanel.setSlots(30)">30 Slots (Viên Gạch)</button>
+              <button type="button" class="btn-quick-slot" data-slot-val="3" onclick="AdminPanel.setSlots(3)">3 Slots (Mặc định)</button>
+              <button type="button" class="btn-quick-slot" data-slot-val="5" onclick="AdminPanel.setSlots(5)">5 Slots</button>
+              <button type="button" class="btn-quick-slot" data-slot-val="8" onclick="AdminPanel.setSlots(8)">8 Slots (Long Chủ)</button>
+              <button type="button" class="btn-quick-slot" data-slot-val="12" onclick="AdminPanel.setSlots(12)">12 Slots (Long Tá Điền)</button>
+              <button type="button" class="btn-quick-slot" data-slot-val="18" onclick="AdminPanel.setSlots(18)">18 Slots (Long Phú Nông)</button>
+              <button type="button" class="btn-quick-slot" data-slot-val="20" onclick="AdminPanel.setSlots(20)">20 Slots (Admin/Đại Địa Chủ)</button>
+              <button type="button" class="btn-quick-slot" data-slot-val="30" onclick="AdminPanel.setSlots(30)">30 Slots (Viên Gạch)</button>
             </div>
           </div>
 
@@ -499,13 +522,14 @@
           <div class="form-group" style="margin-bottom: 18px;">
             <label class="form-label" for="modal-edit-slots" style="font-weight: 700;">🦖 Sức Chứa Gara (Số Slots):</label>
             <div style="display: flex; gap: 10px; align-items: center;">
-              <input type="number" id="modal-edit-slots" class="form-input" min="1" max="100" required style="font-size: 1.1rem; font-weight: 700; width: 110px; text-align: center;">
-              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                <button type="button" class="btn-preset" onclick="AdminPanel.setModalSlots(3)">3 slot</button>
-                <button type="button" class="btn-preset" onclick="AdminPanel.setModalSlots(5)">5 slot</button>
-                <button type="button" class="btn-preset" onclick="AdminPanel.setModalSlots(12)">12 slot</button>
-                <button type="button" class="btn-preset" onclick="AdminPanel.setModalSlots(18)">18 slot</button>
-                <button type="button" class="btn-preset" onclick="AdminPanel.setModalSlots(20)">20 slot</button>
+              <input type="number" id="modal-edit-slots" class="form-input" min="1" max="100" required style="font-size: 1.1rem; font-weight: 700; width: 110px; text-align: center;" oninput="AdminPanel.updateModalSlotButtons(this.value)">
+              <div class="modal-slot-btns" style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button type="button" class="btn-preset" data-modal-slot="3" onclick="AdminPanel.setModalSlots(3)">3 slot</button>
+                <button type="button" class="btn-preset" data-modal-slot="5" onclick="AdminPanel.setModalSlots(5)">5 slot</button>
+                <button type="button" class="btn-preset" data-modal-slot="8" onclick="AdminPanel.setModalSlots(8)">8 slot</button>
+                <button type="button" class="btn-preset" data-modal-slot="12" onclick="AdminPanel.setModalSlots(12)">12 slot</button>
+                <button type="button" class="btn-preset" data-modal-slot="18" onclick="AdminPanel.setModalSlots(18)">18 slot</button>
+                <button type="button" class="btn-preset" data-modal-slot="20" onclick="AdminPanel.setModalSlots(20)">20 slot</button>
               </div>
             </div>
           </div>
@@ -738,13 +762,13 @@
       onSelectRecentPlayer(sid) {
         if (!sid) return;
         document.getElementById('target-steamid').value = sid;
-        this.inspectPlayer();
+        this.inspectPlayer(true);
       },
 
       onSteamIdInput() {
         const val = document.getElementById('target-steamid').value.trim();
         if (val.length === 17) {
-          this.inspectPlayer();
+          this.inspectPlayer(true);
         }
       },
 
@@ -755,15 +779,48 @@
           const defSlots = selectedOpt.getAttribute('data-default-slots');
           if (defSlots) {
             document.getElementById('custom-slots').value = defSlots;
+            this.updateQuickSlotButtons(defSlots);
           }
         }
       },
 
       setSlots(n) {
         document.getElementById('custom-slots').value = n;
+        this.updateQuickSlotButtons(n);
       },
 
-      async inspectPlayer() {
+      updateQuickSlotButtons(n) {
+        const num = Number(n);
+        const btns = document.querySelectorAll('.quick-slot-btns .btn-quick-slot');
+        btns.forEach(b => {
+          const val = Number(b.getAttribute('data-slot-val'));
+          if (val === num) {
+            b.classList.add('active');
+          } else {
+            b.classList.remove('active');
+          }
+        });
+      },
+
+      setModalSlots(n) {
+        document.getElementById('modal-edit-slots').value = n;
+        this.updateModalSlotButtons(n);
+      },
+
+      updateModalSlotButtons(n) {
+        const num = Number(n);
+        const btns = document.querySelectorAll('.modal-slot-btns .btn-preset');
+        btns.forEach(b => {
+          const val = Number(b.getAttribute('data-modal-slot'));
+          if (val === num) {
+            b.classList.add('active');
+          } else {
+            b.classList.remove('active');
+          }
+        });
+      },
+
+      async inspectPlayer(autoFill = true) {
         const sid = document.getElementById('target-steamid').value.trim();
         if (!sid) return;
 
@@ -779,12 +836,16 @@
             document.getElementById('preview-current-role').textContent = data.garageStatus.roleName;
             document.getElementById('preview-status-extra').textContent = `Đang cất trong Gara: ${data.garageStatus.totalParked} con • Nhân vật in-game: ${data.species}`;
 
-            // Tự động chọn role và slot hiện tại vào form
-            const selRole = document.getElementById('select-role');
-            if (selRole && data.garageStatus.roleKey) {
-              selRole.value = data.garageStatus.roleKey;
+            // Chỉ tự động điền form nếu autoFill = true
+            if (autoFill) {
+              const selRole = document.getElementById('select-role');
+              if (selRole && data.garageStatus.roleKey) {
+                selRole.value = data.garageStatus.roleKey;
+              }
+              const currentSlots = data.garageStatus.maxSlots || 3;
+              document.getElementById('custom-slots').value = currentSlots;
+              this.updateQuickSlotButtons(currentSlots);
             }
-            document.getElementById('custom-slots').value = data.garageStatus.maxSlots;
           } else {
             previewCard.style.display = 'none';
           }
@@ -805,6 +866,18 @@
           return;
         }
 
+        const numSlots = Number(customSlots);
+        if (isNaN(numSlots) || numSlots < 1 || numSlots > 100) {
+          App.showToast("Số lượng slot phải là số từ 1 đến 100!", "error");
+          return;
+        }
+
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = "⏳ Đang Lưu & Cấp Quyền...";
+        }
+
         App.showToast("Đang xử lý lưu quyền và slot...", "info");
 
         try {
@@ -820,7 +893,7 @@
               adminSteamId: this.currentAdminSteamId,
               targetSteamId,
               roleKey,
-              customSlots: Number(customSlots),
+              customSlots: numSlots,
               notes
             })
           });
@@ -828,16 +901,46 @@
           const data = await res.json();
           if (res.ok && data.success) {
             App.showToast(data.message, "success");
-            // Cập nhật lại thông tin preview và bảng
-            await this.fetchRolesAndSlots();
+
+            // Cập nhật ngay danh sách bảng tức thì
+            if (Array.isArray(data.assignedUsers)) {
+              this.assignedUsers = data.assignedUsers;
+            } else {
+              const updatedUser = {
+                steamId: targetSteamId,
+                roleKey: roleKey,
+                roleName: (data.garageStatus && data.garageStatus.roleName) || roleKey,
+                slots: numSlots,
+                isSuperAdmin: false,
+                updatedAt: new Date().toLocaleString('vi-VN'),
+                notes: notes
+              };
+              this.assignedUsers = [
+                updatedUser,
+                ...this.assignedUsers.filter(u => u.steamId !== targetSteamId)
+              ];
+            }
+
+            // Xóa ô tìm kiếm để dòng vừa cấp hiển thị ngay trên cùng
+            const searchInp = document.getElementById('search-assigned');
+            if (searchInp) searchInp.value = '';
+
             this.renderAssignedTable();
-            this.inspectPlayer();
+            this.highlightUserRow(targetSteamId);
+
+            // Cập nhật thẻ preview mà không ghi đè lại form input
+            this.inspectPlayer(false);
           } else {
             App.showToast(data.error || "Không thể cấp quyền lúc này!", "error");
           }
         } catch (err) {
           console.error(err);
           App.showToast("Lỗi kết nối máy chủ khi lưu quyền!", "error");
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "💾 LƯU & CẤP QUYỀN NGAY LẬP TỨC";
+          }
         }
       },
 
@@ -865,11 +968,16 @@
           const data = await res.json();
           if (res.ok && data.success) {
             App.showToast(data.message, "success");
-            await this.fetchRolesAndSlots();
+            if (Array.isArray(data.assignedUsers)) {
+              this.assignedUsers = data.assignedUsers;
+            } else {
+              this.assignedUsers = this.assignedUsers.filter(u => u.steamId !== targetSteamId);
+            }
             this.renderAssignedTable();
+
             const curInp = document.getElementById('target-steamid').value.trim();
             if (curInp === targetSteamId) {
-              this.inspectPlayer();
+              this.inspectPlayer(true);
             }
           } else {
             App.showToast(data.error || "Lỗi khi xóa cấu hình!", "error");
@@ -899,6 +1007,7 @@
         }
 
         document.getElementById('modal-edit-slots').value = slots;
+        this.updateModalSlotButtons(slots);
         document.getElementById('modal-edit-notes').value = notes || '';
 
         modal.style.display = 'flex';
@@ -916,12 +1025,9 @@
           const defSlots = opt.getAttribute('data-default-slots');
           if (defSlots) {
             document.getElementById('modal-edit-slots').value = defSlots;
+            this.updateModalSlotButtons(defSlots);
           }
         }
-      },
-
-      setModalSlots(n) {
-        document.getElementById('modal-edit-slots').value = n;
       },
 
       async saveEditModal(e) {
@@ -959,11 +1065,16 @@
           if (res.ok && data.success) {
             App.showToast(data.message, "success");
             this.closeEditModal();
-            await this.fetchRolesAndSlots();
+
+            if (Array.isArray(data.assignedUsers)) {
+              this.assignedUsers = data.assignedUsers;
+            }
             this.renderAssignedTable();
+            this.highlightUserRow(steamId);
+
             const curInp = document.getElementById('target-steamid').value.trim();
             if (curInp === steamId) {
-              this.inspectPlayer();
+              this.inspectPlayer(false);
             }
           } else {
             App.showToast(data.error || "Lỗi khi cập nhật quyền!", "error");
@@ -977,6 +1088,20 @@
             btn.textContent = '💾 Lưu Cập Nhật Ngay';
           }
         }
+      },
+
+      highlightUserRow(steamId) {
+        setTimeout(() => {
+          const row = document.getElementById(`user-row-${steamId}`);
+          if (row) {
+            row.style.transition = 'background-color 0.4s ease';
+            row.style.backgroundColor = 'rgba(245, 158, 11, 0.25)';
+            row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            setTimeout(() => {
+              row.style.backgroundColor = '';
+            }, 3000);
+          }
+        }, 60);
       },
 
       filterTable(keyword) {
@@ -1006,7 +1131,7 @@
         tbody.innerHTML = this.assignedUsers.map((u, idx) => {
           const safeNote = (u.notes || '').replace(/'/g, "\\'");
           return `
-          <tr>
+          <tr id="user-row-${u.steamId}">
             <td style="color: #64748b; font-weight: 700;">#${idx + 1}</td>
             <td>
               <strong style="color: #fff; font-family: monospace; font-size: 0.95rem;">${u.steamId}</strong>
@@ -1016,7 +1141,7 @@
               <span class="badge-admin">${u.roleName}</span>
             </td>
             <td>
-              <span class="badge-slot">${u.slots} Slots</span>
+              <span class="badge-slot" style="font-size: 0.85rem; padding: 4px 10px;">${u.slots} Slots</span>
             </td>
             <td>
               <div style="font-size: 0.85rem; color: #cbd5e1;">${u.notes || '—'}</div>
