@@ -2699,7 +2699,7 @@ app.get('/api/skin/info', async (req, res) => {
 
 // Đổi Màu Skin Khủng Long Trực Tiếp Khi Đang Chơi In-game (IslePilot Live Skin Apply)
 app.post('/api/skin/apply', async (req, res) => {
-  const { species, colors, skinCode } = req.body;
+  const { species, colors, skinCode, female, gender, variation, pattern, theme } = req.body;
   const steamId = req.body.steamId || getRequestSteamId(req);
 
   if (!steamId) {
@@ -2723,27 +2723,29 @@ app.post('/api/skin/apply', async (req, res) => {
     });
   }
 
-  const activeSpecies = pInfo.species;
-  const isFemale = pInfo.female === true;
+  const activeSpecies = species || pInfo.species;
+  const isFemale = female !== undefined 
+    ? Boolean(female) 
+    : (gender ? (gender === 'female' || gender === 'cai') : (pInfo.female === true));
 
-  // Lập payload chuẩn IslePilot Unreal Engine Blueprint
+  // Lập payload chuẩn IslePilot Unreal Engine Blueprint đầy đủ 10 kênh màu và cấu hình
   const cleanSpecies = activeSpecies.replace(/[^a-zA-Z0-9]+/g, "");
   const payload = {
     class: `BP_${cleanSpecies}_C`,
     female: isFemale,
-    variation: 0,
-    pattern: 0,
-    theme: 0,
-    body: hexToLinear(colors?.base || "#2d3748"),
-    markings: hexToLinear(colors?.pattern || "#f59e0b"),
-    flank: hexToLinear(colors?.base || "#4a5568"),
-    underbelly: hexToLinear(colors?.belly || "#e2e8f0"),
-    detail1: hexToLinear(colors?.belly || "#e2e8f0"),
-    eyes: hexToLinear(colors?.eye || "#ef4444"),
-    male_display: hexToLinear(colors?.pattern || "#f59e0b"),
-    teeth: hexToLinear("#ffffff"),
-    mouth: hexToLinear("#ff8888"),
-    claws: hexToLinear("#111111")
+    variation: parseInt(variation) || 0,
+    pattern: parseInt(pattern) || 0,
+    theme: parseInt(theme) || 0,
+    body: hexToLinear(colors?.body || colors?.base || "#897559"),
+    markings: hexToLinear(colors?.markings || colors?.pattern || "#352f2a"),
+    flank: hexToLinear(colors?.flank || colors?.base || "#594a35"),
+    underbelly: hexToLinear(colors?.underbelly || colors?.belly || "#d3b48b"),
+    detail1: hexToLinear(colors?.detail1 || colors?.detail || "#000000"),
+    eyes: hexToLinear(colors?.eyes || colors?.eye || "#ffdfcb"),
+    male_display: hexToLinear(colors?.male_display || colors?.display || "#6c3729"),
+    teeth: hexToLinear(colors?.teeth || "#e8e2d0"),
+    mouth: hexToLinear(colors?.mouth || "#7a3b3b"),
+    claws: hexToLinear(colors?.claws || "#3a3a3a")
   };
 
   // 3. Gọi trực tiếp IslePilot API: POST /players/{steamId}/skin/apply
