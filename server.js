@@ -1646,6 +1646,8 @@ async function modifyLivePlayerBalance(steamId, amount, reason = "web_portal") {
     reason: reason
   });
 
+  clearPlayerCache(steamId);
+
   const data = getPortalData();
   if (res && res.ok && typeof res.balance === 'number') {
     data.userWallets[steamId] = res.balance;
@@ -2525,78 +2527,173 @@ app.get('/api/support/my-tickets', (req, res) => {
   res.json(userTickets);
 });
 
-// 14. Mời Bạn Bè (Referral)
-app.get('/api/referral/me', (req, res) => {
+// 14. Mời Bạn Bè (Referral) & Nhập Mã Quà Tặng (Giftcode)
+app.get('/api/referral/me', async (req, res) => {
   const data = getPortalData();
   const steamId = getRequestSteamId(req);
   if (!steamId) {
     return res.json({
+      loggedIn: false,
       referralCode: null,
       invitedCount: 0,
       earnedLua: 0,
       invitedBy: null,
+      currentBalance: 0,
       rewardPerInvite: 50
     });
   }
+
   const myCode = `ST25-${steamId.slice(-5)}`;
   const referralInfo = (data.referrals && data.referrals[steamId]) || { count: 0, earnedLua: 0, invitedBy: null };
+  const currentBalance = await getLivePlayerBalance(steamId);
 
   res.json({
+    loggedIn: true,
+    steamId,
     referralCode: myCode,
-    invitedCount: referralInfo.count,
-    earnedLua: referralInfo.earnedLua,
-    invitedBy: referralInfo.invitedBy,
+    invitedCount: referralInfo.count || 0,
+    earnedLua: referralInfo.earnedLua || 0,
+    invitedBy: referralInfo.invitedBy || null,
+    currentBalance: currentBalance,
     rewardPerInvite: 50
   });
 });
 
-app.post('/api/referral/claim', (req, res) => {
+app.post('/api/referral/claim', async (req, res) => {
   const { code } = req.body;
   if (!code || !code.trim()) {
-    return res.status(400).json({ error: "Vui lòng nhập mã giới thiệu hợp lệ!" });
+    return res.status(400).json({ error: "Vui lòng nhập mã giới thiệu hoặc mã quà tặng hợp lệ!" });
   }
 
   const cleanCode = code.trim().toUpperCase();
-  const data = getPortalData();
   const steamId = getRequestSteamId(req);
   if (!steamId) {
-    return res.status(401).json({ error: "Vui lòng đăng nhập Steam trước khi nhập mã giới thiệu!" });
-  }
-  const myCode = `ST25-${steamId.slice(-5)}`;
-
-  if (cleanCode === myCode) {
-    return res.status(400).json({ error: "Bạn không thể tự nhập mã của chính mình!" });
+    return res.status(401).json({ error: "Vui lòng đăng nhập Steam trước khi nhập mã nhận Lúa!" });
   }
 
+  const data = getPortalData();
+  if (!data.referrals) data.referrals = {};
   if (!data.referrals[steamId]) {
     data.referrals[steamId] = { count: 0, earnedLua: 0, invitedBy: null };
   }
+  if (!data.userWallets) data.userWallets = {};
+  if (!data.claimedCodeHistory) data.claimedCodeHistory = [];
+  if (!data.claimedCodesPerUser) data.claimedCodesPerUser = {};
+  if (!data.claimedCodesPerUser[steamId]) data.claimedCodesPerUser[steamId] = [];
 
-  if (data.referrals[steamId].invitedBy) {
-    return res.status(400).json({ error: "Bạn đã từng kích hoạt mã giới thiệu rồi!" });
+  const myCode = `ST25-${steamId.slice(-5)}`;
+  if (cleanCode === myCode || cleanCode === steamId.slice(-5)) {
+    return res.status(400).json({ error: "Bạn không thể tự nhập mã giới thiệu của chính mình!" });
   }
 
-  // Award +50 Lúa for current player
-  data.referrals[steamId].invitedBy = cleanCode;
-  data.userWallets[steamId] = (data.userWallets[steamId] || 100) + 50;
+  // 1. Kiểm tra: Mỗi mã chỉ được sử dụng 1 lần trên mỗi tài khoản
+  if (data.claimedCodesPerUser[steamId].includes(cleanCode)) {
+    return res.status(400).json({ error: `Bạn đã từng sử dụng mã [${cleanCode}] rồi! Mỗi mã chỉ được nhận thưởng 1 lần duy nhất.` });
+  }
 
-  // Award +50 Lúa for referrer (if exists)
-  // Search referrer by matching code
-  for (const sId of Object.keys(data.userWallets)) {
-    if (`ST25-${sId.slice(-5)}` === cleanCode) {
-      data.userWallets[sId] = (data.userWallets[sId] || 100) + 50;
-      if (!data.referrals[sId]) data.referrals[sId] = { count: 0, earnedLua: 0, invitedBy: null };
-      data.referrals[sId].count += 1;
-      data.referrals[sId].earnedLua += 50;
-      break;
+  // 2. Danh sách Giftcode sự kiện chính thức ST25
+  const OFFICIAL_GIFTCODES = {
+    'ST25-TANTHU': { reward: 50, title: 'Quà Tân Thủ Khởi Nghiệp ST25' },
+    'ST25-WELCOME': { reward: 50, title: 'Chào Mừng Gia Nhập Đảo Gateway' },
+    'ST25-VIP': { reward: 100, title: 'Quà Tặng VIP Tri Ân Nông Dân' },
+    'ST25-TRIAN': { reward: 50, title: 'Tri Ân Cộng Đồng ST25' },
+    'ST25-2026': { reward: 50, title: 'Sự Kiện Khủng Long ST25 Năm 2026' },
+    'ST25-LUA50': { reward: 50, title: 'Hỗ Trợ Khởi Nghiệp Sinh Tồn' }
+  };
+
+  let rewardAmount = 50;
+  let successMsg = "";
+  let referrerSteamId = null;
+  let referrerName = null;
+
+  if (OFFICIAL_GIFTCODES[cleanCode]) {
+    // Xử lý mã quà tặng sự kiện (Giftcode)
+    const gift = OFFICIAL_GIFTCODES[cleanCode];
+    rewardAmount = gift.reward;
+    successMsg = `Chúc mừng! Bạn đã kích hoạt thành công [${gift.title}] và nhận ngay +${rewardAmount} Lúa 🌾!`;
+  } else {
+    // Xử lý mã bạn bè (Referral Code): Mỗi người chơi chỉ được nhận quà giới thiệu 1 lần duy nhất
+    if (data.referrals[steamId].invitedBy) {
+      return res.status(400).json({ 
+        error: `Tài khoản của bạn đã từng nhập mã giới thiệu [${data.referrals[steamId].invitedBy}] trước đây! Mỗi tài khoản chỉ được nhập mã mời 1 lần duy nhất.` 
+      });
     }
+
+    const codeSuffix = cleanCode.replace(/^ST25-/, '');
+    
+    // Tìm kiếm người giới thiệu trên toàn hệ thống server ST25
+    let allPlayers = [];
+    try {
+      allPlayers = await getRealServerPlayers();
+    } catch (_) {}
+
+    const candidateIds = new Set([
+      ...Object.keys(data.userWallets || {}),
+      ...Object.keys(data.referrals || {}),
+      ...allPlayers.map(p => p.steamId),
+      ...SUPER_ADMINS
+    ]);
+
+    for (const candId of candidateIds) {
+      if (candId.endsWith(codeSuffix)) {
+        referrerSteamId = candId;
+        const matched = allPlayers.find(p => p.steamId === candId);
+        referrerName = matched ? matched.name : `Player_${candId.slice(-4)}`;
+        break;
+      }
+    }
+
+    if (!referrerSteamId) {
+      return res.status(400).json({ 
+        error: `Mã giới thiệu [${cleanCode}] không tồn tại trên máy chủ ST25! Vui lòng kiểm tra lại mã từ bạn bè.` 
+      });
+    }
+
+    if (referrerSteamId === steamId) {
+      return res.status(400).json({ error: "Bạn không thể tự nhập mã giới thiệu của chính mình!" });
+    }
+
+    successMsg = `Chúc mừng! Bạn đã kích hoạt mã giới thiệu từ [${referrerName}] và nhận ngay +50 Lúa 🌾!`;
   }
+
+  // 3. THỰC HIỆN CỘNG LÚA TRỰC TIẾP VÀO VÍ GAME & ISLEPILOT
+  const userBalanceResult = await modifyLivePlayerBalance(steamId, rewardAmount, `claim_code_${cleanCode}`);
+  clearPlayerCache(steamId);
+
+  // 4. NẾU LÀ MÃ BẠN BÈ: CỘNG LÚA CHO NGƯỜI GIỚI THIỆU
+  if (referrerSteamId) {
+    await modifyLivePlayerBalance(referrerSteamId, 50, `referral_friend_${steamId}`);
+    clearPlayerCache(referrerSteamId);
+
+    if (!data.referrals[referrerSteamId]) {
+      data.referrals[referrerSteamId] = { count: 0, earnedLua: 0, invitedBy: null };
+    }
+    data.referrals[referrerSteamId].count = (data.referrals[referrerSteamId].count || 0) + 1;
+    data.referrals[referrerSteamId].earnedLua = (data.referrals[referrerSteamId].earnedLua || 0) + 50;
+
+    data.referrals[steamId].invitedBy = cleanCode;
+  }
+
+  // 5. GHI NHẬN LỊCH SỬ DÙNG MÃ (ĐẢM BẢO MỖI MÃ CHỈ DÙNG 1 LẦN)
+  data.claimedCodesPerUser[steamId].push(cleanCode);
+  data.claimedCodeHistory.push({
+    steamId,
+    code: cleanCode,
+    rewardAmount,
+    timestamp: new Date().toISOString(),
+    referrerSteamId: referrerSteamId || null
+  });
 
   savePortalData(data);
+
+  const finalBalance = userBalanceResult?.balance !== undefined ? userBalanceResult.balance : (data.userWallets[steamId] || 0);
+
   res.json({
     success: true,
-    message: "Chúc mừng! Bạn đã nhận ngay +50 Lúa 🌾 chào mừng gia nhập ST25!",
-    newBalance: data.userWallets[steamId]
+    message: successMsg,
+    reward: rewardAmount,
+    newBalance: finalBalance,
+    code: cleanCode
   });
 });
 
