@@ -139,8 +139,21 @@ const Garage = {
   async fetchGarageData() {
     try {
       const sid = this.getActiveSteamId();
+      const storedUser = (() => {
+        try {
+          const s = localStorage.getItem('st25_steam_user');
+          return s ? JSON.parse(s) : null;
+        } catch (_) { return null; }
+      })();
+
+      const hdrs = {};
+      if (sid) hdrs['x-steam-id'] = sid;
+      if (storedUser && storedUser.isAdmin && storedUser.steam_id) {
+        hdrs['x-admin-steam-id'] = storedUser.steam_id;
+      }
+
       const url = sid ? `/api/player/garage?steamId=${encodeURIComponent(sid)}` : '/api/player/garage';
-      const res = await fetch(url, { headers: sid ? { 'x-steam-id': sid } : {} });
+      const res = await fetch(url, { headers: hdrs });
       if (res.ok) {
         const data = await res.json();
         

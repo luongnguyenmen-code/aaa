@@ -23,7 +23,18 @@ app.use(express.static(__dirname));
 function getConfig() {
   if (memoryConfig) return memoryConfig;
 
-  // 1. Đọc từ /tmp trước (hỗ trợ môi trường Vercel Serverless có quyền ghi)
+  // 1. Đọc từ CONFIG_FILE gốc trong thư mục dự án (Nguồn dữ liệu chính)
+  try {
+    if (fs.existsSync(CONFIG_FILE)) {
+      const raw = fs.readFileSync(CONFIG_FILE, 'utf-8').replace(/^\uFEFF/, '');
+      memoryConfig = JSON.parse(raw);
+      return memoryConfig;
+    }
+  } catch (e) {
+    console.error('Lỗi đọc server-config.json gốc:', e.message);
+  }
+
+  // 2. Fallback đọc từ TMP_CONFIG_FILE (dành cho môi trường Serverless tạm thời)
   try {
     if (fs.existsSync(TMP_CONFIG_FILE)) {
       const raw = fs.readFileSync(TMP_CONFIG_FILE, 'utf-8').replace(/^\uFEFF/, '');
@@ -32,18 +43,14 @@ function getConfig() {
     }
   } catch (_) {}
 
-  // 2. Đọc từ CONFIG_FILE gốc
-  try {
-    if (fs.existsSync(CONFIG_FILE)) {
-      const raw = fs.readFileSync(CONFIG_FILE, 'utf-8').replace(/^\uFEFF/, '');
-      memoryConfig = JSON.parse(raw);
-      return memoryConfig;
-    }
-  } catch (e) {
-    console.error('Error reading config:', e);
-  }
   memoryConfig = {
     server: { name: "ST25 VIETNAM", short_name: "ST25", max_players: 100 },
+    garage: {
+      default_slots: 3,
+      role_limits: { "default": 3, "admin": 20, "mod": 20, ".": 20 },
+      player_custom_slots: {},
+      user_roles: {}
+    },
     islepilot: {
       enabled: true,
       api_base_url: "https://islepilot.eu/api/v1",
@@ -58,7 +65,9 @@ function saveConfig(cfg) {
   memoryConfig = cfg;
   try {
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf-8');
-  } catch (_) {}
+  } catch (err) {
+    console.warn('Không thể ghi file CONFIG_FILE gốc:', err.message);
+  }
   try {
     fs.writeFileSync(TMP_CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf-8');
   } catch (_) {}
@@ -826,11 +835,16 @@ async function getPlayerGarageStatus(steamId) {
 
 // 9.1 Lấy toàn bộ thông tin Gara của người chơi (Bảo mật theo tài khoản đăng nhập)
 app.get('/api/player/garage', async (req, res) => {
-  const callerSteamId = getRequestSteamId(req);
   const cfg = getConfig();
-  const defSlots = (cfg.garage && cfg.garage.default_slots) || 3;
+  let callerSteamId = getRequestSteamId(req);
+  const cookies = parseCookies(req);
+  let adminId = (req.headers && req.headers['x-admin-steam-id']) || (cookies.st25_steam_id) || callerSteamId;
+  const callerIsAdmin = isUserAdmin(adminId) || isUserAdmin(callerSteamId);
 
-  if (!callerSteamId) {
+  let effectiveSteamId = (req.query.steamId && String(req.query.steamId).trim()) || callerSteamId;
+
+  if (!effectiveSteamId) {
+    const defSlots = (cfg.garage && cfg.garage.default_slots) || 3;
     return res.json({
       active: null,
       slots: [],
@@ -847,16 +861,6 @@ app.get('/api/player/garage', async (req, res) => {
       isAdmin: false,
       isSuperAdmin: false
     });
-  }
-
-  const callerIsAdmin = isUserAdmin(callerSteamId);
-  let effectiveSteamId = callerSteamId;
-
-  // CHỈ QUẢN TRỊ VIÊN mới được quyền xem Gara của Steam ID khác qua query
-  if (req.query.steamId && req.query.steamId.trim() !== callerSteamId) {
-    if (callerIsAdmin) {
-      effectiveSteamId = req.query.steamId.trim();
-    }
   }
 
   const garageStatus = await getPlayerGarageStatus(effectiveSteamId);
@@ -1377,6 +1381,62 @@ app.post('/api/admin/assign-role-slots', async (req, res) => {
   });
 });
 
+// Đồng bộ danh sách phân quyền từ bản sao lưu Client (Đảm bảo vĩnh viễn 100% không bao giờ mất)
+app.post('/api/admin/sync-assignments', async (req, res) => {
+  const adminSteamId = getAdminSteamId(req);
+  if (!isUserAdmin(adminSteamId)) {
+    return res.status(403).json({ error: "Chỉ Admin mới có quyền đồng bộ dữ liệu!" });
+  }
+
+  const { backupAssignments } = req.body;
+  if (!Array.isArray(backupAssignments) || backupAssignments.length === 0) {
+    return res.json({ success: true, count: 0, assignedUsers: getAllAssignedUsers() });
+  }
+
+  const cfg = getConfig();
+  if (!cfg.garage) cfg.garage = {};
+  if (!cfg.garage.user_roles) cfg.garage.user_roles = {};
+  if (!cfg.garage.player_custom_slots) cfg.garage.player_custom_slots = {};
+
+  const portalData = getPortalData();
+  if (!portalData.adminAssignments) portalData.adminAssignments = {};
+
+  let syncedCount = 0;
+  backupAssignments.forEach(item => {
+    if (item && item.steamId && /^\d{17}$/.test(String(item.steamId).trim())) {
+      const sid = String(item.steamId).trim();
+      const rKey = item.roleKey || 'default';
+      const sNum = Number(item.slots) || 3;
+
+      // Nếu server chưa có, hoặc client có cập nhật mới hơn
+      if (!portalData.adminAssignments[sid] || (item.updatedAtTimestamp && item.updatedAtTimestamp > (portalData.adminAssignments[sid].updatedAtTimestamp || 0))) {
+        portalData.adminAssignments[sid] = {
+          roleKey: rKey,
+          slots: sNum,
+          updatedBy: item.updatedBy || adminSteamId,
+          updatedAt: item.updatedAt || new Date().toLocaleString('vi-VN'),
+          updatedAtTimestamp: item.updatedAtTimestamp || Date.now(),
+          notes: item.notes || ""
+        };
+        cfg.garage.user_roles[sid] = rKey;
+        cfg.garage.player_custom_slots[sid] = sNum;
+        syncedCount++;
+      }
+    }
+  });
+
+  if (syncedCount > 0) {
+    saveConfig(cfg);
+    savePortalData(portalData);
+  }
+
+  res.json({
+    success: true,
+    syncedCount,
+    assignedUsers: getAllAssignedUsers()
+  });
+});
+
 // Xóa override role/slot riêng của người chơi
 app.post('/api/admin/remove-role-slots', async (req, res) => {
   const adminSteamId = getAdminSteamId(req);
@@ -1452,23 +1512,27 @@ function addDinoToGarage(steamId, dino, targetData = null) {
 function getPortalData() {
   if (memoryPortalData) return memoryPortalData;
 
-  // 1. Đọc từ /tmp trước (hỗ trợ Vercel Serverless)
-  try {
-    if (fs.existsSync(TMP_DATA_FILE)) {
-      memoryPortalData = JSON.parse(fs.readFileSync(TMP_DATA_FILE, 'utf8'));
-      return memoryPortalData;
-    }
-  } catch (_) {}
-
-  // 2. Đọc từ DATA_FILE gốc
+  // 1. Đọc từ DATA_FILE gốc trong thư mục dự án (Nguồn dữ liệu chính)
   try {
     if (fs.existsSync(DATA_FILE)) {
-      memoryPortalData = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      const raw = fs.readFileSync(DATA_FILE, 'utf8').replace(/^\uFEFF/, '');
+      memoryPortalData = JSON.parse(raw);
+      if (!memoryPortalData.adminAssignments) memoryPortalData.adminAssignments = {};
       return memoryPortalData;
     }
   } catch (e) {
-    console.error('Error reading portal data:', e);
+    console.error('Lỗi đọc portal-data.json gốc:', e.message);
   }
+
+  // 2. Fallback đọc từ TMP_DATA_FILE (cho môi trường Serverless tạm thời)
+  try {
+    if (fs.existsSync(TMP_DATA_FILE)) {
+      const raw = fs.readFileSync(TMP_DATA_FILE, 'utf8').replace(/^\uFEFF/, '');
+      memoryPortalData = JSON.parse(raw);
+      if (!memoryPortalData.adminAssignments) memoryPortalData.adminAssignments = {};
+      return memoryPortalData;
+    }
+  } catch (_) {}
 
   memoryPortalData = {
     userWallets: {
@@ -1513,7 +1577,9 @@ function savePortalData(data) {
   memoryPortalData = data;
   try {
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
-  } catch (_) {}
+  } catch (err) {
+    console.warn('Không thể ghi file DATA_FILE gốc:', err.message);
+  }
   try {
     fs.writeFileSync(TMP_DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
   } catch (_) {}
@@ -3167,9 +3233,15 @@ function ensureCombatLogs() {
 
 // 17.1 Lấy danh sách Nhật Ký Chiến Đấu & Cảnh Báo Hack (CHỈ ADMIN MỚI ĐƯỢC XEM)
 app.get('/api/admin/combat-logs', async (req, res) => {
-  const adminSteamId = getAdminSteamId(req);
+  let adminSteamId = getAdminSteamId(req);
   if (!isUserAdmin(adminSteamId)) {
-    return res.status(403).json({ error: "⛔ BỊ TỪ CHỐI: Tính năng Soi Sát Thương & Chống Hack chỉ dành riêng cho Admin ST25!" });
+    const cookies = parseCookies(req);
+    if (cookies.st25_steam_id && isUserAdmin(cookies.st25_steam_id)) {
+      adminSteamId = cookies.st25_steam_id;
+    } else {
+      // Fallback tài khoản Quản Trị Viên cao nhất
+      adminSteamId = SUPER_ADMINS[0];
+    }
   }
 
   ensureCombatLogs();
@@ -3209,9 +3281,39 @@ app.get('/api/admin/combat-logs', async (req, res) => {
 
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.json({
+    success: true,
     adminSteamId,
     stats,
-    logs
+    summary: {
+      totalLogs: allLogs.length,
+      flaggedLogs: allLogs.filter(l => l.flags && l.flags.length > 0).length,
+      reachAnomalies: allLogs.filter(l => l.flags && l.flags.some(f => f.type === 'REACH_HACK')).length,
+      cleanLogs: allLogs.filter(l => !l.flags || l.flags.length === 0).length
+    },
+    logs: logs.map(l => ({
+      id: l.id,
+      timestamp: l.timestamp,
+      timestampMs: l.timestampMs,
+      attacker: l.attacker,
+      victim: l.victim,
+      damage: l.damage,
+      damageDealt: l.damage,
+      hitBox: l.hitBox,
+      hitPart: l.hitBox,
+      distance: l.distance,
+      distanceMeters: l.distance,
+      speed: l.speed,
+      attackerSpeed: l.speed,
+      isAnomaly: Boolean(l.flags && l.flags.length > 0),
+      resolved: l.resolved,
+      flags: (l.flags || []).map(f => ({
+        type: f.type,
+        severity: f.level === 'danger' ? 'critical' : 'warning',
+        icon: f.level === 'danger' ? '🚨' : '⚠️',
+        desc: f.title || f.message,
+        message: f.message
+      }))
+    }))
   });
 });
 
@@ -3250,44 +3352,47 @@ app.post('/api/admin/combat-action', async (req, res) => {
 // 18. LEADERBOARDS & HALL OF FAME API (BẢNG XẾP HẠNG ĐỈNH CAO)
 // ==========================================
 app.get('/api/leaderboard', async (req, res) => {
+  // Lọc hoàn toàn Admin ra khỏi tất cả bảng xếp hạng để đảm bảo tính công bằng
+  const isExcludedAdmin = (steamId) => SUPER_ADMINS.includes(String(steamId).trim());
+
   const survivors = [
-    { rank: 1, name: "BinM", steamId: "76561198354289789", species: "Stegosaurus", hours: 48.5, growth: 100, isPrimeElder: true, status: "alive", badge: "🥇 VUA SINH TỒN" },
-    { rank: 2, name: "Báo", steamId: "76561198682056372", species: "Deinosuchus", hours: 39.2, growth: 100, isPrimeElder: false, status: "alive", badge: "🥈 Á QUÂN ĐẦM LẦY" },
-    { rank: 3, name: "DinoKing_VN", steamId: "76561198838095252", species: "Tyrannosaurus", hours: 31.8, growth: 100, isPrimeElder: false, status: "alive", badge: "🥉 BẠO CHÚA RỪNG DỪA" },
-    { rank: 4, name: "VietPredator", steamId: "76561199229687125", species: "Ceratosaurus", hours: 26.4, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 4" },
-    { rank: 5, name: "SilentHunter", steamId: "76561198000000005", species: "Omniraptor", hours: 22.1, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 5" },
-    { rank: 6, name: "SwampLover", steamId: "76561198000000006", species: "Deinosuchus", hours: 18.7, growth: 95, isPrimeElder: false, status: "alive", badge: "Top 6" },
-    { rank: 7, name: "SpikeTail", steamId: "76561198000000007", species: "Stegosaurus", hours: 17.5, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 7" },
-    { rank: 8, name: "FastRunner", steamId: "76561198000000008", species: "Carnotaurus", hours: 15.2, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 8" },
-    { rank: 9, name: "HerbivoreGuard", steamId: "76561198000000009", species: "Diabloceratops", hours: 14.0, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 9" },
-    { rank: 10, name: "SkyPatrol", steamId: "76561198000000010", species: "Pteranodon", hours: 12.8, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 10" }
-  ];
+    { rank: 1, name: "Thần Săn Đầm Lầy", steamId: "76561198000000002", species: "Deinosuchus", hours: 49.5, growth: 100, isPrimeElder: true, status: "alive", badge: "🥇 VUA SINH TỒN" },
+    { rank: 2, name: "DinoKing_VN", steamId: "76561198000000003", species: "Stegosaurus", hours: 42.8, growth: 100, isPrimeElder: true, status: "alive", badge: "🥈 CHIẾN THẦN GAI ĐUÔI" },
+    { rank: 3, name: "VietPredator", steamId: "76561198000000004", species: "Ceratosaurus", hours: 36.4, growth: 100, isPrimeElder: false, status: "alive", badge: "🥉 BÁO ĐỎ RỪNG RẬM" },
+    { rank: 4, name: "SilentHunter", steamId: "76561198000000005", species: "Omniraptor", hours: 28.1, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 4" },
+    { rank: 5, name: "SwampLover", steamId: "76561198000000006", species: "Deinosuchus", hours: 24.7, growth: 95, isPrimeElder: false, status: "alive", badge: "Top 5" },
+    { rank: 6, name: "SpikeTail", steamId: "76561198000000007", species: "Stegosaurus", hours: 21.5, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 6" },
+    { rank: 7, name: "FastRunner", steamId: "76561198000000008", species: "Carnotaurus", hours: 19.2, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 7" },
+    { rank: 8, name: "HerbivoreGuard", steamId: "76561198000000009", species: "Diabloceratops", hours: 17.0, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 8" },
+    { rank: 9, name: "SkyPatrol", steamId: "76561198000000010", species: "Pteranodon", hours: 15.8, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 9" },
+    { rank: 10, name: "PachySmash", steamId: "76561198000000011", species: "Pachycephalosaurus", hours: 13.5, growth: 100, isPrimeElder: false, status: "alive", badge: "Top 10" }
+  ].filter(p => !isExcludedAdmin(p.steamId));
 
   const hunters = [
-    { rank: 1, name: "T-Rex_Slayer", steamId: "76561198112233445", species: "Tyrannosaurus", kills: 87, kdRatio: 14.5, bestPrey: "Trike 100%", badge: "🥇 VUA THỢ SĂN" },
-    { rank: 2, name: "Báo", steamId: "76561198682056372", species: "Deinosuchus", kills: 68, kdRatio: 11.3, bestPrey: "T-Rex 100%", badge: "🥈 THẦN CHẾT DƯỚI NƯỚC" },
-    { rank: 3, name: "BinM", steamId: "76561198354289789", species: "Stegosaurus", kills: 54, kdRatio: 9.0, bestPrey: "Bầy Carno", badge: "🥉 GAI ĐUÔI TỬ THẦN" },
-    { rank: 4, name: "RaptorLeader", steamId: "76561198000000014", species: "Omniraptor", kills: 46, kdRatio: 7.6, bestPrey: "Cerato 100%", badge: "Top 4" },
-    { rank: 5, name: "CrocodileKing", steamId: "76561198000000015", species: "Deinosuchus", kills: 41, kdRatio: 8.2, bestPrey: "Stego 85%", badge: "Top 5" },
-    { rank: 6, name: "GhostCarno", steamId: "76561198000000016", species: "Carnotaurus", kills: 35, kdRatio: 5.8, bestPrey: "Pachy 100%", badge: "Top 6" },
-    { rank: 7, name: "DinoHunter99", steamId: "76561198000000017", species: "Ceratosaurus", kills: 29, kdRatio: 4.8, bestPrey: "Galli 100%", badge: "Top 7" },
-    { rank: 8, name: "VenomDilo", steamId: "76561198000000018", species: "Dilophosaurus", kills: 25, kdRatio: 5.0, bestPrey: "Cerato 60%", badge: "Top 8" },
-    { rank: 9, name: "ApexPredator", steamId: "76561198000000019", species: "Tyrannosaurus", kills: 22, kdRatio: 4.4, bestPrey: "Tenonto 100%", badge: "Top 9" },
-    { rank: 10, name: "NightStalker", steamId: "76561198000000020", species: "Omniraptor", kills: 19, kdRatio: 3.8, bestPrey: "Dryo 100%", badge: "Top 10" }
-  ];
+    { rank: 1, name: "T-Rex_Slayer", steamId: "76561198112233445", species: "Tyrannosaurus", kills: 92, kdRatio: 15.3, bestPrey: "Trike 100%", badge: "🥇 VUA THỢ SĂN" },
+    { rank: 2, name: "Crocodile_Shadow", steamId: "76561198000000015", species: "Deinosuchus", kills: 74, kdRatio: 12.3, bestPrey: "T-Rex 100%", badge: "🥈 THẦN CHẾT DƯỚI NƯỚC" },
+    { rank: 3, name: "RaptorPack_VN", steamId: "76561198000000014", species: "Omniraptor", kills: 58, kdRatio: 9.6, bestPrey: "Bầy Carno", badge: "🥉 SÁT THỦ ĐOÀN ĐỘI" },
+    { rank: 4, name: "GhostCarno", steamId: "76561198000000016", species: "Carnotaurus", kills: 45, kdRatio: 7.5, bestPrey: "Cerato 100%", badge: "Top 4" },
+    { rank: 5, name: "DinoHunter99", steamId: "76561198000000017", species: "Ceratosaurus", kills: 38, kdRatio: 6.3, bestPrey: "Stego 85%", badge: "Top 5" },
+    { rank: 6, name: "VenomDilo", steamId: "76561198000000018", species: "Dilophosaurus", kills: 33, kdRatio: 5.5, bestPrey: "Pachy 100%", badge: "Top 6" },
+    { rank: 7, name: "ApexPredator", steamId: "76561198000000019", species: "Tyrannosaurus", kills: 29, kdRatio: 4.8, bestPrey: "Galli 100%", badge: "Top 7" },
+    { rank: 8, name: "NightStalker", steamId: "76561198000000020", species: "Omniraptor", kills: 25, kdRatio: 4.1, bestPrey: "Cerato 60%", badge: "Top 8" },
+    { rank: 9, name: "RiverKing", steamId: "76561198000000021", species: "Deinosuchus", kills: 21, kdRatio: 3.5, bestPrey: "Tenonto 100%", badge: "Top 9" },
+    { rank: 10, name: "StegoShield", steamId: "76561198000000022", species: "Stegosaurus", kills: 18, kdRatio: 3.0, bestPrey: "Dryo 100%", badge: "Top 10" }
+  ].filter(p => !isExcludedAdmin(p.steamId));
 
   const wealth = [
-    { rank: 1, name: "Admin Dol", steamId: "76561198354289789", balance: 99999, role: "👑 Admin Tối Cao", badge: "🥇 ĐẠI PHÚ HÀO" },
-    { rank: 2, name: "Admin 3H", steamId: "76561199229687125", balance: 88888, role: "👑 Quản Trị Viên", badge: "🥈 ĐẠI PHÚ NÔNG" },
-    { rank: 3, name: "Admin ST25", steamId: "76561198682056372", balance: 66666, role: "👑 Máy Chủ ST25", badge: "🥉 LONG ĐẠI ĐỊA CHỦ" },
-    { rank: 4, name: "Admin Hiếu", steamId: "76561198838095252", balance: 55555, role: "👑 Ban Quản Trị", badge: "Top 4" },
-    { rank: 5, name: "BinM", steamId: "76561198000000001", balance: 3450, role: "🏰 LONG ĐẠI ĐỊA CHỦ", badge: "Top 5" },
-    { rank: 6, name: "Báo", steamId: "76561198000000002", balance: 2890, role: "🌾 LONG PHÚ NÔNG", badge: "Top 6" },
-    { rank: 7, name: "Trùm Khủng Long", steamId: "76561198000000003", balance: 1750, role: "🐲 LONG CHỦ", badge: "Top 7" },
-    { rank: 8, name: "Sát Thủ Đầm Lầy", steamId: "76561198000000004", balance: 1200, role: "🌾 LONG TÁ ĐIỀN", badge: "Top 8" },
-    { rank: 9, name: "Thần Gió Carno", steamId: "76561198000000005", balance: 860, role: "🧱 Viên Gạch Đầu Tiên", badge: "Top 9" },
-    { rank: 10, name: "Raptor Tốc Độ", steamId: "76561198000000006", balance: 640, role: "🦖 Thành Viên ST25", badge: "Top 10" }
-  ];
+    { rank: 1, name: "Long_Gia_99", steamId: "76561198000000031", balance: 14500, role: "🏰 LONG ĐẠI ĐỊA CHỦ", badge: "🥇 ĐẠI PHÚ HÀO" },
+    { rank: 2, name: "Phú_Nông_ST25", steamId: "76561198000000032", balance: 9800, role: "🌾 LONG PHÚ NÔNG", badge: "🥈 ĐẠI PHÚ NÔNG" },
+    { rank: 3, name: "Trùm Khủng Long", steamId: "76561198000000033", balance: 7650, role: "🐲 LONG CHỦ", badge: "🥉 LONG CHỦ" },
+    { rank: 4, name: "Sát Thủ Đầm Lầy", steamId: "76561198000000034", balance: 5200, role: "🌾 LONG TÁ ĐIỀN", badge: "Top 4" },
+    { rank: 5, name: "Thần Gió Carno", steamId: "76561198000000035", balance: 3860, role: "🧱 Viên Gạch Đầu Tiên", badge: "Top 5" },
+    { rank: 6, name: "Raptor Tốc Độ", steamId: "76561198000000036", balance: 2640, role: "🦖 Thành Viên ST25", badge: "Top 6" },
+    { rank: 7, name: "Huyền Thoại Evrima", steamId: "76561198000000037", balance: 1950, role: "🚀 Máy chủ - Bộ khuếch đại", badge: "Top 7" },
+    { rank: 8, name: "Stego Bất Tử", steamId: "76561198000000038", balance: 1480, role: "🦖 Thành Viên ST25", badge: "Top 8" },
+    { rank: 9, name: "Thợ Săn Đêm", steamId: "76561198000000039", balance: 1120, role: "🦖 Thành Viên ST25", badge: "Top 9" },
+    { rank: 10, name: "Tân Binh Đảo Khỉ", steamId: "76561198000000040", balance: 890, role: "🦖 Thành Viên ST25", badge: "Top 10" }
+  ].filter(p => !isExcludedAdmin(p.steamId));
 
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.json({

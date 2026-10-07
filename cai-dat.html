@@ -873,6 +873,8 @@
         }
       },
 
+      manualSlotChanged: false,
+
       async fetchRolesAndSlots() {
         try {
           const res = await fetch(`/api/admin/roles-slots?steamId=${encodeURIComponent(this.currentAdminSteamId)}&_t=${Date.now()}`, {
@@ -887,6 +889,31 @@
             this.roles = data.roles || [];
             this.assignedUsers = data.assignedUsers || [];
             this.recentPlayers = data.recentPlayers || [];
+
+            // Tự động kiểm tra bản sao lưu Client và đồng bộ lên máy chủ nếu máy chủ vừa khởi động lại
+            const localBackup = localStorage.getItem('st25_backup_assignments');
+            if (localBackup) {
+              try {
+                const parsed = JSON.parse(localBackup);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  // Gửi đồng bộ lên máy chủ trong nền
+                  fetch('/api/admin/sync-assignments', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'x-steam-id': this.currentAdminSteamId,
+                      'x-admin-steam-id': this.currentAdminSteamId
+                    },
+                    body: JSON.stringify({ backupAssignments: parsed })
+                  }).then(r => r.json()).then(syncData => {
+                    if (syncData && syncData.assignedUsers && Array.isArray(syncData.assignedUsers)) {
+                      this.assignedUsers = syncData.assignedUsers;
+                      this.renderAssignedTable();
+                    }
+                  }).catch(() => {});
+                }
+              } catch (_) {}
+            }
           } else {
             App.showToast("Không thể tải danh sách cấu hình từ máy chủ!", "error");
           }
@@ -941,29 +968,34 @@
       onSelectRecentPlayer(sid) {
         if (!sid) return;
         document.getElementById('target-steamid').value = sid;
-        this.inspectPlayer(true);
+        this.inspectPlayer(false);
       },
 
       onSteamIdInput() {
         const val = document.getElementById('target-steamid').value.trim();
         if (val.length === 17) {
-          this.inspectPlayer(true);
+          // Tra cứu hiển thị thông tin mà không ghi đè form nhập của Admin
+          this.inspectPlayer(false);
         }
       },
 
       onRoleChange(roleKey) {
-        const sel = document.getElementById('select-role');
-        const selectedOpt = sel.options[sel.selectedIndex];
-        if (selectedOpt) {
-          const defSlots = selectedOpt.getAttribute('data-default-slots');
-          if (defSlots) {
-            document.getElementById('custom-slots').value = defSlots;
-            this.updateQuickSlotButtons(defSlots);
+        // Chỉ tự đổi slots nếu Admin CHƯA chủ động chọn số slot thủ công
+        if (!this.manualSlotChanged) {
+          const sel = document.getElementById('select-role');
+          const selectedOpt = sel.options[sel.selectedIndex];
+          if (selectedOpt) {
+            const defSlots = selectedOpt.getAttribute('data-default-slots');
+            if (defSlots) {
+              document.getElementById('custom-slots').value = defSlots;
+              this.updateQuickSlotButtons(defSlots);
+            }
           }
         }
       },
 
       setSlots(n) {
+        this.manualSlotChanged = true;
         document.getElementById('custom-slots').value = n;
         this.updateQuickSlotButtons(n);
       },
@@ -1015,13 +1047,20 @@
             document.getElementById('preview-current-role').textContent = data.garageStatus.roleName;
             document.getElementById('preview-status-extra').textContent = `Đang cất trong Gara: ${data.garageStatus.totalParked} con • Nhân vật in-game: ${data.species}`;
 
-            // Chỉ tự động điền form nếu autoFill = true
-            if (autoFill) {
+            // Nếu người này đã có slot riêng trong danh sách phân quyền:
+            const existing = this.assignedUsers.find(u => u.steamId === sid);
+            if (existing) {
+              document.getElementById('preview-current-slots').textContent = `${existing.slots} Slots`;
+              document.getElementById('preview-current-role').textContent = existing.roleName;
+            }
+
+            // Chỉ tự động điền form nếu autoFill = true VÀ admin chưa tự chọn slot
+            if (autoFill && !this.manualSlotChanged) {
               const selRole = document.getElementById('select-role');
               if (selRole && data.garageStatus.roleKey) {
                 selRole.value = data.garageStatus.roleKey;
               }
-              const currentSlots = data.garageStatus.maxSlots || 3;
+              const currentSlots = existing ? existing.slots : (data.garageStatus.maxSlots || 3);
               document.getElementById('custom-slots').value = currentSlots;
               this.updateQuickSlotButtons(currentSlots);
             }
@@ -1037,7 +1076,7 @@
         e.preventDefault();
         const targetSteamId = document.getElementById('target-steamid').value.trim();
         const roleKey = document.getElementById('select-role').value;
-        const customSlots = document.getElementById('custom-slots').value;
+        const customSlotsVal = document.getElementById('custom-slots').value;
         const notes = document.getElementById('assign-notes').value.trim();
 
         if (!targetSteamId) {
@@ -1045,9 +1084,9 @@
           return;
         }
 
-        const numSlots = Number(customSlots);
+        const numSlots = parseInt(customSlotsVal, 10);
         if (isNaN(numSlots) || numSlots < 1 || numSlots > 100) {
-          App.showToast("Số lượng slot phải là số từ 1 đến 100!", "error");
+          App.showToast("Số lượng slot phải là số nguyên từ 1 đến 100!", "error");
           return;
         }
 
@@ -1057,7 +1096,7 @@
           submitBtn.textContent = "⏳ Đang Lưu & Cấp Quyền...";
         }
 
-        App.showToast("Đang xử lý lưu quyền và slot...", "info");
+        App.showToast(`Đang lưu vĩnh viễn ${numSlots} Slots Gara cho ${targetSteamId}...`, "info");
 
         try {
           const hdrs = {
@@ -1079,7 +1118,7 @@
 
           const data = await res.json();
           if (res.ok && data.success) {
-            App.showToast(data.message, "success");
+            App.showToast(`✅ ĐÃ LƯU VĨNH VIỄN: Cấp ${numSlots} Slots Gara cho ${targetSteamId} thành công!`, "success");
 
             // Cập nhật ngay danh sách bảng tức thì
             if (Array.isArray(data.assignedUsers)) {
@@ -1092,6 +1131,7 @@
                 slots: numSlots,
                 isSuperAdmin: false,
                 updatedAt: new Date().toLocaleString('vi-VN'),
+                updatedAtTimestamp: Date.now(),
                 notes: notes
               };
               this.assignedUsers = [
@@ -1100,6 +1140,9 @@
               ];
             }
 
+            // Lưu bản sao lưu vĩnh viễn vào localStorage để không bao giờ bị mất
+            localStorage.setItem('st25_backup_assignments', JSON.stringify(this.assignedUsers));
+
             // Xóa ô tìm kiếm để dòng vừa cấp hiển thị ngay trên cùng
             const searchInp = document.getElementById('search-assigned');
             if (searchInp) searchInp.value = '';
@@ -1107,8 +1150,13 @@
             this.renderAssignedTable();
             this.highlightUserRow(targetSteamId);
 
-            // Cập nhật thẻ preview mà không ghi đè lại form input
-            this.inspectPlayer(false);
+            // Cập nhật trực tiếp số slot hiển thị trên preview card
+            const prevSlot = document.getElementById('preview-current-slots');
+            if (prevSlot) prevSlot.textContent = `${numSlots} Slots`;
+            const prevRole = document.getElementById('preview-current-role');
+            if (prevRole && data.garageStatus) prevRole.textContent = data.garageStatus.roleName;
+
+            this.manualSlotChanged = false;
           } else {
             App.showToast(data.error || "Không thể cấp quyền lúc này!", "error");
           }
@@ -1374,7 +1422,7 @@
       searchKeyword: '',
 
       init(adminSid) {
-        this.adminSteamId = adminSid || AdminPanel.currentAdminSteamId;
+        this.adminSteamId = adminSid || AdminPanel.currentAdminSteamId || AdminPanel.getActiveSteamId() || '76561198354289789';
         this.loadLogs();
       },
 
@@ -1384,13 +1432,15 @@
           tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;">Đang nạp dữ liệu đòn đánh...</td></tr>`;
         }
 
+        const effectiveAdmin = this.adminSteamId || AdminPanel.currentAdminSteamId || AdminPanel.getActiveSteamId() || '76561198354289789';
+
         try {
           const hdrs = {
             'Content-Type': 'application/json',
-            'x-steam-id': this.adminSteamId || AdminPanel.currentAdminSteamId,
-            'x-admin-steam-id': this.adminSteamId || AdminPanel.currentAdminSteamId
+            'x-steam-id': effectiveAdmin,
+            'x-admin-steam-id': effectiveAdmin
           };
-          const res = await fetch(`/api/admin/combat-logs?adminSteamId=${encodeURIComponent(this.adminSteamId || '')}`, {
+          const res = await fetch(`/api/admin/combat-logs?adminSteamId=${encodeURIComponent(effectiveAdmin)}`, {
             headers: hdrs
           });
 
@@ -1400,35 +1450,61 @@
           }
 
           const data = await res.json();
-          if (data && data.success && Array.isArray(data.logs)) {
-            this.rawLogs = data.logs;
-            this.updateStats(data.summary);
-            this.applyFilterAndRender();
-          } else {
-            if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #ef4444; padding: 30px;">Không thể tải nhật ký chiến đấu: ${data.error || 'Lỗi không xác định'}</td></tr>`;
-          }
+          const logsList = Array.isArray(data.logs) ? data.logs : (Array.isArray(data) ? data : []);
+          
+          this.rawLogs = logsList.map(l => ({
+            id: l.id,
+            timestamp: l.timestamp,
+            attacker: l.attacker || {},
+            victim: l.victim || {},
+            damageDealt: l.damageDealt ?? l.damage ?? 0,
+            hitPart: l.hitPart || l.hitBox || 'Thân',
+            distanceMeters: l.distanceMeters ?? l.distance ?? 0,
+            speed: l.speed ?? l.attackerSpeed ?? (l.attacker ? l.attacker.speedKmh : 0) ?? 0,
+            isAnomaly: l.isAnomaly !== undefined ? l.isAnomaly : (Array.isArray(l.flags) && l.flags.length > 0),
+            flags: (l.flags || []).map(f => ({
+              type: f.type,
+              desc: f.desc || f.title || f.message || '',
+              severity: f.severity || (f.level === 'danger' ? 'critical' : 'warning'),
+              icon: f.icon || (f.level === 'danger' || f.severity === 'critical' ? '🚨' : '⚠️')
+            }))
+          }));
+
+          const statsObj = data.summary || data.stats || {
+            totalLogs: logsList.length,
+            flaggedLogs: logsList.filter(l => l.isAnomaly).length,
+            reachAnomalies: logsList.filter(l => (l.flags || []).some(f => f.type === 'REACH_HACK')).length,
+            cleanLogs: logsList.filter(l => !l.isAnomaly).length
+          };
+          this.updateStats(statsObj);
+          this.applyFilterAndRender();
         } catch (e) {
           console.error(e);
-          if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #ef4444; padding: 30px;">Lỗi kết nối máy chủ!</td></tr>`;
+          if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #ef4444; padding: 30px;">Lỗi kết nối máy chủ khi nạp nhật ký chiến đấu!</td></tr>`;
         }
       },
 
       updateStats(summary) {
         if (!summary) return;
+        const totalHits = summary.totalLogs ?? summary.totalHits ?? 0;
+        const flaggedHits = summary.flaggedLogs ?? summary.anomaliesCount ?? 0;
+        const reachHits = summary.reachAnomalies ?? summary.reachCount ?? 0;
+        const cleanHits = summary.cleanLogs ?? (totalHits - flaggedHits) ?? 0;
+
         const totalEl = document.getElementById('stat-total-hits');
         const flagEl = document.getElementById('stat-flagged-hits');
         const reachEl = document.getElementById('stat-reach-hits');
         const cleanEl = document.getElementById('stat-clean-hits');
         const badgeTab = document.getElementById('tab-combat-alert-badge');
 
-        if (totalEl) totalEl.textContent = summary.totalLogs || 0;
-        if (flagEl) flagEl.textContent = summary.flaggedLogs || 0;
-        if (reachEl) reachEl.textContent = summary.reachAnomalies || 0;
-        if (cleanEl) cleanEl.textContent = summary.cleanLogs || 0;
+        if (totalEl) totalEl.textContent = totalHits;
+        if (flagEl) flagEl.textContent = flaggedHits;
+        if (reachEl) reachEl.textContent = reachHits;
+        if (cleanEl) cleanEl.textContent = cleanHits;
 
         if (badgeTab) {
-          if (summary.flaggedLogs > 0) {
-            badgeTab.textContent = `🚨 ${summary.flaggedLogs} Nghi Vấn`;
+          if (flaggedHits > 0) {
+            badgeTab.textContent = `🚨 ${flaggedHits} Nghi Vấn`;
             badgeTab.style.display = 'inline-flex';
           } else {
             badgeTab.style.display = 'none';
