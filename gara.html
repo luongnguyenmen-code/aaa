@@ -3,19 +3,105 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gara Khủng Long — ST25</title>
-  <meta name="description" content="Hệ thống Gara lưu trữ khủng long server ST25 The Isle Evrima: Cất và khôi phục Dino giữ nguyên chỉ số, màu da và đột biến. Tuân thủ Điều 8 & Điều 12.">
+  <title>Gara Khủng Long — Máy Chủ ST25 VIETNAM (IslePilot Cloud)</title>
   <link rel="stylesheet" href="assets/css/style.css">
-  <link rel="icon" href="assets/map/gateway.webp">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+  <style>
+    .garage-header-box {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85));
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .active-dino-panel {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 24px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(15, 23, 42, 0.8));
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 30px;
+    }
+    @media (max-width: 768px) {
+      .active-dino-panel { grid-template-columns: 1fr; }
+    }
+    .stat-bars { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+    .stat-item { background: rgba(0,0,0,0.25); border-radius: 6px; padding: 6px 10px; }
+    .stat-label-wrap { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px; color: #cbd5e1; }
+    .stat-bar-track { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+    .stat-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+    .fill-health { background: #10b981; }
+    .fill-hunger { background: #f59e0b; }
+    .fill-thirst { background: #06b6d4; }
+    .fill-stamina { background: #3b82f6; }
+
+    .slots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .slot-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .slot-card:hover {
+      transform: translateY(-3px);
+      border-color: #38bdf8;
+    }
+    .slot-card.empty-slot {
+      border: 2px dashed rgba(255,255,255,0.1);
+      background: rgba(15, 23, 42, 0.4);
+      align-items: center;
+      justify-content: center;
+      min-height: 220px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .slot-badge-num {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(255,255,255,0.08);
+      color: #94a3b8;
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+    }
+    .mutation-tag {
+      display: inline-block;
+      background: rgba(168, 85, 247, 0.15);
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      color: #c084fc;
+      font-size: 0.75rem;
+      padding: 2px 7px;
+      border-radius: 4px;
+      margin: 2px;
+    }
+  </style>
 </head>
 <body>
 
-  <!-- Header -->
+  <!-- Navigation Bar -->
   <header class="site-header">
-    <div class="container nav-wrap">
+    <div class="container header-container">
       <a href="index.html" class="brand">
         <span style="color: #fbbf24;">🌾 ST25</span>
-        <span class="brand-tag">🦖 GARA</span>
+        <span class="brand-tag">🦖 THE ISLE</span>
       </a>
 
       <ul class="nav-links">
@@ -33,108 +119,106 @@
       </ul>
 
       <div class="nav-actions">
-        <!-- Cooldown Warning Badge -->
-        <span id="cooldown-badge" class="rule-badge badge-warn" style="display: none; padding: 6px 12px; font-size: 0.85rem;">
-          Chờ sẵn sàng: <strong id="cooldown-timer-text">00:30</strong>
-        </span>
-
-        <a href="lien-ket-steam.html" class="btn btn-secondary btn-sm">Xem Đàn Của Bạn</a>
+        <a href="lien-ket-steam.html" class="btn btn-secondary btn-sm" id="nav-btn-steam">Đổi Tài Khoản Steam</a>
+        <a href="tai-hud.html" class="btn btn-hud btn-sm">Tải HUD</a>
       </div>
     </div>
   </header>
 
-  <!-- Content -->
-  <main class="container" style="padding: 40px 20px;">
-    
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
+  <!-- Main Content -->
+  <main class="container" style="padding-top: 35px; padding-bottom: 60px;">
+
+    <!-- Page Header -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
       <div>
-        <h1 style="font-size: 2.2rem; font-weight: 800; color: #fff;">GARA CỦA BẠN</h1>
-        <p style="color: var(--text-secondary);">
-          Lưu giữ khủng long khi muốn tạm nghỉ hoặc đổi loài. Giữ nguyên màu sắc, mức tăng trưởng và đột biến.
+        <h1 style="font-size: 2.2rem; font-weight: 800; color: #fff; margin-bottom: 6px;">
+          GARA KHỦNG LONG ST25
+        </h1>
+        <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">
+          Đồng bộ Cloud 100% với nhà phát hành IslePilot (<a href="https://st25.islepilot.eu/garage" target="_blank" style="color: #38bdf8;">st25.islepilot.eu/garage</a>). Lưu giữ chỉ số, đột biến và tăng trưởng!
         </p>
       </div>
 
       <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <button onclick="Garage.refresh()" class="btn btn-secondary btn-sm" id="btn-refresh-garage">
-          🔄 Đồng bộ lại dữ liệu
+          🔄 Đồng bộ dữ liệu
         </button>
-        <button onclick="Garage.openAdminModal()" class="btn btn-primary btn-sm" id="btn-admin-manage" style="display: none; background: #fbbf24; color: #0f172a; font-weight: 800; border: none;">
-          👑 Phân Quyền Role (BQT)
-        </button>
-        <a href="noi-quy.html#dieu-12" class="btn btn-secondary btn-sm">Đọc luật Gara (Điều 8 & 12)</a>
+        <a href="giao-dich.html" class="btn btn-primary btn-sm" style="font-weight: 700;">
+          ⚖️ Chợ Mua Bán Dino
+        </a>
       </div>
     </div>
 
     <!-- Live Account Bar -->
-    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-color); padding: 12px 20px; border-radius: var(--radius-md); margin-bottom: 25px; flex-wrap: wrap; gap: 10px;">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 1.4rem;">🦖</span>
-        <div>
-          <span style="color: #cbd5e1; font-weight: 700;" id="garage-player-name">Đang tải tài khoản...</span>
-          <small style="color: var(--text-muted); display: block;" id="garage-player-steamid">SteamID: ---</small>
+    <div class="garage-header-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 2rem;">🦖</span>
+          <div>
+            <span style="color: #fff; font-weight: 800; font-size: 1.15rem;" id="garage-player-name">Đang tải tài khoản...</span>
+            <small style="color: var(--text-muted); display: block;" id="garage-player-steamid">SteamID: ---</small>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <span class="rule-badge badge-allow" style="background: rgba(56, 189, 248, 0.15); border-color: #38bdf8; color: #38bdf8; font-size: 0.85rem;" id="garage-role-badge">
+            👑 Đang tải vai trò...
+          </span>
+          <span class="rule-badge badge-allow" style="background: rgba(16, 185, 129, 0.15); border-color: #10b981; color: #6ee7b7; font-size: 0.85rem;">
+            ☁️ ISLEPILOT CLOUD SYNC
+          </span>
+          <span style="color: #fbbf24; font-weight: 800; font-size: 1rem;" id="garage-count-badge">
+            Đang lưu: 0 / 3 Khủng Long
+          </span>
         </div>
       </div>
-      <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-        <span class="rule-badge badge-allow" style="background: rgba(56, 189, 248, 0.15); border-color: #38bdf8; color: #38bdf8;" id="garage-role-badge">
-          👑 Role Discord: Đang tải...
-        </span>
-        <span class="rule-badge badge-allow" style="background: rgba(16, 185, 129, 0.15); border-color: #10b981; color: #6ee7b7;" id="garage-sync-badge">
-          ✅ ĐÃ ĐỒNG BỘ ISLEPILOT & IN-GAME
-        </span>
-        <span style="color: #fbbf24; font-weight: 700; font-size: 0.95rem;" id="garage-count-badge">
-          Đang lưu: 0 / 2 Khủng Long
-        </span>
+
+      <!-- Capacity Notice -->
+      <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.85rem; color: #94a3b8;" id="garage-capacity-notice">
+        Sức chứa Gara được hệ thống tự động đồng bộ theo vai trò của bạn trên server ST25.
       </div>
+    </div>
+
+    <!-- Cooldown Alert (if any) -->
+    <div id="cooldown-alert" style="display: none; background: rgba(234, 88, 12, 0.15); border: 1px solid #f97316; border-radius: var(--radius-md); padding: 14px 20px; margin-bottom: 24px; align-items: center; justify-content: space-between;">
+      <span style="color: #fdba74; font-weight: 600;">
+        ⏳ Thời gian chờ đồng bộ game server: <strong id="cooldown-timer-text" style="color: #fff; font-size: 1.1rem;">00:30</strong>
+      </span>
+      <span style="color: #94a3b8; font-size: 0.85rem;">Vui lòng chờ hết thời gian để đảm bảo dữ liệu nhân vật an toàn.</span>
     </div>
 
     <!-- Active Dinosaur Panel -->
     <section>
-      <h3 style="color: #fff; font-size: 1.15rem; margin-bottom: 12px;">
-        Khủng Long Đang Trong Game (Active Dino)
-      </h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="color: #fff; font-size: 1.2rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+          <span>🎮 Khủng Long Đang Trong Game (Active Dino)</span>
+        </h3>
+        <span style="font-size: 0.85rem; color: var(--text-muted);">Trạng thái nhân vật hiện tại trên bản đồ</span>
+      </div>
+
       <div id="active-dino-content" class="active-dino-panel">
         <div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: var(--text-muted);">
-          Đang tải thông tin khủng long từ server ST25...
+          Đang nạp dữ liệu từ máy chủ ST25...
         </div>
       </div>
     </section>
 
-    <!-- Important Rules Warning Banner -->
-    <div style="margin: 24px 0 32px; padding: 18px 24px; background: rgba(234, 88, 12, 0.1); border-left: 4px solid var(--accent-orange); border-radius: var(--radius-sm);">
-      <h4 style="color: #fb923c; margin-bottom: 6px; font-weight: 700;">NGUYÊN TẮC QUAN TRỌNG KHI DÙNG GARA</h4>
-      <p style="font-size: 0.875rem; color: #cbd5e1; line-height: 1.6;">
-        • <strong>Điều 8 (Cấm Combat Log):</strong> Tuyệt đối không cất Dino khi đang bị truy đuổi hoặc đang combat để trốn chết.<br>
-        • <strong>Điều 11 (Cấm Revenge Kill):</strong> Nếu chết, cấm lấy con khác trong 15 phút quay lại trả thù kẻ đã giết mình.<br>
-        • <strong>Quy định Gara (Chờ 30 giây):</strong> Sau khi lấy Dino ra, <strong>chờ 30 giây</strong> để hệ thống đồng bộ nhân vật và sẵn sàng xuất chiến.<br>
-    </div>
-
-    <!-- Garage Upgrade / Capacity Banner -->
-    <div id="garage-upgrade-banner" style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 24px; gap: 16px; flex-wrap: wrap;">
-      <div style="display: flex; align-items: center; gap: 14px;">
-        <span style="font-size: 2rem;">🚀</span>
+    <!-- Garage Slots Grid -->
+    <section style="margin-top: 35px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
         <div>
-          <h4 style="color: #fbbf24; margin-bottom: 4px; font-size: 1.05rem;">Giới Hạn Gara Đồng Bộ Theo Role Discord</h4>
-          <p style="font-size: 0.85rem; color: #94a3b8; margin: 0; line-height: 1.5;" id="garage-role-desc">
-            Sức chứa Gara được đồng bộ theo Role Discord trên IslePilot. Khi Gara đầy sẽ không thể cất thêm hoặc mua khủng long mới!
+          <h3 style="color: #fff; font-size: 1.25rem; margin: 0 0 4px;">
+            📦 Kho Lưu Trữ Gara (Cloud IslePilot)
+          </h3>
+          <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem;">
+            Danh sách khủng long đã cất an toàn. Bấm <strong>"Đưa Ra Đảo (Restore)"</strong> để thế chỗ nhân vật trong game hoặc <strong>"Bán (Sell)"</strong> để nhận Lúa 🌾.
           </p>
         </div>
-      </div>
-      <a href="https://discord.gg/3xCrA6VyY" target="_blank" class="btn btn-primary btn-sm" style="font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;">
-        💬 Liên Hệ Admin Nâng Cấp Gara
-      </a>
-    </div>
-
-    <!-- Garage Slots -->
-    <section>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 style="color: #fff; font-size: 1.15rem;">
-          Danh Sách Khủng Long Trong Gara (Đồng Bộ Cloud IslePilot)
-        </h3>
-        <span style="font-size: 0.85rem; color: var(--text-muted);" id="garage-capacity-text">Sức chứa tối đa theo Role Discord</span>
+        <span class="rule-badge badge-warn" id="slots-capacity-summary">Đang nạp slots...</span>
       </div>
 
       <div id="garage-slots-grid" class="slots-grid">
-        <!-- Injected by gara.js -->
+        <!-- Rendered by gara.js -->
       </div>
     </section>
 
@@ -143,56 +227,9 @@
   <!-- Footer -->
   <footer class="site-footer">
     <div class="container" style="text-align: center;">
-      <p>© 2026 ST25 — Hệ thống Gara lưu trữ Khủng Long tự động server ST25.</p>
+      <p>© 2026 ST25 — Hệ thống Gara Khủng Long Cloud chính thức của máy chủ The Isle: Evrima Việt Nam.</p>
     </div>
   </footer>
-
-  <!-- Admin Role Assignment Modal -->
-  <div id="admin-role-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 9999; justify-content: center; align-items: center; padding: 20px;">
-    <div style="background: #1e293b; border: 1px solid #f59e0b; border-radius: 12px; width: 100%; max-width: 520px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 12px;">
-        <h3 style="color: #fbbf24; margin: 0; font-size: 1.25rem; display: flex; align-items: center; gap: 8px;">
-          👑 Cấp Quyền & Điều Chỉnh Gara ST25
-        </h3>
-        <button onclick="Garage.closeAdminModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer;">&times;</button>
-      </div>
-
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; color: #cbd5e1; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px;">Steam ID Người Chơi:</label>
-        <input type="text" id="admin-target-steamid" placeholder="VD: 76561198838095252" style="width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid #475569; border-radius: 8px; color: #fff; font-size: 0.95rem;">
-      </div>
-
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; color: #cbd5e1; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px;">Chọn Vai Trò (Role):</label>
-        <select id="admin-target-role" onchange="Garage.onAdminRoleChange()" style="width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid #475569; border-radius: 8px; color: #fff; font-size: 0.95rem;">
-          <option value=".">👑 BQT Cấp Cao (.) — 20 Slots</option>
-          <option value="admin">👑 Quản Trị Viên (Admin) — 20 Slots</option>
-          <option value="mod">🛡️ Điều Hành Viên (Mod) — 20 Slots</option>
-          <option value="long_dai_dia_chu">🏰 LONG ĐẠI ĐỊA CHỦ — 20 Slots</option>
-          <option value="long_phu_nong">🌾 LONG PHÚ NÔNG — 18 Slots</option>
-          <option value="long_ta_dien">🌾 LONG TÁ ĐIỀN — 12 Slots</option>
-          <option value="dev">💻 DEV (Phát Triển) — 10 Slots</option>
-          <option value="long_chu">🐲 LONG CHỦ — 8 Slots</option>
-          <option value="booster">🚀 Booster Server — 5 Slots</option>
-          <option value="streamer">🎙️ Streamer — 5 Slots</option>
-          <option value="default">🦖 Thành Viên Mặc Định — 3 Slots</option>
-          <option value="custom">✨ Slot Tùy Chỉnh Riêng Biệt (Custom)</option>
-        </select>
-      </div>
-
-      <div style="margin-bottom: 24px;" id="admin-custom-slot-wrap">
-        <label style="display: block; color: #cbd5e1; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px;">Số Lượng Slot Gara (Tùy chỉnh):</label>
-        <input type="number" id="admin-target-slots" value="20" min="1" max="50" style="width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid #475569; border-radius: 8px; color: #fff; font-size: 0.95rem;">
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button onclick="Garage.closeAdminModal()" class="btn btn-secondary btn-sm" style="padding: 10px 16px;">Hủy bỏ</button>
-        <button onclick="Garage.submitAdminRole()" class="btn btn-primary btn-sm" style="background: #f59e0b; color: #000; font-weight: 700; padding: 10px 20px;">
-          💾 Cập Nhật Quyền Hạn
-        </button>
-      </div>
-    </div>
-  </div>
 
   <script src="assets/js/app.js"></script>
   <script src="assets/js/gara.js"></script>

@@ -3,84 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chợ Giao Dịch & Ví Lúa — ST25 VIETNAM</title>
-  <meta name="description" content="Sàn giao dịch Lúa 🌾, mua bán Khủng Long tự động chuyển vào Gara và tìm kiếm người chơi của máy chủ ST25 The Isle: Evrima.">
+  <title>Sàn Giao Dịch & Chợ Khủng Long ST25 (IslePilot Trade)</title>
   <link rel="stylesheet" href="assets/css/style.css">
-  <link rel="icon" href="assets/map/gateway.webp">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
   <style>
-    .market-banner {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.95));
-      border: 1px solid rgba(245, 158, 11, 0.35);
-      border-radius: var(--radius-md);
-      padding: 24px;
-      margin-bottom: 25px;
+    .trade-tabs {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
       flex-wrap: wrap;
-      gap: 20px;
     }
-    .balance-huge {
-      font-size: 2.2rem;
-      font-weight: 900;
-      color: #fbbf24;
-      text-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+    .trade-tab-btn {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--border-color);
+      color: #94a3b8;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       gap: 8px;
     }
+    .trade-tab-btn:hover {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border-color: #38bdf8;
+    }
+    .trade-tab-btn.active {
+      background: #fbbf24;
+      color: #0f172a;
+      border-color: #f59e0b;
+    }
+    .tab-content-panel { display: none; }
+    .tab-content-panel.active { display: block; }
+
     .market-card {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
       padding: 20px;
-      transition: all 0.25s ease;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      position: relative;
+      transition: transform 0.2s ease, border-color 0.2s ease;
     }
     .market-card:hover {
-      border-color: #fbbf24;
       transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(245, 158, 11, 0.15);
+      border-color: #fbbf24;
     }
-    .user-search-results {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      background: rgba(15, 23, 42, 0.98);
-      border: 1px solid #fbbf24;
-      border-radius: var(--radius-sm);
-      max-height: 200px;
-      overflow-y: auto;
-      z-index: 100;
-      display: none;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    .rule-table-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow-x: auto;
     }
-    .user-search-item {
-      padding: 10px 14px;
-      cursor: pointer;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      font-size: 0.85rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .rule-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
     }
-    .user-search-item:hover {
-      background: rgba(245, 158, 11, 0.15);
+    .rule-table th, .rule-table td {
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-size: 0.9rem;
+    }
+    .rule-table th {
+      background: rgba(15, 23, 42, 0.8);
       color: #fbbf24;
+      font-weight: 700;
     }
   </style>
 </head>
 <body>
 
-  <!-- Site Header -->
+  <!-- Navigation Bar -->
   <header class="site-header">
-    <div class="container nav-container">
-      <a href="index.html" class="brand-logo">
-        <span class="brand-text">🌾 ST25 <span class="brand-accent">VIETNAM</span> 🦖</span>
+    <div class="container header-container">
+      <a href="index.html" class="brand">
+        <span style="color: #fbbf24;">🌾 ST25</span>
+        <span class="brand-tag">🦖 THE ISLE</span>
       </a>
 
       <ul class="nav-links">
@@ -105,127 +114,166 @@
   </header>
 
   <!-- Main Content -->
-  <main class="container" style="padding-top: 30px; padding-bottom: 60px;">
-    
-    <!-- Balance & Quick Transfer Banner -->
-    <div class="market-banner">
+  <main class="container" style="padding-top: 35px; padding-bottom: 60px;">
+
+    <!-- Page Header -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
       <div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-          <span class="rule-badge badge-allow">🌾 Ví Lúa Liên Kết Tài Khoản Game</span>
-          <span style="color: #cbd5e1; font-size: 0.85rem;" id="market-account-tag">Đang đồng bộ tài khoản...</span>
-        </div>
-        <h1 style="color: #fff; font-size: 1.8rem; margin: 4px 0;">SÀN GIAO DỊCH LÚA & KHỦNG LONG</h1>
+        <h1 style="font-size: 2.2rem; font-weight: 800; color: #fff; margin-bottom: 6px;">
+          SÀN GIAO DỊCH ST25
+        </h1>
         <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">
-          Mua bán Dino chuyển nhượng (tự động chuyển vào Gara), đăng bán Dino từ kho và chuyển Lúa 🌾 an toàn.
+          Đồng bộ theo nền tảng giao dịch IslePilot (<a href="https://st25.islepilot.eu/trade" target="_blank" style="color: #38bdf8;">st25.islepilot.eu/trade</a>). Mua bán Dino, chuyển Lúa và thu mua chính thức!
         </p>
       </div>
 
-      <div style="text-align: right;">
-        <span style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Số dư trong tài khoản</span>
-        <div class="balance-huge">
-          <span id="user-balance-val">---</span>
-          <span>Lúa 🌾</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 2 Column Layout: Transfer Lúa & List Dino from Garage -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 35px;">
-      
-      <!-- Chuyển Lúa & Tìm Người Giao Dịch -->
-      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 22px;">
-        <h3 style="color: #fff; font-size: 1.15rem; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
-          <span>🌾 Chuyển Lúa & Tìm Người Giao Dịch</span>
-        </h3>
-        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
-          Tìm kiếm đồng đội theo tên hoặc SteamID để chuyển Lúa trực tiếp vào tài khoản server.
-        </p>
-
-        <!-- Search User Tool -->
-        <div class="form-group" style="position: relative; margin-bottom: 14px;">
-          <label class="form-label" for="search-user-input">🔍 Tìm kiếm người chơi:</label>
-          <input type="text" id="search-user-input" class="form-input" placeholder="Gõ tên hoặc SteamID..." oninput="handleSearchUsers(this.value)">
-          <div id="search-results-box" class="user-search-results"></div>
-        </div>
-
-        <form id="transfer-form" onsubmit="handleTransfer(event)">
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label class="form-label" for="receiver-steamid">SteamID 64 người nhận:</label>
-            <input type="text" id="receiver-steamid" class="form-input" placeholder="Nhập SteamID 64 (17 chữ số)..." required>
-          </div>
-
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label class="form-label" for="transfer-amount">Số Lúa muốn chuyển 🌾:</label>
-            <input type="number" id="transfer-amount" class="form-input" min="1" placeholder="Nhập số Lúa..." required>
-          </div>
-
-          <div class="form-group" style="margin-bottom: 16px;">
-            <label class="form-label" for="transfer-note">Lời nhắn (tuỳ chọn):</label>
-            <input type="text" id="transfer-note" class="form-input" placeholder="Chia sẻ Lúa cho bầy đi săn...">
-          </div>
-
-          <button type="submit" class="btn btn-primary" style="width: 100%;">
-            🌾 Xác Nhận Chuyển Lúa 🚀
-          </button>
-        </form>
-      </div>
-
-      <!-- Đăng Bán Khủng Long Từ Gara -->
-      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 22px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-          <h3 style="color: #fff; font-size: 1.15rem; margin: 0; display: flex; align-items: center; gap: 8px;">
-            <span>🦖 Đăng Bán Dino Từ Gara Lên Chợ</span>
-          </h3>
-          <span class="rule-badge badge-allow" id="garage-avail-badge">0 Dino</span>
-        </div>
-        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
-          Chọn khủng long trong kho Gara của bạn để đăng bán cho người chơi khác thu về Lúa 🌾.
-        </p>
-
-        <form id="list-dino-form" onsubmit="handleListDino(event)">
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label class="form-label" for="select-garage-dino">Chọn khủng long từ Gara:</label>
-            <select id="select-garage-dino" class="form-input" required>
-              <option value="">Đang tải danh sách Dino trong Gara...</option>
-            </select>
-          </div>
-
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label class="form-label" for="list-dino-price">Giá bán (Lúa 🌾):</label>
-            <input type="number" id="list-dino-price" class="form-input" min="1" placeholder="Ví dụ: 80" required>
-          </div>
-
-          <div class="form-group" style="margin-bottom: 16px;">
-            <label class="form-label" for="list-dino-title">Tiêu đề quảng cáo:</label>
-            <input type="text" id="list-dino-title" class="form-input" placeholder="Ví dụ: T-Rex Đực 100% Full S-S-D cần nhượng...">
-          </div>
-
-          <button type="submit" class="btn btn-secondary" style="width: 100%; font-weight: 700; border-color: #fbbf24; color: #fbbf24;">
-            📤 Đăng Bán Lên Chợ Giao Dịch
-          </button>
-        </form>
-
-        <div style="margin-top: 15px; font-size: 0.8rem; color: var(--text-muted);">
-          💡 Khi có người mua, Lúa sẽ tự động cộng thẳng vào tài khoản game của bạn!
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Dino Marketplace Grid -->
-    <div>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
+      <!-- Live Wallet Balance -->
+      <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(251, 191, 36, 0.3); padding: 14px 22px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 14px;">
+        <span style="font-size: 2.2rem;">🌾</span>
         <div>
-          <h2 style="color: #fff; font-size: 1.4rem; margin: 0 0 4px;">🦖 Chợ Mua Bán Khủng Long (Tự Chuyển Vào Gara)</h2>
-          <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem;">
-            Mua khủng long bằng Lúa 🌾 — Hệ thống sẽ <strong>tự động chuyển ngay vào ô trống trong Gara của bạn</strong> để lấy ra đảo chơi!
-          </p>
+          <span style="font-size: 0.8rem; color: #94a3b8; display: block; font-weight: 600;">SỐ DƯ VÍ ISLEPILOT</span>
+          <span style="font-size: 1.4rem; font-weight: 800; color: #fbbf24;" id="user-balance-val">0</span>
+          <span style="color: #fbbf24; font-size: 0.9rem; font-weight: 700;">LÚA</span>
         </div>
-        <span class="rule-badge badge-warn" id="market-count-badge">Đang tải...</span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="trade-tabs">
+      <button class="trade-tab-btn active" onclick="switchTradeTab('tab-p2p')">
+        🦖 Chợ Khủng Long P2P
+      </button>
+      <button class="trade-tab-btn" onclick="switchTradeTab('tab-transfer')">
+        💸 Chuyển Lúa Cho Người Chơi
+      </button>
+      <button class="trade-tab-btn" onclick="switchTradeTab('tab-sell-rules')">
+        📜 Quy Định Thu Mua Nhà Phát Hành
+      </button>
+    </div>
+
+    <!-- TAB 1: P2P MARKETPLACE -->
+    <div id="tab-p2p" class="tab-content-panel active">
+      <div style="display: grid; grid-template-columns: 340px 1fr; gap: 24px; align-items: start;">
+
+        <!-- Form Đăng Bán Khủng Long Từ Gara -->
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 22px;">
+          <h3 style="color: #fff; font-size: 1.15rem; margin: 0 0 8px; display: flex; align-items: center; gap: 8px;">
+            <span>📤 Đăng Bán Dino Từ Gara</span>
+          </h3>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
+            Chọn khủng long trong Gara Cloud của bạn để rao bán trên Chợ ST25.
+          </p>
+
+          <form id="list-dino-form" onsubmit="handleListDino(event)">
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label class="form-label" for="select-garage-dino">Chọn khủng long từ Gara:</label>
+              <select id="select-garage-dino" class="form-input" required>
+                <option value="">Đang tải danh sách Dino trong Gara...</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label class="form-label" for="list-dino-price">Giá bán mong muốn (Lúa 🌾):</label>
+              <input type="number" id="list-dino-price" class="form-input" min="1" placeholder="Ví dụ: 80" required>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label class="form-label" for="list-dino-title">Tiêu đề / Lời nhắn:</label>
+              <input type="text" id="list-dino-title" class="form-input" placeholder="Ví dụ: T-Rex Đực 90% Prime Elder">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; font-weight: 700;">
+              📤 Đăng Lên Chợ Ngay
+            </button>
+          </form>
+
+          <div style="margin-top: 15px; font-size: 0.8rem; color: #94a3b8; line-height: 1.5;">
+            💡 Khi có người mua, Lúa sẽ được chuyển tự động vào ví IslePilot của bạn!
+          </div>
+        </div>
+
+        <!-- Danh sách bài đăng chợ -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="color: #fff; font-size: 1.25rem; margin: 0;">
+              🛒 Danh Sách Khủng Long Đang Rao Bán
+            </h3>
+            <span class="rule-badge badge-warn" id="market-count-badge">Đang tải...</span>
+          </div>
+
+          <div id="market-listings-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px;">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 2: TRANSFER LÚA -->
+    <div id="tab-transfer" class="tab-content-panel">
+      <div style="max-width: 600px; margin: 0 auto; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 28px;">
+        <h3 style="color: #fff; font-size: 1.3rem; margin: 0 0 6px;">
+          💸 Chuyển Lúa Trực Tiếp (IslePilot Wallet)
+        </h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 20px;">
+          Chuyển Lúa 🌾 an toàn cho bạn bè trên server. Giao dịch được ghi nhận trực tiếp vào ví chính thức.
+        </p>
+
+        <form id="transfer-lua-form" onsubmit="handleTransferLua(event)">
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" for="transfer-receiver">Steam ID Người Nhận (17 số):</label>
+            <input type="text" id="transfer-receiver" class="form-input" placeholder="Ví dụ: 76561198838095252" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" for="transfer-amount">Số Lúa Chuyển (🌾):</label>
+            <input type="number" id="transfer-amount" class="form-input" min="1" placeholder="Ví dụ: 50" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 22px;">
+            <label class="form-label" for="transfer-note">Lời nhắn giao dịch:</label>
+            <input type="text" id="transfer-note" class="form-input" placeholder="Ví dụ: Tiền mua thịt săn...">
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; font-weight: 700; padding: 12px;">
+            💸 Xác Nhận Chuyển Lúa
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- TAB 3: OFFICIAL SELL RULES -->
+    <div id="tab-sell-rules" class="tab-content-panel">
+      <div style="margin-bottom: 18px;">
+        <h3 style="color: #fff; font-size: 1.3rem; margin: 0 0 6px;">
+          📜 Bảng Quy Định Thu Mua Khủng Long Chính Thức (IslePilot)
+        </h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">
+          Người chơi có thể bán khủng long đủ điều kiện trong Gara vào hệ thống để nhận ngay Lúa 🌾 vào ví bất cứ lúc nào!
+        </p>
       </div>
 
-      <div id="market-listings-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px;">
-        <!-- Injected by JS -->
+      <div class="rule-table-wrap">
+        <table class="rule-table">
+          <thead>
+            <tr>
+              <th>Loài Khủng Long</th>
+              <th>Giá Thu Mua Cơ Bản (Lúa 🌾)</th>
+              <th>Yêu Cầu Growth Tối Thiểu</th>
+              <th>Yêu Cầu Prime Elder</th>
+              <th>Hành Động</th>
+            </tr>
+          </thead>
+          <tbody id="sell-rules-tbody">
+            <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">Đang tải quy định từ IslePilot...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 20px; text-align: center;">
+        <a href="gara.html" class="btn btn-primary" style="font-weight: 700;">
+          🦖 Mở Gara Để Bán Khủng Long
+        </a>
       </div>
     </div>
 
@@ -234,7 +282,7 @@
   <!-- Footer -->
   <footer class="site-footer">
     <div class="container" style="text-align: center;">
-      <p>© 2026 ST25 — Sàn giao dịch & Quản lý Khủng long máy chủ The Isle: Evrima Việt Nam.</p>
+      <p>© 2026 ST25 — Nền tảng Giao Dịch & Gara chính thức máy chủ The Isle: Evrima Việt Nam.</p>
     </div>
   </footer>
 
@@ -242,6 +290,17 @@
   <script>
     let mySteamId = null;
     let myLiveBalance = 0;
+
+    function switchTradeTab(tabId) {
+      document.querySelectorAll('.trade-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content-panel').forEach(p => p.classList.remove('active'));
+
+      const activeBtn = Array.from(document.querySelectorAll('.trade-tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const panel = document.getElementById(tabId);
+      if (panel) panel.classList.add('active');
+    }
 
     function getActiveSteamId() {
       if (mySteamId) return mySteamId;
@@ -258,46 +317,32 @@
       return null;
     }
 
-    async function loadMarketData() {
+    async function loadTradeData() {
       try {
         const activeSid = getActiveSteamId();
         const marketUrl = activeSid ? `/api/market/data?steamId=${encodeURIComponent(activeSid)}` : '/api/market/data';
-        const garageUrl = activeSid ? `/api/player/garage?steamId=${encodeURIComponent(activeSid)}` : '/api/player/garage';
-
-        const [marketRes, garageRes] = await Promise.all([
-          fetch(marketUrl, { headers: activeSid ? { 'x-steam-id': activeSid } : {} }),
-          fetch(garageUrl, { headers: activeSid ? { 'x-steam-id': activeSid } : {} })
-        ]);
-        const data = await marketRes.json();
-        const garageData = await garageRes.json();
+        const res = await fetch(marketUrl, { headers: activeSid ? { 'x-steam-id': activeSid } : {} });
+        const data = await res.json();
 
         mySteamId = data.steamId || activeSid;
         myLiveBalance = data.balance || 0;
 
-        // Update balance & account
         document.getElementById('user-balance-val').textContent = (data.balance || 0).toLocaleString('vi-VN');
-        const accTag = document.getElementById('market-account-tag');
-        if (accTag) {
-          accTag.textContent = mySteamId ? `Tài khoản: ${data.personaName} (${mySteamId})` : `Tài khoản: Khách (Chưa đăng nhập Steam)`;
-        }
 
-        // Update Garage dino select options
+        // Render select garage dino
         const garageSelect = document.getElementById('select-garage-dino');
-        const garageBadge = document.getElementById('garage-avail-badge');
-        const tradeables = garageData.tradeableDinos || [];
-        garageBadge.textContent = `${tradeables.length} Dino`;
-
-        if (tradeables.length === 0) {
-          garageSelect.innerHTML = '<option value="">Gara chưa có khủng long nào để bán</option>';
+        const dinos = data.myGarageDinos || [];
+        if (dinos.length === 0) {
+          garageSelect.innerHTML = '<option value="">Gara của bạn chưa có khủng long nào để bán</option>';
         } else {
           garageSelect.innerHTML = '<option value="">-- Chọn 1 khủng long trong Gara --</option>' +
-            tradeables.map(d => `<option value="${d.id}">${d.species} (${d.growth}% Growth - ${d.gender})</option>`).join('');
+            dinos.map(d => `<option value="${d.id}">${d.species} (${d.growth}% Growth - ${d.gender}${d.isPrimeElder ? ' - Prime' : ''})</option>`).join('');
         }
 
-        // Update market listings
+        // Render listings
         const mktGrid = document.getElementById('market-listings-grid');
         const mktBadge = document.getElementById('market-count-badge');
-        mktBadge.textContent = `${data.listings.length} mặt hàng`;
+        mktBadge.textContent = `${data.listings.length} Mặt Hàng`;
 
         if (data.listings.length === 0) {
           mktGrid.innerHTML = '<div style="grid-column: 1/-1; color: var(--text-muted); text-align: center; padding: 30px;">Hiện chưa có mặt hàng nào trên chợ.</div>';
@@ -309,154 +354,70 @@
               <div class="market-card">
                 <div>
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <span style="font-size: 2rem;">${item.icon || '🦖'}</span>
+                    <span style="font-size: 2.2rem;">${item.icon || '🦖'}</span>
                     <span class="rule-badge badge-allow" style="font-size: 0.85rem; font-weight: 700; color: #fbbf24; border-color: rgba(245, 158, 11, 0.4);">
                       ${item.price} Lúa 🌾
                     </span>
                   </div>
-                  <h4 style="color: #fff; font-size: 1.05rem; margin-bottom: 6px;">${item.title}</h4>
-                  <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5;">
-                    <div>• Loài: <strong style="color: #38bdf8;">${item.species}</strong></div>
-                    <div>• Trưởng thành: <strong style="color: #10b981;">${item.growth}% Growth</strong></div>
-                    <div>• Dinh dưỡng: <strong style="color: #fbbf24;">${item.diet}</strong></div>
-                    <div>• Người bán: <span style="color: var(--text-secondary);">${item.seller}</span> ${isMyListing ? '<strong style="color: #fbbf24;">(Bạn)</strong>' : ''}</div>
+
+                  <h4 style="color: #fff; margin: 0 0 6px; font-size: 1.15rem;">${item.title}</h4>
+                  <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 12px;">
+                    Người bán: <strong style="color: #cbd5e1;">${item.seller}</strong>
                   </div>
-                  <div style="background: rgba(16, 185, 129, 0.08); padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; color: #10b981; margin-bottom: 10px;">
-                    🚘 Tự động chuyển vào Gara của bạn
+
+                  <div style="background: rgba(0,0,0,0.25); border-radius: 6px; padding: 10px; font-size: 0.8rem; color: #cbd5e1; line-height: 1.6; margin-bottom: 14px;">
+                    <div>• Loài: <strong>${item.species || 'Tyrannosaurus'}</strong></div>
+                    <div>• Tăng trưởng: <strong style="color: #10b981;">${item.growth}%</strong></div>
+                    <div>• Giới tính: <strong>${item.gender || 'Đực (Male)'}</strong></div>
                   </div>
                 </div>
 
-                ${isMyListing ? `
-                  <button onclick="handleCancelListing('${item.id}')" class="btn btn-secondary btn-sm" style="width: 100%; margin-top: 10px; color: #ef4444; border-color: #ef4444;">
-                    ❌ Thu Hồi Về Gara
-                  </button>
-                ` : `
-                  <button onclick="handleBuyItem('${item.id}', ${item.price}, '${item.title}')" class="btn btn-primary btn-sm" style="width: 100%; margin-top: 10px;">
-                    🌾 Mua & Nhận Vào Gara (${item.price} Lúa)
-                  </button>
-                `}
+                <div>
+                  ${isMyListing ? `
+                    <button onclick="handleCancelListing('${item.id}')" class="btn btn-secondary btn-sm" style="width: 100%; border-color: #ef4444; color: #ef4444;">
+                      ❌ Hủy Bán (Thu Hồi)
+                    </button>
+                  ` : `
+                    <button onclick="handleBuyItem('${item.id}', ${item.price})" class="btn btn-primary btn-sm" style="width: 100%; font-weight: 700;">
+                      🛒 Mua Ngay (${item.price} Lúa 🌾)
+                    </button>
+                  `}
+                </div>
               </div>
             `;
           }).join('');
         }
 
+        // Load sell rules
+        loadSellRules();
       } catch (e) {
-        console.error('Error loading market:', e);
+        console.error(e);
       }
     }
 
-    // Tìm kiếm người chơi
-    let searchTimeout = null;
-    async function handleSearchUsers(query) {
-      clearTimeout(searchTimeout);
-      const resultsBox = document.getElementById('search-results-box');
-
-      if (!query || query.trim().length < 1) {
-        resultsBox.style.display = 'none';
-        return;
-      }
-
-      searchTimeout = setTimeout(async () => {
-        try {
-          const res = await fetch(`/api/market/users?q=${encodeURIComponent(query.trim())}`);
-          const users = await res.json();
-
-          if (users.length === 0) {
-            resultsBox.innerHTML = '<div style="padding: 10px; color: var(--text-muted); font-size: 0.8rem;">Không tìm thấy người chơi nào.</div>';
-          } else {
-            resultsBox.innerHTML = users.map(u => `
-              <div class="user-search-item" onclick="selectUser('${u.steamId}', '${u.name}')">
-                <div>
-                  <strong style="color: #fff;">${u.name}</strong>
-                  <small style="color: var(--text-muted); display: block;">${u.steamId}</small>
-                </div>
-                <span class="rule-badge badge-allow" style="font-size: 0.7rem;">${u.species || 'ST25'}</span>
-              </div>
-            `).join('');
-          }
-          resultsBox.style.display = 'block';
-        } catch (e) {}
-      }, 200);
-    }
-
-    function selectUser(steamId, name) {
-      document.getElementById('receiver-steamid').value = steamId;
-      document.getElementById('search-user-input').value = `${name} (${steamId})`;
-      document.getElementById('search-results-box').style.display = 'none';
-      App.showToast(`Đã chọn người nhận: ${name}`, 'info');
-    }
-
-    // Đóng dropdown khi click ngoài
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('#search-user-input') && !e.target.closest('#search-results-box')) {
-        const box = document.getElementById('search-results-box');
-        if (box) box.style.display = 'none';
-      }
-    });
-
-    // Chuyển Lúa
-    async function handleTransfer(e) {
-      e.preventDefault();
-      const receiver = document.getElementById('receiver-steamid').value.trim();
-      const amount = Number(document.getElementById('transfer-amount').value);
-      const note = document.getElementById('transfer-note').value.trim();
-
-      if (!receiver || amount <= 0) {
-        App.showToast('Vui lòng nhập SteamID và số Lúa hợp lệ!', 'error');
-        return;
-      }
-
+    async function loadSellRules() {
       try {
-        const res = await fetch('/api/market/transfer', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ receiverSteamId: receiver, amount, note })
-        });
-        const result = await res.json();
-        if (res.ok) {
-          App.showToast(result.message, 'success');
-          document.getElementById('transfer-form').reset();
-          document.getElementById('search-user-input').value = '';
-          loadMarketData();
-        } else {
-          App.showToast(result.error || 'Giao dịch thất bại!', 'error');
+        const res = await fetch('/api/market/sell-rules');
+        const rules = await res.json();
+        const tbody = document.getElementById('sell-rules-tbody');
+
+        if (!rules || rules.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">Máy chủ chưa công bố bảng thu mua.</td></tr>';
+          return;
         }
-      } catch (err) {
-        App.showToast('Lỗi mạng khi chuyển Lúa!', 'error');
-      }
+
+        tbody.innerHTML = rules.map(r => `
+          <tr>
+            <td><strong style="color: #fff;">${r.species}</strong></td>
+            <td><span style="color: #fbbf24; font-weight: 700;">${r.basePrice} Lúa 🌾</span></td>
+            <td><span style="color: #10b981;">${Math.round(r.minGrowth * 100)}% - ${Math.round(r.maxGrowth * 100)}%</span></td>
+            <td>${r.requirePrime ? '<span class="rule-badge badge-gold">Bắt Buộc Prime</span>' : '<span class="rule-badge badge-allow">Không Yêu Cầu</span>'}</td>
+            <td><a href="gara.html" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">Mở Gara Bán</a></td>
+          </tr>
+        `).join('');
+      } catch (_) {}
     }
 
-    // Mua Dino (Tự động chuyển vào Gara)
-    async function handleBuyItem(itemId, price, title) {
-      if (!confirm(`Xác nhận dùng ${price} Lúa 🌾 trong tài khoản để mua [${title}]? Khủng long sẽ được chuyển thẳng vào Gara của bạn!`)) return;
-
-      const activeSid = getActiveSteamId();
-      try {
-        const res = await fetch('/api/market/buy', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(activeSid ? { 'x-steam-id': activeSid } : {})
-          },
-          body: JSON.stringify({ itemId, steamId: activeSid })
-        });
-        const result = await res.json();
-        if (res.ok) {
-          App.showToast(result.message, 'success');
-          loadMarketData();
-        } else {
-          if (result.isFull || result.upgradeRequired) {
-            alert(`⚠️ GARA CỦA BẠN ĐÃ ĐẦY!\n\n${result.error}\n\n👉 Vui lòng liên hệ Admin qua Discord (https://discord.gg/3xCrA6VyY) để nâng cấp Gara!`);
-          } else {
-            App.showToast(result.error || 'Mua thất bại!', 'error');
-          }
-        }
-      } catch (err) {
-        App.showToast('Lỗi mạng khi mua vật phẩm!', 'error');
-      }
-    }
-
-    // Đăng bán Dino từ Gara
     async function handleListDino(e) {
       e.preventDefault();
       const dinoId = document.getElementById('select-garage-dino').value;
@@ -464,35 +425,27 @@
       const title = document.getElementById('list-dino-title').value.trim();
 
       if (!dinoId || price <= 0) {
-        App.showToast('Vui lòng chọn khủng long và nhập giá bán hợp lệ!', 'error');
+        App.showToast('Vui lòng chọn khủng long và nhập giá hợp lệ!', 'error');
         return;
       }
 
       const activeSid = getActiveSteamId();
       if (!activeSid) {
-        App.showToast('Vui lòng đăng nhập Steam để đăng bán khủng long lên chợ!', 'error');
+        App.showToast('Vui lòng đăng nhập Steam để đăng bán!', 'error');
         return;
       }
 
       try {
         const res = await fetch('/api/market/list-dino', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-steam-id': activeSid
-          },
-          body: JSON.stringify({
-            dinoId,
-            price,
-            customTitle: title,
-            steamId: activeSid
-          })
+          headers: { 'Content-Type': 'application/json', 'x-steam-id': activeSid },
+          body: JSON.stringify({ dinoId, price, customTitle: title, steamId: activeSid })
         });
         const result = await res.json();
         if (res.ok) {
           App.showToast(result.message, 'success');
           document.getElementById('list-dino-form').reset();
-          loadMarketData();
+          loadTradeData();
         } else {
           App.showToast(result.error || 'Đăng bán thất bại!', 'error');
         }
@@ -501,24 +454,47 @@
       }
     }
 
-    // Thu hồi bài bán về Gara
+    async function handleBuyItem(itemId, price) {
+      if (myLiveBalance < price) {
+        App.showToast(`Bạn không đủ Lúa! Cần ${price} Lúa (Hiện có ${myLiveBalance}).`, 'error');
+        return;
+      }
+
+      if (!confirm(`Xác nhận mua vật phẩm này với giá ${price} Lúa 🌾?`)) return;
+
+      const activeSid = getActiveSteamId();
+      try {
+        const res = await fetch('/api/market/buy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(activeSid ? { 'x-steam-id': activeSid } : {}) },
+          body: JSON.stringify({ itemId, steamId: activeSid })
+        });
+        const result = await res.json();
+        if (res.ok) {
+          App.showToast(result.message, 'success');
+          loadTradeData();
+        } else {
+          App.showToast(result.error || 'Mua thất bại!', 'error');
+        }
+      } catch (err) {
+        App.showToast('Lỗi mạng khi mua vật phẩm!', 'error');
+      }
+    }
+
     async function handleCancelListing(listingId) {
-      if (!confirm('Bạn có chắc chắn muốn thu hồi bài bán này về lại Gara của bạn?')) return;
+      if (!confirm('Bạn có chắc chắn muốn thu hồi bài đăng này?')) return;
 
       const activeSid = getActiveSteamId();
       try {
         const res = await fetch('/api/market/cancel-listing', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(activeSid ? { 'x-steam-id': activeSid } : {})
-          },
+          headers: { 'Content-Type': 'application/json', ...(activeSid ? { 'x-steam-id': activeSid } : {}) },
           body: JSON.stringify({ listingId, steamId: activeSid })
         });
         const result = await res.json();
         if (res.ok) {
           App.showToast(result.message, 'success');
-          loadMarketData();
+          loadTradeData();
         } else {
           App.showToast(result.error || 'Thu hồi thất bại!', 'error');
         }
@@ -527,7 +503,47 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', loadMarketData);
+    async function handleTransferLua(e) {
+      e.preventDefault();
+      const receiver = document.getElementById('transfer-receiver').value.trim();
+      const amount = Number(document.getElementById('transfer-amount').value);
+      const note = document.getElementById('transfer-note').value.trim();
+
+      if (!receiver || amount <= 0) {
+        App.showToast('Vui lòng nhập người nhận và số Lúa hợp lệ!', 'error');
+        return;
+      }
+
+      if (myLiveBalance < amount) {
+        App.showToast(`Số dư không đủ! Bạn chỉ có ${myLiveBalance} Lúa.`, 'error');
+        return;
+      }
+
+      if (!confirm(`Xác nhận chuyển ${amount} Lúa 🌾 cho tài khoản [${receiver}]?`)) return;
+
+      const activeSid = getActiveSteamId();
+      try {
+        const res = await fetch('/api/market/transfer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(activeSid ? { 'x-steam-id': activeSid } : {}) },
+          body: JSON.stringify({ receiverSteamId: receiver, amount, note, senderSteamId: activeSid })
+        });
+        const result = await res.json();
+        if (res.ok) {
+          App.showToast(result.message, 'success');
+          document.getElementById('transfer-lua-form').reset();
+          loadTradeData();
+        } else {
+          App.showToast(result.error || 'Chuyển Lúa thất bại!', 'error');
+        }
+      } catch (err) {
+        App.showToast('Lỗi mạng khi chuyển Lúa!', 'error');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadTradeData();
+    });
   </script>
 </body>
 </html>

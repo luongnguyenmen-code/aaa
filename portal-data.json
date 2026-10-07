@@ -76,22 +76,21 @@
         "icon": "🎨",
         "desc": "Mã Evrima: [Tyrannosaurus_Skin_v1:B=090d16:P=1e293b:U=334155:E=06b6d4]",
         "type": "skin"
+      },
+      {
+        "id": "voucher-1791333861335-147",
+        "name": "T-Rex Bạo Chúa 100% Full Dinh Dưỡng S-S-D",
+        "icon": "🦖",
+        "desc": "Khủng long Tyrannosaurus (Đực (Male), 100% Growth). Mua từ Chợ ST25.",
+        "type": "dino_voucher",
+        "species": "Tyrannosaurus",
+        "growth": 100,
+        "gender": "Đực (Male)",
+        "purchased_at": "07:44:21 7/10/2026"
       }
     ]
   },
   "marketListings": [
-    {
-      "id": "mkt-1",
-      "seller": "Trùm Khủng Long ST25",
-      "sellerSteamId": "76561198000000001",
-      "title": "T-Rex Bạo Chúa 100% Full Dinh Dưỡng S-S-D",
-      "species": "Tyrannosaurus",
-      "gender": "Đực (Male)",
-      "price": 120,
-      "growth": 100,
-      "diet": "S-S-D",
-      "icon": "🦖"
-    },
     {
       "id": "mkt-2",
       "seller": "Sát Thủ Đầm Lầy",

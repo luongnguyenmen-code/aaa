@@ -1,4 +1,4 @@
-// Dinosaur Garage System Script for ST25 (Synchronized with IslePilot Cloud & In-Game Plugin)
+// ST25 Garage System — Synchronized 100% with IslePilot Cloud API (st25.islepilot.eu/garage)
 const Garage = {
   activeDino: null,
   slots: [],
@@ -13,7 +13,7 @@ const Garage = {
   },
 
   async refresh() {
-    App.showToast('Đang đồng bộ dữ liệu với IslePilot...', 'info');
+    App.showToast('Đang đồng bộ dữ liệu với IslePilot Cloud...', 'info');
     await this.fetchGarageData();
     this.render();
     App.showToast('Đã đồng bộ dữ liệu Gara thành công!', 'success');
@@ -42,8 +42,7 @@ const Garage = {
         clearInterval(this.cooldownTimer);
         this.cooldownTimer = null;
         localStorage.removeItem('the_isle_garage_cooldown');
-        App.showToast('Hết 30 giây chuẩn bị! Khủng long đã sẵn sàng xuất chiến trong game.', 'success');
-        // Tự động làm mới dữ liệu để hiển thị con active mới nhất
+        App.showToast('Thời gian chuẩn bị hoàn tất! Dữ liệu đã sẵn sàng.', 'success');
         await this.fetchGarageData();
         this.render();
       }
@@ -52,17 +51,17 @@ const Garage = {
   },
 
   updateCooldownUI() {
-    const badge = document.getElementById('cooldown-badge');
+    const alertBox = document.getElementById('cooldown-alert');
     const timerText = document.getElementById('cooldown-timer-text');
-    if (!badge || !timerText) return;
+    if (!alertBox || !timerText) return;
 
     if (this.cooldownSeconds > 0) {
-      badge.style.display = 'inline-flex';
+      alertBox.style.display = 'flex';
       const m = Math.floor(this.cooldownSeconds / 60);
       const s = this.cooldownSeconds % 60;
       timerText.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     } else {
-      badge.style.display = 'none';
+      alertBox.style.display = 'none';
     }
   },
 
@@ -95,7 +94,7 @@ const Garage = {
           totalParked: data.totalParked || 0,
           maxSlots: data.maxSlots || 3,
           roleKey: data.roleKey || 'default',
-          roleName: data.roleName || '🦖 Thành Viên ST25 (3 Slots)',
+          roleName: data.roleName || '🦖 Thành Viên ST25',
           roleLimit: data.roleLimit || data.maxSlots || 3
         };
         this.updateHeaderUI();
@@ -112,26 +111,19 @@ const Garage = {
     const nameEl = document.getElementById('garage-player-name');
     const steamEl = document.getElementById('garage-player-steamid');
     const countEl = document.getElementById('garage-count-badge');
-    const capEl = document.getElementById('garage-capacity-text');
     const roleBadge = document.getElementById('garage-role-badge');
-    const roleDesc = document.getElementById('garage-role-desc');
+    const noticeEl = document.getElementById('garage-capacity-notice');
+    const summaryBadge = document.getElementById('slots-capacity-summary');
 
     if (nameEl) nameEl.textContent = `Tài khoản: ${this.playerInfo.personaName}`;
     if (steamEl) steamEl.textContent = `Steam ID: ${this.playerInfo.steamId || 'Chưa đăng nhập'}`;
     if (countEl) countEl.textContent = `Đang lưu: ${this.playerInfo.totalParked} / ${this.playerInfo.maxSlots} Khủng Long`;
-    if (capEl) capEl.textContent = `Sức chứa tối đa: ${this.playerInfo.maxSlots} khủng long (${this.playerInfo.roleName})`;
-    if (roleDesc) {
-      roleDesc.innerHTML = `Bạn đang có quyền hạn: <strong style="color: #fbbf24;">${this.playerInfo.roleName}</strong> — Giới hạn lưu trữ: <strong style="color: #38bdf8;">${this.playerInfo.maxSlots} slot</strong> khủng long. Khi đầy Gara sẽ không thể cất thêm hoặc mua khủng long mới!`;
+    if (roleBadge) roleBadge.textContent = `${this.playerInfo.roleName} (${this.playerInfo.maxSlots} Slots)`;
+    if (noticeEl) {
+      noticeEl.innerHTML = `Bạn đang có vai trò: <strong style="color: #fbbf24;">${this.playerInfo.roleName}</strong> — Giới hạn lưu trữ tối đa: <strong style="color: #38bdf8;">${this.playerInfo.maxSlots} slots</strong>. Dữ liệu được đồng bộ trực tiếp với IslePilot Cloud.`;
     }
-
-    const adminBtn = document.getElementById('btn-admin-manage');
-    if (adminBtn) {
-      const key = (this.playerInfo.roleKey || '').toLowerCase();
-      if (['.', 'admin', 'mod', 'dev'].includes(key) || this.playerInfo.maxSlots >= 20) {
-        adminBtn.style.display = 'inline-flex';
-      } else {
-        adminBtn.style.display = 'none';
-      }
+    if (summaryBadge) {
+      summaryBadge.textContent = `${this.playerInfo.totalParked} / ${this.playerInfo.maxSlots} Slots Đã Dùng`;
     }
   },
 
@@ -148,8 +140,11 @@ const Garage = {
     if (!this.activeDino) {
       panel.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
-          <h3 style="color: #fff; margin-bottom: 6px;">Bạn hiện không có khủng long nào đang chơi (Active)</h3>
-          <p style="color: #94a3b8;">Hãy vào game spawn khủng long mới hoặc chọn một con từ Gara bên dưới bấm <strong>"Lấy ra đảo chơi"</strong> để đưa trực tiếp vào game.</p>
+          <span style="font-size: 2.5rem; display: block; margin-bottom: 12px;">🦖</span>
+          <h3 style="color: #fff; margin-bottom: 6px;">Bạn hiện không có khủng long nào đang chơi trong game</h3>
+          <p style="color: #94a3b8; max-width: 500px; margin: 0 auto;">
+            Hãy vào game spawn khủng long mới hoặc chọn một con từ Gara bên dưới bấm <strong>"Đưa Ra Đảo (Restore)"</strong> để hồi phục vào server!
+          </p>
         </div>
       `;
       return;
@@ -157,20 +152,22 @@ const Garage = {
 
     const d = this.activeDino;
     panel.innerHTML = `
-      <div class="dino-avatar-box">
-        <h3 style="color: #fff; margin-bottom: 6px; font-size: 1.5rem;">${d.species}</h3>
+      <div style="background: rgba(0,0,0,0.3); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.06);">
+        <span style="font-size: 3rem; display: block; margin-bottom: 8px;">🦖</span>
+        <h3 style="color: #fff; margin-bottom: 6px; font-size: 1.4rem;">${d.species}</h3>
         <span class="rule-badge badge-allow">${d.gender}</span>
-        <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">
-          Tăng trưởng: <b style="color: #10b981; font-size: 1.1rem;">${d.growth}%</b>
+        ${d.isPrimeElder ? '<span class="rule-badge badge-gold" style="margin-left: 6px;">👑 PRIME ELDER</span>' : ''}
+        <p style="font-size: 0.95rem; color: var(--text-muted); margin-top: 14px;">
+          Tăng trưởng: <b style="color: #10b981; font-size: 1.2rem;">${d.growth}%</b>
         </p>
-        <button onclick="Garage.storeActiveDino()" class="btn btn-secondary btn-sm" style="margin-top: 16px; width: 100%; font-weight: 700;">
-          📥 Cất Vào Gara (Park 35s)
+        <button onclick="Garage.parkActiveDino()" class="btn btn-secondary btn-sm" style="margin-top: 16px; width: 100%; font-weight: 700; border-color: #10b981; color: #10b981;">
+          📥 Cất Vào Gara (Park)
         </button>
       </div>
 
       <div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h4 style="color: #fff;">Chỉ số sinh tồn in-game</h4>
+          <h4 style="color: #fff; margin: 0;">Chỉ số sinh tồn in-game</h4>
           <span style="font-size: 0.85rem; color: #fbbf24; font-weight: 600;">Dinh dưỡng: ${d.diet ? d.diet.join(' • ') : 'Đầy đủ'}</span>
         </div>
 
@@ -188,18 +185,13 @@ const Garage = {
             <div class="stat-bar-track"><div class="stat-bar-fill fill-thirst" style="width: ${d.thirst}%"></div></div>
           </div>
           <div class="stat-item">
-            <div class="stat-label-wrap"><span>Thể lực (Stamina)</span><b>${d.stamina}%</b></div>
+            <div class="stat-label-wrap"><span>Thể Lực (Stamina)</span><b>${d.stamina}%</b></div>
             <div class="stat-bar-track"><div class="stat-bar-fill fill-stamina" style="width: ${d.stamina}%"></div></div>
-          </div>
-          <div class="stat-item" style="grid-column: 1 / -1;">
-            <div class="stat-label-wrap"><span>Mức độ trưởng thành (Growth)</span><b>${d.growth}%</b></div>
-            <div class="stat-bar-track"><div class="stat-bar-fill fill-growth" style="width: ${d.growth}%"></div></div>
           </div>
         </div>
 
-        <div style="margin-top: 20px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.08);">
-          <strong style="font-size: 0.85rem; color: var(--accent-emerald-light);">Đột biến kích hoạt:</strong>
-          <span style="font-size: 0.85rem; color: #cbd5e1; margin-left: 8px;">${d.mutations && d.mutations.length ? d.mutations.join(', ') : 'Chưa có đột biến'}</span>
+        <div style="margin-top: 18px; font-size: 0.8rem; color: #94a3b8; line-height: 1.6;">
+          ⚠️ <strong>Lưu ý luật server:</strong> Cấm combat log (không cất khi đang bị săn đuổi). Khi cất vào Gara, con khủng long sẽ được lưu giữ an toàn tuyệt đối trên Cloud IslePilot.
         </div>
       </div>
     `;
@@ -209,306 +201,165 @@ const Garage = {
     const grid = document.getElementById('garage-slots-grid');
     if (!grid) return;
 
-    if (!this.slots || this.slots.length === 0) {
+    if (this.slots.length === 0) {
       grid.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
-          Chưa có khủng long nào trong Gara.
+          Gara của bạn hiện chưa có ô lưu trữ nào.
         </div>
       `;
       return;
     }
 
-    grid.innerHTML = this.slots.map((s, idx) => {
+    grid.innerHTML = this.slots.map(s => {
       if (s.empty) {
         return `
-          <div class="garage-slot-card empty">
-            <div style="font-size: 0.85rem; color: var(--text-muted);">Ô số ${idx + 1}</div>
-            <div style="text-align: center; padding: 30px 0;">
-              <span style="font-size: 1.8rem; color: var(--text-muted); font-weight: 700;">+</span>
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">Ô trống</p>
-            </div>
-            ${this.activeDino ? `<button onclick="Garage.storeActiveDino()" class="btn btn-secondary btn-sm">Cất con hiện tại vào</button>` : ''}
+          <div class="slot-card empty-slot">
+            <span class="slot-badge-num">Ô #${s.slot}</span>
+            <div style="font-size: 2rem; margin-bottom: 8px; opacity: 0.4;">📦</div>
+            <h4 style="color: #64748b; margin-bottom: 4px; font-size: 1.05rem;">Ô Trống #${s.slot}</h4>
+            <p style="font-size: 0.8rem; margin: 0; color: #475569;">Sẵn sàng cất khủng long mới</p>
           </div>
         `;
       }
 
+      const mutHtml = (s.mutations && s.mutations.length > 0)
+        ? s.mutations.map(m => `<span class="mutation-tag">🧬 ${m}</span>`).join('')
+        : '<span style="font-size: 0.75rem; color: #64748b;">Chưa có đột biến</span>';
+
       return `
-        <div class="garage-slot-card" style="display: flex; flex-direction: column; justify-content: space-between; border-color: ${s.isPrimeElder ? 'rgba(251, 191, 36, 0.4)' : 'rgba(16, 185, 129, 0.3)'};">
+        <div class="slot-card">
+          <span class="slot-badge-num">Ô #${s.slot}</span>
           <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-weight: 800; color: #fff;">Ô #${idx + 1}</span>
-              <div style="display: flex; gap: 4px; align-items: center;">
-                ${s.isPrimeElder ? '<span class="rule-badge badge-warn" style="font-size: 0.7rem; font-weight: 700; background: rgba(245, 158, 11, 0.15); border-color: #f59e0b; color: #fbbf24;">⭐ Prime Elder</span>' : ''}
-                <span class="rule-badge badge-allow" style="font-weight: 700;">${s.growth}% lớn</span>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+              <div>
+                <h4 style="color: #fff; margin: 0 0 4px; font-size: 1.2rem;">${s.species}</h4>
+                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                  <span class="rule-badge badge-allow" style="font-size: 0.75rem; padding: 2px 6px;">${s.gender}</span>
+                  ${s.isPrimeElder ? '<span class="rule-badge badge-gold" style="font-size: 0.75rem; padding: 2px 6px;">👑 PRIME</span>' : ''}
+                  <span style="font-size: 0.8rem; color: #10b981; font-weight: 700;">${s.growth}% Growth</span>
+                </div>
               </div>
             </div>
 
-            <div>
-              <h4 style="color: #fbbf24; font-size: 1.2rem; margin-bottom: 4px;">🦖 ${s.species}</h4>
-              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 6px;">
-                ${s.gender} • Cất: <span style="color: #cbd5e1;">${s.stored_at || 'Đã lưu'}</span>
-              </p>
+            <div style="background: rgba(0,0,0,0.2); border-radius: 6px; padding: 10px; margin: 12px 0;">
+              <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px;">Đột biến gen:</div>
+              <div>${mutHtml}</div>
+            </div>
 
-              <!-- Live Stats Mini Bars (IslePilot Cloud Sync) -->
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 10px 0; font-size: 0.72rem;">
-                <div style="background: rgba(0,0,0,0.25); padding: 4px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
-                  <span style="color: #94a3b8;">Máu:</span> <strong style="color: #ef4444;">${s.health !== undefined ? s.health : 100}%</strong>
-                </div>
-                <div style="background: rgba(0,0,0,0.25); padding: 4px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
-                  <span style="color: #94a3b8;">Đói:</span> <strong style="color: #f59e0b;">${s.hunger !== undefined ? s.hunger : 100}%</strong>
-                </div>
-                <div style="background: rgba(0,0,0,0.25); padding: 4px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
-                  <span style="color: #94a3b8;">Khát:</span> <strong style="color: #38bdf8;">${s.thirst !== undefined ? s.thirst : 100}%</strong>
-                </div>
-                <div style="background: rgba(0,0,0,0.25); padding: 4px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
-                  <span style="color: #94a3b8;">Thể lực:</span> <strong style="color: #10b981;">${s.stamina !== undefined ? s.stamina : 100}%</strong>
-                </div>
-              </div>
-
-              <!-- Mutations List -->
-              ${s.mutations && s.mutations.filter(m => m && m !== 'None').length > 0 ? `
-                <div style="margin: 8px 0; font-size: 0.72rem; color: #a7f3d0; background: rgba(16, 185, 129, 0.08); padding: 5px 8px; border-radius: 4px;">
-                  🧬 <b>Đột biến:</b> ${s.mutations.filter(m => m && m !== 'None').join(', ')}
-                </div>
-              ` : ''}
-
-              <div style="font-size: 0.75rem; color: var(--text-muted);">
-                Nguồn: <span style="color: #38bdf8;">${s.source || 'IslePilot Cloud'}</span>
-              </div>
+            <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 14px;">
+              <span>🕒 Lưu lúc: ${s.stored_at}</span>
             </div>
           </div>
 
-          <div style="display: flex; gap: 8px; margin-top: 14px;">
-            <button onclick="Garage.restoreDino('${s.id}', ${s.slot}, '${s.species}', ${s.growth})" class="btn btn-primary btn-sm" style="flex: 1; font-weight: 800;">
-              🚀 Lấy Ra Chơi (30s)
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button onclick="Garage.restoreDino('${s.id}', '${s.species}', ${s.growth})" class="btn btn-primary btn-sm" style="width: 100%; font-weight: 700;">
+              ⚔️ Đưa Ra Đảo (Restore)
             </button>
-            <button onclick="Garage.deleteDino('${s.id}', ${s.slot}, '${s.species}')" class="btn btn-danger btn-sm" title="Xoá / Giải phóng">
-              🗑️
-            </button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <button onclick="Garage.sellDino('${s.id}', '${s.species}', ${s.growth})" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; border-color: #f59e0b; color: #fbbf24;">
+                💰 Bán (Sell)
+              </button>
+              <a href="giao-dich.html" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; text-align: center;">
+                ⚖️ Rao Chợ
+              </a>
+            </div>
           </div>
         </div>
       `;
     }).join('');
   },
 
-  parkingTimer: null,
-  parkingSeconds: 0,
-
-  async storeActiveDino() {
+  async parkActiveDino() {
     if (!this.activeDino) {
-      App.showToast('Bạn không có khủng long đang chơi để cất!', 'warning');
+      App.showToast('Bạn hiện không có khủng long nào đang sống để cất!', 'error');
       return;
     }
 
-    if (this.parkingSeconds > 0) {
-      App.showToast(`Đang trong tiến trình cất thú (${this.parkingSeconds}s còn lại). Vui lòng đứng yên!`, 'warning');
+    if (!confirm(`Xác nhận cất [${this.activeDino.species}] vào Gara IslePilot? Hãy đảm bảo bạn đang an toàn và không trong combat!`)) {
       return;
     }
 
-    if (!confirm(`Xác nhận cất ${this.activeDino.species} (${this.activeDino.growth}%) vào Gara?\n\n• Hệ thống yêu cầu chờ đúng 30 GIÂY.\n• Bạn phải đứng yên an toàn trong game (không di chuyển, không dính sát thương) theo Điều 8!\n\nBắt đầu 30 giây cất thú?`)) {
-      return;
-    }
-
+    const sid = this.getActiveSteamId();
     try {
-      App.showToast('Bắt đầu đếm ngược 30 giây cất thú. Vui lòng đứng yên trong game! ⏳', 'info');
-      const startRes = await fetch('/api/player/garage/store', {
+      App.showToast('Đang kết nối IslePilot để cất khủng long...', 'info');
+      const res = await fetch('/api/player/garage/park', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'start' })
+        headers: { 'Content-Type': 'application/json', ...(sid ? { 'x-steam-id': sid } : {}) },
+        body: JSON.stringify({ steamId: sid })
       });
-
-      this.parkingSeconds = 30;
-      this.updateParkingUI();
-
-      if (this.parkingTimer) clearInterval(this.parkingTimer);
-      this.parkingTimer = setInterval(async () => {
-        this.parkingSeconds--;
-        this.updateParkingUI();
-
-        if (this.parkingSeconds <= 0) {
-          clearInterval(this.parkingTimer);
-          this.parkingTimer = null;
-
-          App.showToast('Đang hoàn tất lưu khủng long vào Gara...', 'info');
-          const finishRes = await fetch('/api/player/garage/store', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'confirm' })
-          });
-          const finishData = await finishRes.json();
-
-          if (finishRes.ok) {
-            App.showToast(finishData.message || 'Đã cất khủng long vào Gara thành công sau 30 giây!', 'success');
-            await this.fetchGarageData();
-            this.render();
-          } else {
-            App.showToast(finishData.error || 'Cất thú thất bại!', 'error');
-          }
-        }
-      }, 1000);
-
+      const data = await res.json();
+      if (res.ok && data.success) {
+        App.showToast(data.message, 'success');
+        localStorage.setItem('the_isle_garage_cooldown', Date.now() + 30000);
+        this.cooldownSeconds = 30;
+        this.startCooldownTimer();
+        await this.fetchGarageData();
+        this.render();
+      } else {
+        App.showToast(data.error || 'Cất khủng long thất bại!', 'error');
+      }
     } catch (e) {
-      console.error(e);
       App.showToast('Lỗi mạng khi cất khủng long!', 'error');
     }
   },
 
-  updateParkingUI() {
-    const badge = document.getElementById('cooldown-badge');
-    const timerText = document.getElementById('cooldown-timer-text');
-    if (!badge || !timerText) return;
-
-    if (this.parkingSeconds > 0) {
-      badge.style.display = 'inline-flex';
-      badge.className = 'rule-badge badge-warn';
-      const m = Math.floor(this.parkingSeconds / 60);
-      const s = this.parkingSeconds % 60;
-      badge.innerHTML = `Đang cất Gara: <strong id="cooldown-timer-text">${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}</strong>`;
-    } else if (this.cooldownSeconds <= 0) {
-      badge.style.display = 'none';
-    }
-  },
-
-  async restoreDino(id, slotNum, species, growth) {
+  async restoreDino(garageDinoId, species, growth) {
     if (this.cooldownSeconds > 0) {
-      App.showToast(`Bạn đang trong thời gian đếm ngược (${this.cooldownSeconds}s còn lại)!`, 'warning');
+      App.showToast(`Vui lòng chờ hết thời gian đệm (${this.cooldownSeconds}s) để bảo vệ dữ liệu!`, 'warn');
       return;
     }
 
-    if (this.parkingSeconds > 0) {
-      App.showToast(`Đang trong tiến trình cất thú (${this.parkingSeconds}s còn lại)!`, 'warning');
+    if (!confirm(`Xác nhận đưa [${species} ${growth}%] ra đảo? Nhân vật hiện tại trong game sẽ được thế chỗ bằng con này!`)) {
       return;
     }
 
-    const currentName = this.activeDino ? this.activeDino.species : 'nhân vật hiện tại';
-    const confirmMsg = `⚠️ XÁC NHẬN LẤY KHỦNG LONG RA ĐẢO:\n\n` +
-      `• Khi lấy [${species} ${growth}%] ra chơi, con [${currentName}] đang chơi trong game sẽ BỊ MẤT LUÔN (không lưu vào kho)!\n` +
-      `• Quá trình chuẩn bị xuất chiến sẽ mất đúng 30 GIÂY.\n` +
-      `• Kể cả con nhỏ dưới 25% vẫn xuất kích bình thường.\n\n` +
-      `Bạn có đồng ý đưa [${species}] ra đảo?`;
-
-    if (!confirm(confirmMsg)) {
-      return;
-    }
-
+    const sid = this.getActiveSteamId();
     try {
-      App.showToast(`Đang gửi lệnh xuất xưởng [${species} ${growth}%]... Bắt đầu chờ 30 giây! 🚀`, 'info');
-      const res = await fetch('/api/player/garage/load', {
+      App.showToast(`Đang hồi phục [${species}] vào game server...`, 'info');
+      const res = await fetch('/api/player/garage/restore', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: id,
-          slot: slotNum,
-          species: species,
-          growth: growth
-        })
-      });
-      const data = await res.json();
-
-      if (res.ok) {
-        // Kích hoạt đồng hồ 30 giây xuất chiến
-        const cooldownDuration = data.cooldown_seconds || 30;
-        this.cooldownSeconds = cooldownDuration;
-        localStorage.setItem('the_isle_garage_cooldown', (Date.now() + cooldownDuration * 1000).toString());
-        this.startCooldownTimer();
-
-        App.showToast(data.message || `Đã đưa [${species}] ra đảo thành công! Đang đếm ngược 30 giây hoàn tất.`, 'success');
-
-        // Làm mới dữ liệu Gara
-        setTimeout(async () => {
-          await this.fetchGarageData();
-          this.render();
-        }, 1200);
-
-      } else {
-        App.showToast(data.error || 'Lấy khủng long thất bại!', 'error');
-      }
-    } catch (e) {
-      App.showToast('Lỗi mạng khi lấy khủng long!', 'error');
-    }
-  },
-
-  async deleteDino(id, slotNum, species) {
-    if (!confirm(`Bạn có chắc chắn muốn xoá vĩnh viễn [${species}] ở ô ${slotNum}? Hành động này sẽ bán/giải phóng thú khỏi Gara!`)) {
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/player/garage/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: id, slot: slotNum })
-      });
-      if (res.ok) {
-        App.showToast(`Đã xoá [${species}] khỏi Gara.`, 'info');
-        await this.fetchGarageData();
-        this.render();
-      } else {
-        App.showToast('Không thể xoá thú!', 'error');
-      }
-    } catch (e) {
-      App.showToast('Lỗi mạng khi xoá thú!', 'error');
-    }
-  },
-
-  openAdminModal() {
-    const modal = document.getElementById('admin-role-modal');
-    if (modal) {
-      modal.style.display = 'flex';
-      this.onAdminRoleChange();
-    }
-  },
-
-  closeAdminModal() {
-    const modal = document.getElementById('admin-role-modal');
-    if (modal) modal.style.display = 'none';
-  },
-
-  onAdminRoleChange() {
-    const roleSel = document.getElementById('admin-target-role');
-    const slotInput = document.getElementById('admin-target-slots');
-    if (!roleSel || !slotInput) return;
-
-    const defaultLimits = {
-      ".": 20, "admin": 20, "mod": 20, "long_dai_dia_chu": 20,
-      "long_phu_nong": 18, "long_ta_dien": 12, "dev": 10,
-      "long_chu": 8, "booster": 5, "streamer": 5, "default": 3
-    };
-
-    if (roleSel.value !== 'custom') {
-      slotInput.value = defaultLimits[roleSel.value] || 3;
-    }
-  },
-
-  async submitAdminRole() {
-    const steamId = (document.getElementById('admin-target-steamid').value || '').trim();
-    const role = document.getElementById('admin-target-role').value;
-    const slots = Number(document.getElementById('admin-target-slots').value) || 3;
-
-    if (!steamId || steamId.length < 10) {
-      App.showToast('Vui lòng nhập Steam ID hợp lệ (17 số)!', 'error');
-      return;
-    }
-
-    try {
-      App.showToast('Đang lưu quyền hạn lên hệ thống máy chủ...', 'info');
-      const res = await fetch('/api/admin/set-garage-role', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ steamId, role, slots })
+        headers: { 'Content-Type': 'application/json', ...(sid ? { 'x-steam-id': sid } : {}) },
+        body: JSON.stringify({ garageDinoId, steamId: sid })
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        App.showToast(`Đã cấp quyền thành công cho [${steamId}]! Role: ${role.toUpperCase()} (${slots} slots)`, 'success');
-        this.closeAdminModal();
+        App.showToast(data.message, 'success');
+        localStorage.setItem('the_isle_garage_cooldown', Date.now() + 30000);
+        this.cooldownSeconds = 30;
+        this.startCooldownTimer();
         await this.fetchGarageData();
         this.render();
       } else {
-        App.showToast(data.error || 'Lỗi khi cấp quyền!', 'error');
+        App.showToast(data.error || 'Hồi phục khủng long thất bại!', 'error');
       }
     } catch (e) {
-      console.error(e);
-      App.showToast('Lỗi mạng khi lưu quyền hạn!', 'error');
+      App.showToast('Lỗi mạng khi hồi phục khủng long!', 'error');
+    }
+  },
+
+  async sellDino(garageDinoId, species, growth) {
+    if (!confirm(`Xác nhận bán [${species} ${growth}%] vào hệ thống nhà phát hành IslePilot? Tiền Lúa 🌾 sẽ được cộng tự động vào ví của bạn.`)) {
+      return;
+    }
+
+    const sid = this.getActiveSteamId();
+    try {
+      App.showToast(`Đang bán [${species}] vào hệ thống...`, 'info');
+      const res = await fetch('/api/player/garage/sell', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(sid ? { 'x-steam-id': sid } : {}) },
+        body: JSON.stringify({ garageDinoId, steamId: sid })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        App.showToast(data.message, 'success');
+        await this.fetchGarageData();
+        this.render();
+      } else {
+        App.showToast(data.error || 'Bán khủng long thất bại!', 'error');
+      }
+    } catch (e) {
+      App.showToast('Lỗi mạng khi bán khủng long!', 'error');
     }
   }
 };

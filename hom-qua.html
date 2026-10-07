@@ -216,7 +216,7 @@
         <li><a href="giao-dich.html" class="nav-link">⚖️ Giao Dịch</a></li>
         <li><a href="hom-qua.html" class="nav-link active">🎁 Hòm May Mắn</a></li>
         <li><a href="gara.html" class="nav-link">🦖 Gara</a></li>
-        <li><a href="skin.html" class="nav-link">🎨 Skin</a></li>
+                <li><a href="skin.html" class="nav-link">🎨 Skin</a></li>
         <li><a href="tha-xac.html" class="nav-link">🥩 Thả Xác</a></li>
         <li><a href="moi-ban.html" class="nav-link">👥 Mời Bạn</a></li>
         <li><a href="ho-tro.html" class="nav-link">🆘 Hỗ Trợ</a></li>
@@ -329,8 +329,8 @@
         <button onclick="closeRewardModal()" class="btn btn-secondary" style="flex: 1; font-weight: 700;">
           🌾 Tiếp Tục Mở
         </button>
-        <a id="modal-garage-btn" href="gara.html" class="btn btn-primary" style="flex: 1; display: none; font-weight: 700; text-align: center; text-decoration: none; padding: 10px 14px; line-height: 1.5;">
-          🦖 Mở Gara Ra Đảo
+        <a id="modal-garage-btn" href="nhiem-vu.html#kho-do" class="btn btn-primary" style="flex: 1; display: none; font-weight: 700; text-align: center; text-decoration: none; padding: 10px 14px; line-height: 1.5;">
+          🎒 Xem Túi Đồ & Vật Phẩm
         </a>
       </div>
     </div>
@@ -608,8 +608,8 @@
           const garageBtn = document.getElementById('modal-garage-btn');
           if (result.transferredToGarage || result.reward.type === 'dino') {
             document.getElementById('modal-reward-desc').innerHTML = `
-              🦖 <strong style="color: #fbbf24;">Khủng long [${result.reward.name}]</strong> đã được tự động lưu trực tiếp vào <strong>Gara</strong> của bạn!<br>
-              <span style="color: #94a3b8; font-size: 0.85rem; display: block; margin-top: 6px;">Bạn có thể bấm nút bên dưới để mở Gara xuất kích ra đảo chơi ngay!</span>
+              🦖 <strong style="color: #fbbf24;">Khủng long [${result.reward.name}]</strong> đã được tự động lưu vào <strong>Túi đồ (Kho Lúa)</strong> của bạn!<br>
+              <span style="color: #94a3b8; font-size: 0.85rem; display: block; margin-top: 6px;">Bạn có thể bấm nút bên dưới để mở Túi Đồ kiểm tra vật phẩm và voucher.</span>
             `;
             if (garageBtn) garageBtn.style.display = 'block';
           } else if (result.reward.type === 'lua') {
