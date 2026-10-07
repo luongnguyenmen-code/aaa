@@ -465,6 +465,14 @@
       "updatedAt": "17:23:48 7/10/2026",
       "updatedAtTimestamp": 1791368628130,
       "notes": "Test cap Long Ta Dien 12 slots"
+    },
+    "76561199031275693": {
+      "roleKey": "default",
+      "slots": 8,
+      "updatedBy": "76561198354289789",
+      "updatedAt": "17:32:49 7/10/2026",
+      "updatedAtTimestamp": 1791369169580,
+      "notes": ""
     }
   },
   "trades": [

@@ -3,9 +3,17 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 
+const os = require('os');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const CONFIG_FILE = path.join(__dirname, 'server-config.json');
+const TMP_CONFIG_FILE = path.join(os.tmpdir(), 'server-config.json');
+const DATA_FILE = path.join(__dirname, 'portal-data.json');
+const TMP_DATA_FILE = path.join(os.tmpdir(), 'portal-data.json');
+
+let memoryConfig = null;
+let memoryPortalData = null;
 
 app.use(cors());
 app.use(express.json());
@@ -13,15 +21,28 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
 function getConfig() {
+  if (memoryConfig) return memoryConfig;
+
+  // 1. Đọc từ /tmp trước (hỗ trợ môi trường Vercel Serverless có quyền ghi)
+  try {
+    if (fs.existsSync(TMP_CONFIG_FILE)) {
+      const raw = fs.readFileSync(TMP_CONFIG_FILE, 'utf-8').replace(/^\uFEFF/, '');
+      memoryConfig = JSON.parse(raw);
+      return memoryConfig;
+    }
+  } catch (_) {}
+
+  // 2. Đọc từ CONFIG_FILE gốc
   try {
     if (fs.existsSync(CONFIG_FILE)) {
       const raw = fs.readFileSync(CONFIG_FILE, 'utf-8').replace(/^\uFEFF/, '');
-      return JSON.parse(raw);
+      memoryConfig = JSON.parse(raw);
+      return memoryConfig;
     }
   } catch (e) {
     console.error('Error reading config:', e);
   }
-  return {
+  memoryConfig = {
     server: { name: "ST25 VIETNAM", short_name: "ST25", max_players: 100 },
     islepilot: {
       enabled: true,
@@ -30,16 +51,18 @@ function getConfig() {
       api_token: "ipa_4c51bd355513813f26ea6e759d4e6fb0dd5d8bb7174799de"
     }
   };
+  return memoryConfig;
 }
 
 function saveConfig(cfg) {
+  memoryConfig = cfg;
   try {
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf-8');
-    return true;
-  } catch (e) {
-    console.error('Error saving config:', e);
-    return false;
-  }
+  } catch (_) {}
+  try {
+    fs.writeFileSync(TMP_CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf-8');
+  } catch (_) {}
+  return true;
 }
 
 // In-memory cache for GET endpoints to respect the 120 req/min limit
@@ -1349,17 +1372,29 @@ function addDinoToGarage(steamId, dino, targetData = null) {
 }
 
 // ==================== NEW FEATURES BACKEND ==================== //
-const DATA_FILE = path.join(__dirname, 'portal-data.json');
 
 function getPortalData() {
+  if (memoryPortalData) return memoryPortalData;
+
+  // 1. Đọc từ /tmp trước (hỗ trợ Vercel Serverless)
+  try {
+    if (fs.existsSync(TMP_DATA_FILE)) {
+      memoryPortalData = JSON.parse(fs.readFileSync(TMP_DATA_FILE, 'utf8'));
+      return memoryPortalData;
+    }
+  } catch (_) {}
+
+  // 2. Đọc từ DATA_FILE gốc
   try {
     if (fs.existsSync(DATA_FILE)) {
-      return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      memoryPortalData = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      return memoryPortalData;
     }
   } catch (e) {
     console.error('Error reading portal data:', e);
   }
-  return {
+
+  memoryPortalData = {
     userWallets: {
       "76561198636766540": 250
     },
@@ -1392,18 +1427,21 @@ function getPortalData() {
     ],
     tickets: [],
     referrals: {},
-    carcassOrders: []
+    carcassOrders: [],
+    adminAssignments: {}
   };
+  return memoryPortalData;
 }
 
 function savePortalData(data) {
+  memoryPortalData = data;
   try {
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
-    return true;
-  } catch (e) {
-    console.error('Error saving portal data:', e);
-    return false;
-  }
+  } catch (_) {}
+  try {
+    fs.writeFileSync(TMP_DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+  } catch (_) {}
+  return true;
 }
 
 // Helper: Get real wallet balance from IslePilot API
