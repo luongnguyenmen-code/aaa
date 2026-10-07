@@ -939,6 +939,73 @@ app.get('/api/player/garage', async (req, res) => {
   });
 });
 
+// Helper: Chuyển đổi thông điệp lỗi của IslePilot thành thông báo tiếng Việt trực quan, chi tiết
+function formatGarageError(rawError, action = 'restore') {
+  if (!rawError) {
+    return action === 'restore' 
+      ? "⚠️ Không thể lấy khủng long ra đảo lúc này! Vui lòng đảm bảo bạn đang ở khu vực vắng người (cách xa người chơi khác tối thiểu 100 mét) và vào game trước khi thử lại."
+      : "⚠️ Không thể cất khủng long vào Gara lúc này! Bạn cần ở trạng thái an toàn, không nhận sát thương và chờ tối thiểu 30 giây.";
+  }
+
+  const errStr = (typeof rawError === 'string' ? rawError : JSON.stringify(rawError)).toLowerCase();
+
+  // 1. Lỗi có người chơi xung quanh trong bán kính 100 mét (Proximity Check)
+  if (
+    errStr.includes('nearby') || 
+    errStr.includes('too close') || 
+    errStr.includes('proximity') || 
+    errStr.includes('distance') || 
+    errStr.includes('100m') || 
+    errStr.includes('100 m') || 
+    errStr.includes('radius') ||
+    errStr.includes('range') ||
+    errStr.includes('close to another') ||
+    (errStr.includes('player') && (errStr.includes('close') || errStr.includes('around') || errStr.includes('area') || errStr.includes('other')))
+  ) {
+    return "⚠️ KHÔNG THỂ LẤY RA VÌ CÓ NGƯỜI XUNG QUANH: Phát hiện có người chơi khác trong bán kính 100 mét xung quanh bạn! Theo quy định máy chủ ST25, bạn bắt buộc phải di chuyển nhân vật đến khu vực an toàn, vắng vẻ (cách xa người khác tối thiểu 100m) mới có thể lấy khủng long từ Gara ra đảo.";
+  }
+
+  // 2. Lỗi vừa nhận sát thương / đang trong trạng thái giao tranh (combat)
+  if (
+    errStr.includes('combat') || 
+    errStr.includes('damage') || 
+    errStr.includes('hurt') || 
+    errStr.includes('attack') || 
+    errStr.includes('bleed') || 
+    errStr.includes('fight') || 
+    errStr.includes('injury') ||
+    errStr.includes('battle')
+  ) {
+    return "⚠️ CHƯA ĐỦ ĐIỀU KIỆN CẤT VÀO GARA: Bạn vừa nhận sát thương hoặc đang trong trạng thái giao tranh (combat)! Quy định máy chủ yêu cầu phải thoát khỏi giao tranh và hoàn toàn không bị mất máu / nhận sát thương trong tối thiểu 30 giây mới được cất vào Gara.";
+  }
+
+  // 3. Lỗi chưa online trong game hoặc cần vào game trước
+  if (errStr.includes('not online') || errStr.includes('offline') || errStr.includes('join')) {
+    return action === 'restore'
+      ? "⚠️ BẠN CHƯA VÀO SERVER: Vui lòng đăng nhập vào server game ST25 (chọn cùng loài khủng long) trước khi bấm đưa khủng long ra đảo!"
+      : "⚠️ BẠN CHƯA VÀO SERVER: Nhân vật của bạn hiện không trực tuyến trong game để cất vào Gara.";
+  }
+
+  // 4. Lỗi Cooldown 30s
+  if (
+    errStr.includes('cooldown') || 
+    errStr.includes('wait') || 
+    errStr.includes('frequent') || 
+    errStr.includes('rate limit') || 
+    errStr.includes('30s') ||
+    errStr.includes('30 seconds')
+  ) {
+    return "⏳ ĐANG TRONG THỜI GIAN CHỜ (30 GIÂY): Hệ thống yêu cầu giãn cách tối thiểu 30 giây giữa các lần cất/lấy Gara để bảo vệ an toàn dữ liệu.";
+  }
+
+  // 5. Gara đầy
+  if (errStr.includes('full') || errStr.includes('limit') || errStr.includes('slot')) {
+    return "⚠️ SỨC CHỨA GARA ĐÃ ĐẦY: Gara của bạn đã đạt giới hạn tối đa cho phép. Vui lòng lấy bớt thú cũ ra chơi, bán bớt hoặc liên hệ Admin để nâng cấp thêm Slot.";
+  }
+
+  return rawError;
+}
+
 // 9.2 Cất Khủng Long Đang Chơi Vào Gara (POST /players/{steamId}/garage/park)
 app.post('/api/player/garage/park', async (req, res) => {
   const steamId = getRequestSteamId(req);
@@ -959,12 +1026,17 @@ app.post('/api/player/garage/park', async (req, res) => {
     return res.json({
       success: true,
       message: "Đã cất khủng long vào Gara IslePilot thành công!",
-      data: result
+      data: result,
+      cooldown_seconds: 30
     });
   }
 
+  const userFriendlyMsg = formatGarageError(result?.error, 'park');
+  const isCombat = userFriendlyMsg.includes('giao tranh') || userFriendlyMsg.includes('sát thương');
   res.status(result?._status || 400).json({
-    error: result?.error || "Không thể cất khủng long vào Gara lúc này! Đảm bảo nhân vật an toàn và không trong combat."
+    error: userFriendlyMsg,
+    code: isCombat ? 'COMBAT_DAMAGE' : 'PARK_FAILED',
+    rawError: result?.error
   });
 });
 
@@ -1014,8 +1086,12 @@ app.post('/api/player/garage/restore', async (req, res) => {
     });
   }
 
+  const userFriendlyMsg = formatGarageError(result?.error, 'restore');
+  const isNearby = userFriendlyMsg.includes('100') || userFriendlyMsg.includes('xung quanh');
   res.status(result?._status || 400).json({
-    error: result?.error || "Không thể lấy khủng long ra đảo lúc này. Vui lòng thử lại sau 30 giây!"
+    error: userFriendlyMsg,
+    code: isNearby ? 'NEARBY_PLAYERS_100M' : 'RESTORE_FAILED',
+    rawError: result?.error
   });
 });
 

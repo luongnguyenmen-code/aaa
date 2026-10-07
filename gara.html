@@ -232,6 +232,46 @@
       </div>
     </div>
 
+    <!-- Quy Định An Toàn Cất & Lấy Gara (100m Khoảng Cách & 30s Không Sát Thương) -->
+    <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+      <span style="font-size: 1.8rem; line-height: 1;">🛡️</span>
+      <div style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.6; flex: 1;">
+        <strong style="color: #38bdf8; font-size: 0.98rem; display: block; margin-bottom: 4px;">
+          Quy Định An Toàn Khi Cất & Lấy Khủng Long Gara ST25:
+        </strong>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; margin-top: 6px;">
+          <div style="background: rgba(0, 0, 0, 0.3); padding: 10px 14px; border-radius: 8px; border-left: 3px solid #10b981;">
+            <strong style="color: #6ee7b7;">🦖 Lấy Ra Đảo (Restore):</strong>
+            <div style="color: #94a3b8; font-size: 0.82rem; margin-top: 2px;">
+              Bắt buộc nhân vật phải cách xa người chơi khác <strong>tối thiểu 100 mét</strong> (khu vực vắng người). Nếu có người xung quanh trong 100m, server sẽ từ chối để chống gian lận spawn thú.
+            </div>
+          </div>
+          <div style="background: rgba(0, 0, 0, 0.3); padding: 10px 14px; border-radius: 8px; border-left: 3px solid #f59e0b;">
+            <strong style="color: #fcd34d;">📦 Cất Vào Gara (Park):</strong>
+            <div style="color: #94a3b8; font-size: 0.82rem; margin-top: 2px;">
+              Bắt buộc <strong>không bị nhận sát thương trong 30 giây</strong> và thời gian chờ giãn cách (cooldown) giữa 2 lần cất/lấy là <strong>30 giây</strong>.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dynamic Action Error Alert Banner (Hiển thị nổi bật khi gặp lỗi 100m hoặc Combat) -->
+    <div id="garage-action-alert" style="display: none; background: rgba(239, 68, 68, 0.15); border: 2px solid #ef4444; border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 22px; box-shadow: 0 8px 30px rgba(239, 68, 68, 0.25);">
+      <div style="display: flex; gap: 14px; align-items: flex-start;">
+        <span style="font-size: 2rem; line-height: 1;" id="garage-action-alert-icon">⚠️</span>
+        <div style="flex: 1;">
+          <h4 style="color: #f87171; margin: 0 0 6px; font-size: 1.1rem; font-weight: 800;" id="garage-action-alert-title">
+            Thông Báo Từ Máy Chủ Game
+          </h4>
+          <div style="color: #fca5a5; font-size: 0.92rem; line-height: 1.6;" id="garage-action-alert-msg">
+            Nội dung thông báo
+          </div>
+        </div>
+        <button type="button" onclick="document.getElementById('garage-action-alert').style.display='none'" style="background: rgba(255,255,255,0.1); border: none; color: #cbd5e1; width: 32px; height: 32px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+      </div>
+    </div>
+
     <!-- Cooldown Alert (if any) -->
     <div id="cooldown-alert" style="display: none; background: rgba(234, 88, 12, 0.15); border: 1px solid #f97316; border-radius: var(--radius-md); padding: 14px 20px; margin-bottom: 24px; align-items: center; justify-content: space-between;">
       <span style="color: #fdba74; font-weight: 600;">

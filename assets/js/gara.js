@@ -388,17 +388,24 @@ const Garage = {
   },
 
   async parkActiveDino() {
+    if (this.cooldownSeconds > 0) {
+      this.showActionAlert('⏳ Đang Trong Thời Gian Giãn Cách 30 Giây', `Vui lòng chờ thêm ${this.cooldownSeconds}s trước khi cất hoặc đổi khủng long!`, 'warning');
+      App.showToast(`Vui lòng chờ hết thời gian đệm (${this.cooldownSeconds}s)!`, 'warn');
+      return;
+    }
+
     if (!this.activeDino) {
       App.showToast('Bạn hiện không có khủng long nào đang sống để cất!', 'error');
       return;
     }
 
-    if (!confirm(`Xác nhận cất [${this.activeDino.species}] vào Gara IslePilot? Hãy đảm bảo bạn đang an toàn và không trong combat!`)) {
+    if (!confirm(`Xác nhận cất [${this.activeDino.species}] vào Gara IslePilot? Lưu ý: Bạn bắt buộc phải không bị nhận sát thương trong 30 giây gần nhất!`)) {
       return;
     }
 
     const sid = this.getActiveSteamId();
     try {
+      this.hideActionAlert();
       App.showToast('Đang kết nối IslePilot để cất khủng long...', 'info');
       const res = await fetch('/api/player/garage/park', {
         method: 'POST',
@@ -408,31 +415,37 @@ const Garage = {
       const data = await res.json();
       if (res.ok && data.success) {
         App.showToast(data.message, 'success');
+        this.hideActionAlert();
         localStorage.setItem('the_isle_garage_cooldown', Date.now() + 30000);
         this.cooldownSeconds = 30;
         this.startCooldownTimer();
         await this.fetchGarageData();
         this.render();
       } else {
-        App.showToast(data.error || 'Cất khủng long thất bại!', 'error');
+        const errMsg = data.error || 'Cất khủng long thất bại!';
+        App.showToast(errMsg, 'error');
+        this.showActionAlert('⚠️ Chưa Thể Cất Vào Gara Lúc Này', errMsg, 'error');
       }
     } catch (e) {
       App.showToast('Lỗi mạng khi cất khủng long!', 'error');
+      this.showActionAlert('Lỗi Kết Nối', 'Không thể kết nối máy chủ ST25. Vui lòng kiểm tra lại đường truyền!', 'error');
     }
   },
 
   async restoreDino(garageDinoId, species, growth) {
     if (this.cooldownSeconds > 0) {
+      this.showActionAlert('⏳ Đang Trong Thời Gian Giãn Cách 30 Giây', `Vui lòng chờ thêm ${this.cooldownSeconds}s để bảo vệ an toàn dữ liệu nhân vật!`, 'warning');
       App.showToast(`Vui lòng chờ hết thời gian đệm (${this.cooldownSeconds}s) để bảo vệ dữ liệu!`, 'warn');
       return;
     }
 
-    if (!confirm(`Xác nhận đưa [${species} ${growth}%] ra đảo? Nhân vật hiện tại trong game sẽ được thế chỗ bằng con này!`)) {
+    if (!confirm(`Xác nhận đưa [${species} ${growth}%] ra đảo? Lưu ý: Nhân vật của bạn bắt buộc phải ở khu vực vắng vẻ, cách người chơi khác tối thiểu 100 mét!`)) {
       return;
     }
 
     const sid = this.getActiveSteamId();
     try {
+      this.hideActionAlert();
       App.showToast(`Đang hồi phục [${species}] vào game server...`, 'info');
       const res = await fetch('/api/player/garage/restore', {
         method: 'POST',
@@ -442,17 +455,54 @@ const Garage = {
       const data = await res.json();
       if (res.ok && data.success) {
         App.showToast(data.message, 'success');
+        this.hideActionAlert();
         localStorage.setItem('the_isle_garage_cooldown', Date.now() + 30000);
         this.cooldownSeconds = 30;
         this.startCooldownTimer();
         await this.fetchGarageData();
         this.render();
       } else {
-        App.showToast(data.error || 'Hồi phục khủng long thất bại!', 'error');
+        const errMsg = data.error || 'Hồi phục khủng long thất bại!';
+        App.showToast(errMsg, 'error');
+        this.showActionAlert('⚠️ Không Thể Đưa Khủng Long Ra Đảo', errMsg, 'error');
       }
     } catch (e) {
       App.showToast('Lỗi mạng khi hồi phục khủng long!', 'error');
+      this.showActionAlert('Lỗi Kết Nối', 'Không thể kết nối máy chủ game. Vui lòng thử lại sau giây lát!', 'error');
     }
+  },
+
+  showActionAlert(title, message, type = 'error') {
+    const el = document.getElementById('garage-action-alert');
+    const titleEl = document.getElementById('garage-action-alert-title');
+    const msgEl = document.getElementById('garage-action-alert-msg');
+    const iconEl = document.getElementById('garage-action-alert-icon');
+    if (!el || !titleEl || !msgEl) return;
+
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+
+    if (type === 'warning') {
+      el.style.borderColor = '#f59e0b';
+      el.style.backgroundColor = 'rgba(245, 158, 11, 0.15)';
+      titleEl.style.color = '#fbbf24';
+      msgEl.style.color = '#fef08a';
+      if (iconEl) iconEl.textContent = '⏳';
+    } else {
+      el.style.borderColor = '#ef4444';
+      el.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+      titleEl.style.color = '#f87171';
+      msgEl.style.color = '#fca5a5';
+      if (iconEl) iconEl.textContent = '⚠️';
+    }
+
+    el.style.display = 'block';
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  },
+
+  hideActionAlert() {
+    const el = document.getElementById('garage-action-alert');
+    if (el) el.style.display = 'none';
   },
 
   async sellDino(garageDinoId, species, growth) {
