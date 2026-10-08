@@ -46,7 +46,7 @@
         reveal(entry.target);
       }
     }, { threshold: .12, rootMargin: '0px 0px -24px 0px' });
-    for (const element of root.querySelectorAll('main .hero-title, main .hero-desc, main h1, main h2, main .cards-grid > .card, [data-st25-reveal]')) {
+    for (const element of root.querySelectorAll('main .hero-title, main .hero-desc, main h1, main h2, main .cards-grid > .card, main .portal-feature, [data-st25-reveal]')) {
       if (revealed.has(element) || element.closest('.leaflet-container, [hidden], .modal, .tab-content') || element.getClientRects().length === 0) continue;
       observer.observe(element);
     }
