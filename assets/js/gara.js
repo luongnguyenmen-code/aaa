@@ -337,7 +337,7 @@ const Garage = {
     }
 
     const d = this.activeDino;
-    const isPrime = !!(d.isPrimeElder || d.growth >= 100);
+    const isPrime = Boolean(d.isPrimeElder);
     panel.className = `active-dino-panel glass-panel ${isPrime ? 'holo-prime' : ''}`;
     panel.innerHTML = `
       <div style="background: rgba(0,0,0,0.35); border-radius: 12px; padding: 22px; text-align: center; border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; justify-content: center; align-items: center;">
@@ -428,7 +428,7 @@ const Garage = {
         `;
       }
 
-      const isPrime = Boolean(s.isPrimeElder || s.growth >= 100);
+      const isPrime = Boolean(s.isPrimeElder);
       const mutHtml = (s.mutations && s.mutations.length > 0)
         ? s.mutations.map(m => `<span class="mutation-gem">🧬 ${m}</span>`).join(' ')
         : '<span style="font-size: 0.75rem; color: #64748b;">Thuần chủng (Không đột biến)</span>';
@@ -438,9 +438,9 @@ const Garage = {
       return `
         <div class="slot-card dino-card-tcg ${isPrime ? 'holo-prime' : ''}">
           <span class="slot-badge-num">Ô #${s.slot}</span>
-          <div>
+          <div style="position: relative; z-index: 1;">
             <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 10px;">
-              <div style="font-size: 2.4rem; line-height: 1; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.4));">${icon}</div>
+              <div style="font-size: 2.4rem; line-height: 1;">${icon}</div>
               <div>
                 <h4 style="color: #fff; margin: 0 0 4px; font-size: 1.25rem; font-weight: 800;">${s.species}</h4>
                 <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
@@ -473,7 +473,7 @@ const Garage = {
             </div>
           </div>
 
-          <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="position: relative; z-index: 1; display: flex; flex-direction: column; gap: 8px;">
             <button onclick="Garage.startRestoreChanneling('${s.id}', '${s.species}', ${s.growth})" class="btn btn-primary btn-sm" style="width: 100%; font-weight: 800; padding: 11px 14px; font-size: 0.92rem; background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);">
               ⚔️ Đưa Ra Đảo (Restore 30s)
             </button>

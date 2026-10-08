@@ -246,12 +246,9 @@ a:hover {
   padding: 3px 10px;
   border-radius: 4px;
   font-weight: 700;
-  border: 1px solid rgba(245, 158, 11, 0.35);
-}
-  border-radius: 4px;
-  font-weight: 700;
   font-size: 0.75rem;
   text-transform: uppercase;
+  border: 1px solid rgba(245, 158, 11, 0.35);
 }
 
 /* Hero Section */
@@ -1102,54 +1099,38 @@ a:hover {
 /* 3D TCG Dinosaur Card Styles */
 .dino-card-tcg, .slot-card {
   position: relative;
-  background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(10, 15, 12, 0.95)) !important;
+  background: rgba(15, 23, 42, 0.92) !important;
   border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
   border-radius: var(--radius-md) !important;
   padding: 18px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease !important;
   overflow: hidden;
 }
 
 .dino-card-tcg:hover, .slot-card:hover {
-  transform: translateY(-6px) scale(1.02) !important;
+  transform: translateY(-4px) !important;
   border-color: #38bdf8 !important;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7), 0 0 25px rgba(56, 189, 248, 0.25) !important;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.7), 0 0 20px rgba(56, 189, 248, 0.25) !important;
 }
 
-/* Holographic Shimmer Border for Prime & Elder */
+/* Glowing Accent Border for Prime & Elder Cards (No green covering) */
 .dino-card-tcg.holo-prime,
 .dino-card-tcg.holo-elder,
 .slot-card.holo-prime {
-  border: 1.5px solid transparent !important;
-  position: relative;
+  border: 1.5px solid rgba(16, 185, 129, 0.7) !important;
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(16, 185, 129, 0.08)) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(16, 185, 129, 0.3) !important;
 }
 
-.dino-card-tcg.holo-prime::before,
-.dino-card-tcg.holo-elder::before,
-.slot-card.holo-prime::before {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  z-index: 0;
-  border-radius: inherit;
-  background: linear-gradient(
-    60deg,
-    #f59e0b,
-    #ef4444,
-    #8b5cf6,
-    #06b6d4,
-    #10b981,
-    #f59e0b
-  );
-  background-size: 300% 300%;
-  animation: holoGradient 4s ease infinite;
-}
-
-@keyframes holoGradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+.dino-card-tcg.holo-prime:hover,
+.dino-card-tcg.holo-elder:hover,
+.slot-card.holo-prime:hover {
+  border-color: #34d399 !important;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.8), 0 0 24px rgba(52, 211, 153, 0.5) !important;
 }
 
 /* Enhanced 4 Vital Stat Meters */
