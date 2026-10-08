@@ -268,6 +268,89 @@
       flex-direction: column;
       gap: 4px;
     }
+
+    /* Quản lý Thời hạn Gói Gara & Bộ Lọc Thời Gian */
+    .expiry-stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .expiry-stat-chip {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      user-select: none;
+    }
+    .expiry-stat-chip:hover {
+      background: rgba(30, 41, 59, 0.9);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .expiry-stat-chip.active {
+      border-color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+    }
+    .filter-toolbar-box {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .badge-status-active {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid #10b981;
+      color: #6ee7b7;
+    }
+    .badge-status-expiring {
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid #f59e0b;
+      color: #fcd34d;
+      animation: pulse-warn 2s infinite ease-in-out;
+    }
+    .badge-status-expired {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid #ef4444;
+      color: #fca5a5;
+    }
+    .badge-status-perm {
+      background: rgba(168, 85, 247, 0.18);
+      border: 1px solid #a855f7;
+      color: #d8b4fe;
+    }
+    @keyframes pulse-warn {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
   </style>
 </head>
 <body>
@@ -533,17 +616,85 @@
 
     <!-- Danh Sách Các Thành Viên Đã Phân Quyền -->
     <section>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
         <div>
-          <h3 style="color: #fff; font-size: 1.3rem; margin: 0 0 4px;">
-            📋 Danh Sách Thành Viên Đã Được Phân Quyền & Cấp Slot
+          <h3 style="color: #fff; font-size: 1.3rem; margin: 0 0 4px; display: flex; align-items: center; gap: 8px;">
+            <span>📋 Danh Sách Thành Viên & Quản Lý Hạn Gara (1 Tháng)</span>
           </h3>
           <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem;">
-            Các tài khoản đã được cấp role và số slot riêng biệt trong hệ thống.
+            Theo dõi thời gian cấp, ngày hết hạn (30 ngày), lọc người chơi theo ngày sửa đổi và gia hạn nhanh slot Gara.
           </p>
         </div>
-        <div style="display: flex; gap: 10px;">
-          <input type="text" id="search-assigned" placeholder="Tìm theo Steam ID..." class="form-input" style="padding: 8px 12px; font-size: 0.85rem; width: 220px;" oninput="AdminPanel.filterTable(this.value)">
+      </div>
+
+      <!-- 5 Thẻ Thống Kê Nhanh Trạng Thái Hạn 1 Tháng -->
+      <div class="expiry-stats-bar">
+        <div class="expiry-stat-chip active" id="stat-chip-all" onclick="AdminPanel.setFilterStatus('all')">
+          <span style="color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Tất Cả</span>
+          <div style="font-size: 1.4rem; font-weight: 800; color: #fff;" id="count-all">0</div>
+          <small style="color: #64748b; font-size: 0.7rem;">Tổng thành viên</small>
+        </div>
+        <div class="expiry-stat-chip" id="stat-chip-active" onclick="AdminPanel.setFilterStatus('active')" style="border-color: rgba(16, 185, 129, 0.3);">
+          <span style="color: #6ee7b7; font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">🟢 Còn Hạn</span>
+          <div style="font-size: 1.4rem; font-weight: 800; color: #10b981;" id="count-active">0</div>
+          <small style="color: #34d399; font-size: 0.7rem;">Thời hạn > 7 ngày</small>
+        </div>
+        <div class="expiry-stat-chip" id="stat-chip-expiring" onclick="AdminPanel.setFilterStatus('expiring')" style="border-color: rgba(245, 158, 11, 0.3);">
+          <span style="color: #fcd34d; font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">🟡 Sắp Hết Hạn</span>
+          <div style="font-size: 1.4rem; font-weight: 800; color: #f59e0b;" id="count-expiring">0</div>
+          <small style="color: #fbbf24; font-size: 0.7rem;">Còn lại ≤ 7 ngày</small>
+        </div>
+        <div class="expiry-stat-chip" id="stat-chip-expired" onclick="AdminPanel.setFilterStatus('expired')" style="border-color: rgba(239, 68, 68, 0.3);">
+          <span style="color: #fca5a5; font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">🔴 Đã Quá Hạn</span>
+          <div style="font-size: 1.4rem; font-weight: 800; color: #ef4444;" id="count-expired">0</div>
+          <small style="color: #f87171; font-size: 0.7rem;">Hết hạn 30 ngày</small>
+        </div>
+        <div class="expiry-stat-chip" id="stat-chip-perm" onclick="AdminPanel.setFilterStatus('permanent')" style="border-color: rgba(168, 85, 247, 0.3);">
+          <span style="color: #d8b4fe; font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">♾️ Vĩnh Viễn</span>
+          <div style="font-size: 1.4rem; font-weight: 800; color: #c084fc;" id="count-perm">0</div>
+          <small style="color: #e9d5ff; font-size: 0.7rem;">Không thời hạn</small>
+        </div>
+      </div>
+
+      <!-- Thanh Công Cụ Tìm Kiếm & Lọc Thời Gian -->
+      <div class="filter-toolbar-box">
+        <div class="filter-group" style="flex: 1 1 240px;">
+          <input type="text" id="filter-keyword" placeholder="🔍 Tìm Steam ID, ghi chú, vai trò..." class="form-input" style="padding: 8px 12px; font-size: 0.85rem; width: 100%;" oninput="AdminPanel.onFilterInput()">
+        </div>
+
+        <!-- Lọc Theo Ngày Sửa Đổi / Cấp -->
+        <div class="filter-group">
+          <label for="filter-date" style="color: #94a3b8; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">
+            📅 Ngày cấp:
+          </label>
+          <input type="date" id="filter-date" class="form-input" style="padding: 6px 10px; font-size: 0.85rem; color: #fff; background: rgba(0,0,0,0.4);" onchange="AdminPanel.onDateChange()">
+          <button type="button" id="btn-clear-date" onclick="AdminPanel.clearDateFilter()" class="btn-action-sm" style="display: none; background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #fca5a5;" title="Xóa lọc ngày">
+            ✕
+          </button>
+        </div>
+
+        <!-- Lọc Theo Trạng Thái Hạn Dùng -->
+        <div class="filter-group">
+          <select id="filter-status" class="form-input" style="padding: 7px 12px; font-size: 0.85rem; width: auto;" onchange="AdminPanel.onStatusChange(this.value)">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="active">🟢 Còn hạn (> 7 ngày)</option>
+            <option value="expiring">🟡 Sắp hết hạn (≤ 7 ngày)</option>
+            <option value="expired">🔴 Đã quá hạn</option>
+            <option value="permanent">♾️ Vĩnh viễn</option>
+          </select>
+        </div>
+
+        <!-- Sắp Xếp Danh Sách -->
+        <div class="filter-group">
+          <select id="filter-sort" class="form-input" style="padding: 7px 12px; font-size: 0.85rem; width: auto;" onchange="AdminPanel.onSortChange(this.value)">
+            <option value="newest">⏱️ Mới sửa đổi nhất</option>
+            <option value="oldest">⏳ Cũ nhất</option>
+            <option value="expiring">⚠️ Sắp hết hạn nhất</option>
+            <option value="slots">🦖 Slots nhiều nhất</option>
+          </select>
+          <button type="button" onclick="AdminPanel.resetFilters()" class="btn-action-sm" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1;" title="Đặt lại toàn bộ bộ lọc">
+            🔄 Đặt lại
+          </button>
         </div>
       </div>
 
@@ -551,12 +702,12 @@
         <table class="admin-table">
           <thead>
             <tr>
-              <th>#</th>
+              <th style="width: 45px;">#</th>
               <th>Steam ID</th>
               <th>Vai Trò (Role)</th>
-              <th>Sức Chứa Gara</th>
-              <th>Ghi Chú / Thời Gian</th>
-              <th style="text-align: right;">Thao Tác</th>
+              <th style="width: 110px;">Sức Chứa</th>
+              <th>Thời Hạn & Ghi Chú (Gói 1 Tháng)</th>
+              <th style="text-align: right; width: 230px;">Thao Tác</th>
             </tr>
           </thead>
           <tbody id="assigned-users-tbody">
@@ -1090,8 +1241,12 @@
             localStorage.setItem('st25_backup_assignments', JSON.stringify(this.assignedUsers));
 
             // Xóa ô tìm kiếm để dòng vừa cấp hiển thị ngay trên cùng
-            const searchInp = document.getElementById('search-assigned');
+            const searchInp = document.getElementById('filter-keyword');
             if (searchInp) searchInp.value = '';
+            this.filterKeyword = '';
+            this.filterDate = '';
+            this.filterStatus = 'all';
+            this.highlightActiveStatChip('all');
 
             this.renderAssignedTable();
             this.highlightUserRow(targetSteamId);
@@ -1300,20 +1455,228 @@
         }
       },
 
-      filterTable(keyword) {
-        const clean = keyword.toLowerCase().trim();
-        const rows = document.querySelectorAll('#assigned-users-tbody tr');
-        rows.forEach(r => {
-          const text = r.textContent.toLowerCase();
-          r.style.display = text.includes(clean) ? '' : 'none';
+      filterKeyword: '',
+      filterDate: '',
+      filterStatus: 'all',
+      filterSort: 'newest',
+
+      calculateExpiry(u) {
+        if (u.isSuperAdmin || (u.notes && /vĩnh viễn|vinh vien|permanent|unlimited/i.test(u.notes))) {
+          return {
+            status: 'permanent',
+            daysLeft: 9999,
+            badgeClass: 'badge-status-perm',
+            badgeText: '♾️ Vĩnh Viễn',
+            expireDateStr: 'Không thời hạn'
+          };
+        }
+
+        const updateMs = u.updatedAtTimestamp || (u.updatedAt ? new Date(u.updatedAt).getTime() : 0);
+        if (!updateMs) {
+          return {
+            status: 'permanent',
+            daysLeft: 9999,
+            badgeClass: 'badge-status-perm',
+            badgeText: '♾️ Mặc định',
+            expireDateStr: 'Chưa cập nhật'
+          };
+        }
+
+        const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+        const expireMs = updateMs + ONE_MONTH_MS;
+        const diffMs = expireMs - Date.now();
+        const daysLeft = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
+        const expDate = new Date(expireMs);
+        const expDay = String(expDate.getDate()).padStart(2, '0');
+        const expMonth = String(expDate.getMonth() + 1).padStart(2, '0');
+        const expYear = expDate.getFullYear();
+        const expireDateStr = `${expDay}/${expMonth}/${expYear}`;
+
+        if (daysLeft > 7) {
+          return {
+            status: 'active',
+            daysLeft,
+            badgeClass: 'badge-status-active',
+            badgeText: `🟢 Còn ${daysLeft} ngày`,
+            expireDateStr: `HSD: ${expireDateStr}`
+          };
+        }
+
+        if (daysLeft >= 0 && daysLeft <= 7) {
+          return {
+            status: 'expiring',
+            daysLeft,
+            badgeClass: 'badge-status-expiring',
+            badgeText: `🟡 Sắp hết: ${daysLeft} ngày`,
+            expireDateStr: `HSD: ${expireDateStr}`
+          };
+        }
+
+        return {
+          status: 'expired',
+          daysLeft,
+          badgeClass: 'badge-status-expired',
+          badgeText: `🔴 Quá hạn ${Math.abs(daysLeft)} ngày`,
+          expireDateStr: `Hết hạn: ${expireDateStr}`
+        };
+      },
+
+      updateExpiryStats() {
+        let active = 0, expiring = 0, expired = 0, perm = 0;
+        (this.assignedUsers || []).forEach(u => {
+          const exp = this.calculateExpiry(u);
+          if (exp.status === 'active') active++;
+          else if (exp.status === 'expiring') expiring++;
+          else if (exp.status === 'expired') expired++;
+          else if (exp.status === 'permanent') perm++;
         });
+        const total = (this.assignedUsers || []).length;
+
+        const elAll = document.getElementById('count-all');
+        if (elAll) elAll.textContent = total;
+        const elAct = document.getElementById('count-active');
+        if (elAct) elAct.textContent = active;
+        const elExp = document.getElementById('count-expiring');
+        if (elExp) elExp.textContent = expiring;
+        const elEnd = document.getElementById('count-expired');
+        if (elEnd) elEnd.textContent = expired;
+        const elPer = document.getElementById('count-perm');
+        if (elPer) elPer.textContent = perm;
+      },
+
+      onFilterInput() {
+        const inp = document.getElementById('filter-keyword');
+        this.filterKeyword = inp ? inp.value.trim().toLowerCase() : '';
+        this.renderAssignedTable();
+      },
+
+      onDateChange() {
+        const dateInp = document.getElementById('filter-date');
+        this.filterDate = dateInp ? dateInp.value : '';
+        const btnClear = document.getElementById('btn-clear-date');
+        if (btnClear) btnClear.style.display = this.filterDate ? 'inline-block' : 'none';
+        this.renderAssignedTable();
+      },
+
+      clearDateFilter() {
+        const dateInp = document.getElementById('filter-date');
+        if (dateInp) dateInp.value = '';
+        this.filterDate = '';
+        const btnClear = document.getElementById('btn-clear-date');
+        if (btnClear) btnClear.style.display = 'none';
+        this.renderAssignedTable();
+      },
+
+      onStatusChange(val) {
+        this.filterStatus = val;
+        this.highlightActiveStatChip(val);
+        this.renderAssignedTable();
+      },
+
+      setFilterStatus(status) {
+        this.filterStatus = status;
+        const sel = document.getElementById('filter-status');
+        if (sel) sel.value = status;
+        this.highlightActiveStatChip(status);
+        this.renderAssignedTable();
+      },
+
+      highlightActiveStatChip(status) {
+        const chips = ['all', 'active', 'expiring', 'expired', 'perm'];
+        chips.forEach(c => {
+          const el = document.getElementById(`stat-chip-${c}`);
+          if (el) {
+            const isMatch = (c === 'perm' && status === 'permanent') || (c === status);
+            if (isMatch) el.classList.add('active');
+            else el.classList.remove('active');
+          }
+        });
+      },
+
+      onSortChange(val) {
+        this.filterSort = val;
+        this.renderAssignedTable();
+      },
+
+      resetFilters() {
+        this.filterKeyword = '';
+        this.filterDate = '';
+        this.filterStatus = 'all';
+        this.filterSort = 'newest';
+
+        const kInp = document.getElementById('filter-keyword');
+        if (kInp) kInp.value = '';
+        const dInp = document.getElementById('filter-date');
+        if (dInp) dInp.value = '';
+        const btnClear = document.getElementById('btn-clear-date');
+        if (btnClear) btnClear.style.display = 'none';
+        const sSel = document.getElementById('filter-status');
+        if (sSel) sSel.value = 'all';
+        const sortSel = document.getElementById('filter-sort');
+        if (sortSel) sortSel.value = 'newest';
+
+        this.highlightActiveStatChip('all');
+        this.renderAssignedTable();
+        App.showToast('Đã đặt lại toàn bộ bộ lọc!', 'info');
+      },
+
+      async quickRenewUser(steamId, roleKey, slots, currentNotes) {
+        const confirmMsg = `🔄 XÁC NHẬN GIA HẠN THÊM 30 NGÀY:\n\n` +
+          `• Tài khoản: ${steamId}\n` +
+          `• Sức chứa: ${slots} Slots Gara\n` +
+          `• Vai trò: ${roleKey}\n\n` +
+          `Bạn có chắc chắn muốn làm mới thời hạn 1 tháng (30 ngày) cho người chơi này tính từ hôm nay?`;
+
+        if (!confirm(confirmMsg)) return;
+
+        App.showToast(`Đang gia hạn 30 ngày cho ${steamId}...`, 'info');
+        try {
+          const hdrs = {
+            'Content-Type': 'application/json',
+            'x-steam-id': this.currentAdminSteamId,
+            'x-admin-steam-id': this.currentAdminSteamId
+          };
+          const res = await fetch('/api/admin/assign-role-slots', {
+            method: 'POST',
+            headers: hdrs,
+            body: JSON.stringify({
+              adminSteamId: this.currentAdminSteamId,
+              targetSteamId: steamId,
+              roleKey: roleKey || 'default',
+              customSlots: Number(slots),
+              notes: currentNotes || ''
+            })
+          });
+
+          const data = await res.json();
+          if (res.ok && data.success) {
+            App.showToast(`✅ Đã gia hạn thành công thêm 30 ngày cho [${steamId}]!`, 'success');
+            if (Array.isArray(data.assignedUsers)) {
+              this.assignedUsers = data.assignedUsers;
+            }
+            this.renderAssignedTable();
+            this.highlightUserRow(steamId);
+          } else {
+            App.showToast(data.error || 'Lỗi khi gia hạn!', 'error');
+          }
+        } catch (err) {
+          console.error(err);
+          App.showToast('Lỗi kết nối khi gia hạn!', 'error');
+        }
+      },
+
+      filterTable(keyword) {
+        this.filterKeyword = (keyword || '').toLowerCase().trim();
+        this.renderAssignedTable();
       },
 
       renderAssignedTable() {
         const tbody = document.getElementById('assigned-users-tbody');
         if (!tbody) return;
 
-        if (!this.assignedUsers.length) {
+        this.updateExpiryStats();
+
+        if (!this.assignedUsers || !this.assignedUsers.length) {
           tbody.innerHTML = `
             <tr>
               <td colspan="6" style="text-align: center; padding: 30px; color: #64748b;">
@@ -1324,8 +1687,86 @@
           return;
         }
 
-        tbody.innerHTML = this.assignedUsers.map((u, idx) => {
+        // Lọc danh sách
+        let filtered = this.assignedUsers.filter(u => {
+          const exp = this.calculateExpiry(u);
+
+          // 1. Lọc theo trạng thái
+          if (this.filterStatus !== 'all' && exp.status !== this.filterStatus) {
+            return false;
+          }
+
+          // 2. Lọc theo ngày cấp (dạng YYYY-MM-DD từ input date)
+          if (this.filterDate) {
+            const timeMs = u.updatedAtTimestamp || (u.updatedAt ? new Date(u.updatedAt).getTime() : 0);
+            if (!timeMs) return false;
+            const uDate = new Date(timeMs);
+            const uY = uDate.getFullYear();
+            const uM = String(uDate.getMonth() + 1).padStart(2, '0');
+            const uD = String(uDate.getDate()).padStart(2, '0');
+            const userDateStr = `${uY}-${uM}-${uD}`;
+            if (userDateStr !== this.filterDate) return false;
+          }
+
+          // 3. Lọc theo từ khóa tìm kiếm (Steam ID, ghi chú, role, text ngày)
+          if (this.filterKeyword) {
+            const combinedText = [
+              u.steamId || '',
+              u.roleName || '',
+              u.roleKey || '',
+              u.notes || '',
+              u.updatedAt || '',
+              exp.expireDateStr || '',
+              exp.badgeText || ''
+            ].join(' ').toLowerCase();
+
+            if (!combinedText.includes(this.filterKeyword)) {
+              return false;
+            }
+          }
+
+          return true;
+        });
+
+        // Sắp xếp danh sách
+        filtered.sort((a, b) => {
+          const timeA = a.updatedAtTimestamp || (a.updatedAt ? new Date(a.updatedAt).getTime() : 0);
+          const timeB = b.updatedAtTimestamp || (b.updatedAt ? new Date(b.updatedAt).getTime() : 0);
+
+          if (this.filterSort === 'newest') {
+            return timeB - timeA;
+          } else if (this.filterSort === 'oldest') {
+            return timeA - timeB;
+          } else if (this.filterSort === 'expiring') {
+            const expA = this.calculateExpiry(a);
+            const expB = this.calculateExpiry(b);
+            return expA.daysLeft - expB.daysLeft;
+          } else if (this.filterSort === 'slots') {
+            return (b.slots || 0) - (a.slots || 0);
+          }
+          return 0;
+        });
+
+        if (!filtered.length) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 30px; color: #94a3b8;">
+                🔍 Không tìm thấy thành viên nào phù hợp với bộ lọc hiện tại.
+                <div style="margin-top: 8px;">
+                  <button type="button" onclick="AdminPanel.resetFilters()" class="btn-action-sm" style="background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8;">
+                    Đặt lại bộ lọc
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = filtered.map((u, idx) => {
           const safeNote = (u.notes || '').replace(/'/g, "\\'");
+          const exp = this.calculateExpiry(u);
+
           return `
           <tr id="user-row-${u.steamId}">
             <td style="color: #64748b; font-weight: 700;">#${idx + 1}</td>
@@ -1340,19 +1781,28 @@
               <span class="badge-slot" style="font-size: 0.85rem; padding: 4px 10px;">${u.slots} Slots</span>
             </td>
             <td>
-              <div style="font-size: 0.85rem; color: #cbd5e1;">${u.notes || '—'}</div>
-              ${u.updatedAt ? `<small style="color: #64748b; font-size: 0.75rem;">Cập nhật: ${u.updatedAt}</small>` : ''}
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span class="badge-status ${exp.badgeClass}">${exp.badgeText}</span>
+                <small style="color: #94a3b8; font-size: 0.75rem;">(${exp.expireDateStr})</small>
+              </div>
+              <div style="margin-top: 4px; font-size: 0.75rem; color: #64748b;">
+                📅 Cấp: ${u.updatedAt || '—'}
+              </div>
+              ${u.notes ? `<div style="margin-top: 4px; font-size: 0.82rem; color: #cbd5e1;">📝 ${u.notes}</div>` : ''}
             </td>
             <td style="text-align: right; white-space: nowrap;">
-              <button onclick="AdminPanel.editUser('${u.steamId}', '${u.roleKey}', ${u.slots}, '${safeNote}')" class="btn-action-sm btn-action-edit" title="Chỉnh sửa">
+              <button onclick="AdminPanel.quickRenewUser('${u.steamId}', '${u.roleKey}', ${u.slots}, '${safeNote}')" class="btn-action-sm" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #6ee7b7; margin-right: 4px;" title="Gia hạn thêm 30 ngày từ hôm nay">
+                🔄 +30 Ngày
+              </button>
+              <button onclick="AdminPanel.editUser('${u.steamId}', '${u.roleKey}', ${u.slots}, '${safeNote}')" class="btn-action-sm btn-action-edit" title="Chỉnh sửa vai trò & slots">
                 ✏️ Sửa
               </button>
               ${!u.isSuperAdmin ? `
-                <button onclick="AdminPanel.removeAssign('${u.steamId}')" class="btn-action-sm btn-action-del" title="Xóa đưa về mặc định">
+                <button onclick="AdminPanel.removeAssign('${u.steamId}')" class="btn-action-sm btn-action-del" title="Xóa đưa về mặc định (hết hạn / thu hồi)">
                   🗑️ Xóa
                 </button>
               ` : ''}
-              <a href="gara.html?steamId=${u.steamId}" class="btn-action-sm" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #6ee7b7; text-decoration: none;" title="Soi Gara">
+              <a href="gara.html?steamId=${u.steamId}" class="btn-action-sm" style="background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #7dd3fc; text-decoration: none;" title="Xem Gara Khủng Long">
                 🦖 Gara
               </a>
             </td>
