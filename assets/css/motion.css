@@ -1,0 +1,27 @@
+/* Native navigation keeps URLs, browser history and link behavior intact. */
+@view-transition { navigation: auto; }
+body > main.container { view-transition-name: st25-content; }
+body > header.site-header { view-transition-name: st25-header; }
+::view-transition { pointer-events: none; }
+::view-transition-group(*) { animation-duration: 220ms; }
+::view-transition-old(root) { animation: st25-fade-out 140ms ease both; }
+::view-transition-new(root) { animation: st25-fade-in 200ms ease both; }
+::view-transition-group(st25-header),
+::view-transition-new(st25-header) { animation: none; }
+::view-transition-old(st25-header) { display: none; }
+::view-transition-old(st25-content) { animation: st25-fade-out 120ms ease both; }
+::view-transition-new(st25-content) {
+  animation: st25-content-in 220ms cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes st25-fade-out { to { opacity: 0; } }
+@keyframes st25-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes st25-content-in {
+  from { opacity: .25; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

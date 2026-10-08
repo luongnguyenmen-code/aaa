@@ -350,6 +350,8 @@
   </style>
   <link rel="stylesheet" href="assets/css/buttons.css?v=20261009-audit">
   <link rel="stylesheet" href="assets/css/fonts.css?v=20261009-audit">
+  <link rel="stylesheet" href="assets/css/motion.css?v=20261009">
+  <script src="assets/js/motion.js?v=20261009" defer></script>
 </head>
 <body>
 
@@ -1440,6 +1442,8 @@
         const contentRoles = document.getElementById('tab-content-roles');
         const contentCombat = document.getElementById('tab-content-combat');
 
+        const targetContent = tabName === 'combat' ? contentCombat : contentRoles;
+        const changed = targetContent && targetContent.style.display === 'none';
         if (tabName === 'combat') {
           if (btnRoles) btnRoles.classList.remove('active');
           if (btnCombat) btnCombat.classList.add('active');
@@ -1455,6 +1459,7 @@
             CombatInspector.stopLive();
           }
         }
+        if (changed) window.ST25Motion?.enter(targetContent);
       },
 
       filterKeyword: '',

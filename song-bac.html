@@ -524,6 +524,8 @@
   </style>
   <link rel="stylesheet" href="assets/css/buttons.css?v=20261009-audit">
   <link rel="stylesheet" href="assets/css/fonts.css?v=20261009-audit">
+  <link rel="stylesheet" href="assets/css/motion.css?v=20261009">
+  <script src="assets/js/motion.js?v=20261009" defer></script>
 </head>
 <body>
 
@@ -1074,6 +1076,8 @@
     }
 
     function switchGame(game) {
+      const target = document.getElementById('game-' + game + '-sec');
+      if (!target || target.style.display !== 'none') return;
       const tabs = document.querySelectorAll('.casino-tab-btn');
       tabs.forEach(t => t.classList.remove('active'));
       document.getElementById('game-taixiu-sec').style.display = 'none';
@@ -1090,6 +1094,7 @@
         tabs[2].classList.add('active');
         document.getElementById('game-race-sec').style.display = 'block';
       }
+      window.ST25Motion?.enter(target);
     }
 
     // ==========================================
