@@ -1,7 +1,7 @@
 {
   "userWallets": {
     "76561198636766540": 189,
-    "76561198354289789": 7218,
+    "76561198354289789": 7389,
     "76561198838095252": 586,
     "76561199229687125": 22,
     "76561198789527189": 302
@@ -916,7 +916,7 @@
   "lockedInviteCodes": [],
   "userCustomInviteCodes": {},
   "casinoStats": {
-    "totalTreasury": 18475,
+    "totalTreasury": 18953,
     "taiXiuHistory": [
       {
         "dice": [
@@ -1248,6 +1248,108 @@
           "rex",
           "cua"
         ]
+      }
+    ],
+    "raceHistory": [
+      {
+        "winnerId": "carno",
+        "winnerName": "Carnotaurus (Tên Lửa Đỏ)",
+        "time": 1791458088662
+      },
+      {
+        "winnerId": "cera",
+        "winnerName": "Ceratosaurus (Độc Nhãn Vương)",
+        "time": 1791458087975
+      },
+      {
+        "winnerId": "cera",
+        "winnerName": "Ceratosaurus (Độc Nhãn Vương)",
+        "time": 1791458087533
+      },
+      {
+        "winnerId": "pachy",
+        "winnerName": "Pachycephalosaurus (Thiết Đầu Công)",
+        "time": 1791458087083
+      },
+      {
+        "winnerId": "pachy",
+        "winnerName": "Pachycephalosaurus (Thiết Đầu Công)",
+        "time": 1791458086187
+      },
+      {
+        "winnerId": "pachy",
+        "winnerName": "Pachycephalosaurus (Thiết Đầu Công)",
+        "time": 1791458061334
+      },
+      {
+        "winnerId": "galli",
+        "winnerName": "Gallimimus (Gà Gió Lốc)",
+        "time": 1791458056196
+      },
+      {
+        "winnerId": "cera",
+        "winnerName": "Ceratosaurus (Độc Nhãn Vương)",
+        "time": 1791458055208
+      },
+      {
+        "winnerId": "galli",
+        "winnerName": "Gallimimus (Gà Gió Lốc)",
+        "time": 1791458054709
+      },
+      {
+        "winnerId": "pachy",
+        "winnerName": "Pachycephalosaurus (Thiết Đầu Công)",
+        "time": 1791458053732
+      },
+      {
+        "winnerId": "carno",
+        "winnerName": "Carnotaurus (Tên Lửa Đỏ)",
+        "time": 1791458053285
+      },
+      {
+        "winnerId": "carno",
+        "winnerName": "Carnotaurus (Tên Lửa Đỏ)",
+        "time": 1791458052313
+      },
+      {
+        "winnerId": "carno",
+        "winnerName": "Carnotaurus (Tên Lửa Đỏ)",
+        "time": 1791458051389
+      },
+      {
+        "winnerId": "carno",
+        "winnerName": "Carnotaurus (Tên Lửa Đỏ)",
+        "time": 1791458050720
+      },
+      {
+        "winnerId": "deino",
+        "winnerName": "Deinosuchus (Thần Cá Sấu)",
+        "time": 1791458049810
+      },
+      {
+        "winnerId": "carno",
+        "winnerName": "Carnotaurus (Tên Lửa Đỏ)",
+        "time": 1791458049151
+      },
+      {
+        "winnerId": "galli",
+        "winnerName": "Gallimimus (Gà Gió Lốc)",
+        "time": 1791458048230
+      },
+      {
+        "winnerId": "carno",
+        "winnerName": "Carnotaurus (Tên Lửa Đỏ)",
+        "time": 1791458047338
+      },
+      {
+        "winnerId": "carno",
+        "winnerName": "Carnotaurus (Tên Lửa Đỏ)",
+        "time": 1791458046387
+      },
+      {
+        "winnerId": "galli",
+        "winnerName": "Gallimimus (Gà Gió Lốc)",
+        "time": 1791458045642
       }
     ]
   },

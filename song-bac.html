@@ -834,7 +834,7 @@
               <span class="lane-num-badge" style="border: 1px solid #fbbf24; color: #fbbf24;">1</span>
               <div>
                 <div class="lane-racer-name">Gallimimus</div>
-                <div class="lane-racer-odds">x2.2 (Gà Gió Lốc)</div>
+                <div class="lane-racer-odds">x2.0 (Gà Gió Lốc)</div>
               </div>
             </div>
             <div class="race-lane-field">
@@ -848,7 +848,7 @@
               <span class="lane-num-badge" style="border: 1px solid #f87171; color: #f87171;">2</span>
               <div>
                 <div class="lane-racer-name">Carnotaurus</div>
-                <div class="lane-racer-odds">x3.0 (Tên Lửa Đỏ)</div>
+                <div class="lane-racer-odds">x2.6 (Tên Lửa Đỏ)</div>
               </div>
             </div>
             <div class="race-lane-field">
@@ -862,7 +862,7 @@
               <span class="lane-num-badge" style="border: 1px solid #60a5fa; color: #60a5fa;">3</span>
               <div>
                 <div class="lane-racer-name">Pachycephalo</div>
-                <div class="lane-racer-odds">x4.5 (Thiết Đầu)</div>
+                <div class="lane-racer-odds">x3.8 (Thiết Đầu)</div>
               </div>
             </div>
             <div class="race-lane-field">
@@ -876,7 +876,7 @@
               <span class="lane-num-badge" style="border: 1px solid #34d399; color: #34d399;">4</span>
               <div>
                 <div class="lane-racer-name">Ceratosaurus</div>
-                <div class="lane-racer-odds">x6.0 (Độc Nhãn)</div>
+                <div class="lane-racer-odds">x5.0 (Độc Nhãn)</div>
               </div>
             </div>
             <div class="race-lane-field">
@@ -890,7 +890,7 @@
               <span class="lane-num-badge" style="border: 1px solid #c084fc; color: #c084fc;">5</span>
               <div>
                 <div class="lane-racer-name">Deinosuchus</div>
-                <div class="lane-racer-odds">x10.0 (Cá Sấu Thần)</div>
+                <div class="lane-racer-odds">x7.5 (Cá Sấu Thần)</div>
               </div>
             </div>
             <div class="race-lane-field">
@@ -917,35 +917,35 @@
         <div class="race-bet-card" id="card-bet-galli" onclick="addRaceBet('galli')">
           <div class="racer-avatar">🏃</div>
           <div class="racer-title">Gallimimus</div>
-          <div class="racer-odds">1 ĂN 2.2</div>
+          <div class="racer-odds">1 ĂN 2.0</div>
           <div class="racer-current-bet">Cược: <strong id="race-bet-val-galli">0</strong> 🌾</div>
         </div>
         <!-- Carno -->
         <div class="race-bet-card" id="card-bet-carno" onclick="addRaceBet('carno')">
           <div class="racer-avatar">🦖</div>
           <div class="racer-title">Carnotaurus</div>
-          <div class="racer-odds">1 ĂN 3.0</div>
+          <div class="racer-odds">1 ĂN 2.6</div>
           <div class="racer-current-bet">Cược: <strong id="race-bet-val-carno">0</strong> 🌾</div>
         </div>
         <!-- Pachy -->
         <div class="race-bet-card" id="card-bet-pachy" onclick="addRaceBet('pachy')">
           <div class="racer-avatar">🦘</div>
           <div class="racer-title">Pachycephalo</div>
-          <div class="racer-odds">1 ĂN 4.5</div>
+          <div class="racer-odds">1 ĂN 3.8</div>
           <div class="racer-current-bet">Cược: <strong id="race-bet-val-pachy">0</strong> 🌾</div>
         </div>
         <!-- Cera -->
         <div class="race-bet-card" id="card-bet-cera" onclick="addRaceBet('cera')">
           <div class="racer-avatar">🐊</div>
           <div class="racer-title">Ceratosaurus</div>
-          <div class="racer-odds">1 ĂN 6.0</div>
+          <div class="racer-odds">1 ĂN 5.0</div>
           <div class="racer-current-bet">Cược: <strong id="race-bet-val-cera">0</strong> 🌾</div>
         </div>
         <!-- Deino -->
         <div class="race-bet-card" id="card-bet-deino" onclick="addRaceBet('deino')">
           <div class="racer-avatar">🦆</div>
           <div class="racer-title">Deinosuchus</div>
-          <div class="racer-odds" style="color: #fbbf24; background: rgba(245, 158, 11, 0.15);">1 ĂN 10.0</div>
+          <div class="racer-odds" style="color: #fbbf24; background: rgba(245, 158, 11, 0.15);">1 ĂN 7.5</div>
           <div class="racer-current-bet">Cược: <strong id="race-bet-val-deino">0</strong> 🌾</div>
         </div>
       </div>
@@ -1010,11 +1010,11 @@
     let raceChip = 10;
     const raceBets = { galli: 0, carno: 0, pachy: 0, cera: 0, deino: 0 };
     const raceInfo = {
-      galli: { name: 'Gallimimus (Gà Gió Lốc)', icon: '🏃', odds: 2.2, color: '#fbbf24' },
-      carno: { name: 'Carnotaurus (Tên Lửa Đỏ)', icon: '🦖', odds: 3.0, color: '#f87171' },
-      pachy: { name: 'Pachycephalosaurus (Thiết Đầu)', icon: '🦘', odds: 4.5, color: '#60a5fa' },
-      cera: { name: 'Ceratosaurus (Độc Nhãn)', icon: '🐊', odds: 6.0, color: '#34d399' },
-      deino: { name: 'Deinosuchus (Thần Cá Sấu)', icon: '🦆', odds: 10.0, color: '#c084fc' }
+      galli: { name: 'Gallimimus (Gà Gió Lốc)', icon: '🏃', odds: 2.0, color: '#fbbf24' },
+      carno: { name: 'Carnotaurus (Tên Lửa Đỏ)', icon: '🦖', odds: 2.6, color: '#f87171' },
+      pachy: { name: 'Pachycephalosaurus (Thiết Đầu)', icon: '🦘', odds: 3.8, color: '#60a5fa' },
+      cera: { name: 'Ceratosaurus (Độc Nhãn)', icon: '🐊', odds: 5.0, color: '#34d399' },
+      deino: { name: 'Deinosuchus (Thần Cá Sấu)', icon: '🦆', odds: 7.5, color: '#c084fc' }
     };
     let isRacing = false;
 

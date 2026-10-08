@@ -4821,11 +4821,11 @@ app.post('/api/casino/dino-race/play', async (req, res) => {
   }
 
   const racers = [
-    { id: 'galli', name: 'Gallimimus (Gà Gió Lốc)', icon: '🏃', odds: 2.2 },
-    { id: 'carno', name: 'Carnotaurus (Tên Lửa Đỏ)', icon: '🦖', odds: 3.0 },
-    { id: 'pachy', name: 'Pachycephalosaurus (Thiết Đầu Công)', icon: '🦘', odds: 4.5 },
-    { id: 'cera', name: 'Ceratosaurus (Độc Nhãn Vương)', icon: '🐊', odds: 6.0 },
-    { id: 'deino', name: 'Deinosuchus (Thần Cá Sấu)', icon: '🦆', odds: 10.0 }
+    { id: 'galli', name: 'Gallimimus (Gà Gió Lốc)', icon: '🏃', odds: 2.0, baseWeight: 42 },
+    { id: 'carno', name: 'Carnotaurus (Tên Lửa Đỏ)', icon: '🦖', odds: 2.6, baseWeight: 28 },
+    { id: 'pachy', name: 'Pachycephalosaurus (Thiết Đầu Công)', icon: '🦘', odds: 3.8, baseWeight: 16 },
+    { id: 'cera', name: 'Ceratosaurus (Độc Nhãn Vương)', icon: '🐊', odds: 5.0, baseWeight: 10 },
+    { id: 'deino', name: 'Deinosuchus (Thần Cá Sấu)', icon: '🦆', odds: 7.5, baseWeight: 4 }
   ];
 
   let totalBet = 0;
@@ -4850,28 +4850,74 @@ app.post('/api/casino/dino-race/play', async (req, res) => {
   // 1. Trừ Lúa trực tiếp trên IslePilot Cloud
   await modifyLivePlayerBalance(steamId, -totalBet, `dino_race_bet_${totalBet}`);
 
-  // 2. Thuật toán: Người chơi chỉ thắng 30%, Nhà cái thắng 70%
-  const playerWins = Math.random() < CASINO_PLAYER_WIN_RATE;
-  const betRacerIds = Object.keys(cleanedBets);
-  const unbetRacerIds = racers.map(r => r.id).filter(id => !cleanedBets[id]);
+  // 2. Thuật toán Đua Thú ST25: Siết chặt tỷ lệ, mô phỏng thể lực & tốc độ thực tế
+  // Phân tích kết quả lãi/lỗ của từng con nếu về Nhất
+  const outcomes = racers.map(r => {
+    const betOnR = cleanedBets[r.id] || 0;
+    const payout = betOnR > 0 ? Math.floor(betOnR * r.odds * 0.95) : 0;
+    const netProfit = payout - totalBet;
+    return {
+      racer: r,
+      bet: betOnR,
+      payout,
+      netProfit,
+      isPlayerProfit: netProfit > 0
+    };
+  });
+
+  const playerProfitableOutcomes = outcomes.filter(o => o.isPlayerProfit);
+  const houseProfitableOutcomes = outcomes.filter(o => !o.isPlayerProfit);
+
+  // Tỷ lệ người chơi được lãi ròng tối đa chỉ 20% (Nhà cái kiểm soát 80%)
+  const RACE_WIN_RATE = 0.20;
+  let allowPlayerProfit = (Math.random() < RACE_WIN_RATE) && (playerProfitableOutcomes.length > 0);
 
   let winnerId = null;
-  if (playerWins && betRacerIds.length > 0) {
-    // Cho con người chơi cược (ưu tiên con cược nhiều nhất) về Nhất
-    winnerId = betRacerIds.sort((a,b) => (cleanedBets[b]||0) - (cleanedBets[a]||0))[0];
-  } else {
-    // Cho con người chơi KHÔNG CƯỢC về Nhất
-    if (unbetRacerIds.length > 0) {
-      winnerId = unbetRacerIds[Math.floor(Math.random() * unbetRacerIds.length)];
-    } else {
-      // Nếu cược cả 5 con, chọn con cược ít nhất
-      winnerId = racers.map(r => r.id).sort((a,b) => (cleanedBets[a]||0) - (cleanedBets[b]||0))[0];
+
+  if (allowPlayerProfit) {
+    // KHÔNG tự động lấy con cược nhiều nhất!
+    // Quay ngẫu nhiên CÓ TRỌNG SỐ theo baseWeight tự nhiên của từng con:
+    const totalWinWeight = playerProfitableOutcomes.reduce((acc, o) => acc + o.racer.baseWeight, 0);
+    let rand = Math.random() * totalWinWeight;
+    for (const o of playerProfitableOutcomes) {
+      if (rand <= o.racer.baseWeight) {
+        // Bộ lọc an toàn: nếu con này mang lại số tiền thắng quá lớn (> 1000 Lúa), chỉ cho nổ với xác suất 4%
+        if (o.netProfit > 1000 && Math.random() > 0.04) {
+          allowPlayerProfit = false;
+          break;
+        }
+        winnerId = o.racer.id;
+        break;
+      }
+      rand -= o.racer.baseWeight;
     }
   }
 
-  // Sắp xếp thứ hạng (Rankings 1st -> 5th)
-  const remainingIds = racers.map(r => r.id).filter(id => id !== winnerId).sort(() => Math.random() - 0.5);
-  const rankings = [winnerId, ...remainingIds];
+  // Nếu nhà cái thắng hoặc bị thu hồi vé nổ lớn:
+  if (!winnerId || !allowPlayerProfit) {
+    const candidateList = houseProfitableOutcomes.length > 0 ? houseProfitableOutcomes : outcomes;
+    const totalHouseWeight = candidateList.reduce((acc, o) => acc + o.racer.baseWeight, 0);
+    let rand = Math.random() * totalHouseWeight;
+    for (const o of candidateList) {
+      if (rand <= o.racer.baseWeight) {
+        winnerId = o.racer.id;
+        break;
+      }
+      rand -= o.racer.baseWeight;
+    }
+    if (!winnerId) {
+      winnerId = candidateList[0].racer.id;
+    }
+  }
+
+  // Sắp xếp thứ hạng (Rankings 1st -> 5th) dựa trên trọng số tốc độ tự nhiên + ngẫu nhiên:
+  const remaining = racers.filter(r => r.id !== winnerId);
+  remaining.sort((a, b) => {
+    const scoreA = a.baseWeight + (Math.random() * 20);
+    const scoreB = b.baseWeight + (Math.random() * 20);
+    return scoreB - scoreA;
+  });
+  const rankings = [winnerId, ...remaining.map(r => r.id)];
 
   // 3. Tính tiền thưởng
   const winningRacer = racers.find(r => r.id === winnerId);
