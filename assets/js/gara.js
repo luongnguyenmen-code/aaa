@@ -46,6 +46,10 @@ function updateGarageDinoIcon(id, species) {
 }
 // ──────────────────────────────────────────────────────────────────────────
 
+function escapeGarageHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+}
+
 const Garage = {
   activeDino: null,
   slots: [],
@@ -476,55 +480,41 @@ const Garage = {
       }
 
       const isPrime = Boolean(s.isPrimeElder);
-      const mutHtml = (s.mutations && s.mutations.length > 0)
-        ? s.mutations.map(m => `<span class="mutation-gem">🧬 ${m}</span>`).join(' ')
-        : '<span style="font-size: 0.75rem; color: #64748b;">Thuần chủng (Không đột biến)</span>';
-
+      const species = escapeGarageHtml(s.species || 'Khủng long');
+      const growth = Math.max(0, Math.min(100, Number(s.growth) || 0));
+      const mutations = Array.isArray(s.mutations) ? s.mutations : [];
+      const mutHtml = mutations.length
+        ? mutations.map(m => '<span class="mutation-gem">' + escapeGarageHtml(m) + '</span>').join('')
+        : '<span class="garage-mutation-empty">Thuần chủng · Không đột biến</span>';
 
       return `
-        <div class="slot-card dino-card-tcg ${isPrime ? 'holo-prime' : ''}">
-          <span class="slot-badge-num">Ô #${s.slot}</span>
-          <div style="position: relative; z-index: 1;">
-            <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 10px;">
-              <div style="width:70px;height:70px;flex-shrink:0;">${getDinoImage(s.species, '70px', 'lazy')}</div>
-              <div>
-                <h4 style="color: #fff; margin: 0 0 4px; font-size: 1.25rem; font-weight: 800;">${s.species}</h4>
-                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                  <span class="rule-badge badge-allow" style="font-size: 0.72rem; padding: 2px 7px;">${s.gender}</span>
-                  ${s.isPrimeElder ? '<span class="rule-badge badge-gold" style="font-size: 0.72rem; padding: 2px 7px;">👑 PRIME</span>' : ''}
-                  <span style="font-size: 0.82rem; color: #38bdf8; font-weight: 800;">${s.growth}% Growth</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Vital mini track -->
-            <div class="vital-meter" style="padding: 6px 8px; margin-bottom: 10px;">
-              <div class="vital-label" style="font-size: 0.75rem;">
-                <span>Tiến trình trưởng thành</span>
-                <span style="color: #a855f7;">${s.growth}%</span>
-              </div>
-              <div class="vital-track" style="height: 6px;">
-                <div class="vital-bar bar-growth" style="width: ${s.growth}%"></div>
-              </div>
-            </div>
-
-            <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.05);">
-              <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px; font-weight: 700;">Đột biến gen (Mutations):</div>
-              <div style="display: flex; gap: 4px; flex-wrap: wrap;">${mutHtml}</div>
-            </div>
-
-            <div style="font-size: 0.74rem; color: #94a3b8; margin-bottom: 14px; display: flex; justify-content: space-between;">
-              <span>🕒 Lưu: ${s.stored_at || 'Mới lưu'}</span>
-              <span style="color: #10b981;">Cloud IslePilot</span>
-            </div>
+        <article class="slot-card dino-card-tcg garage-storage-card">
+          <div class="garage-card-hero">
+            <span class="slot-badge-num">Ô #${escapeGarageHtml(s.slot)}</span>
+            ${isPrime ? '<span class="garage-prime-badge">👑 PRIME</span>' : ''}
+            ${getDinoImage(s.species, '224px', 'lazy')}
           </div>
-
-          <div style="position: relative; z-index: 1; display: flex; flex-direction: column; gap: 8px;">
-            <button onclick="Garage.startRestoreChanneling('${s.id}', '${s.species}', ${s.growth})" class="btn btn-primary btn-sm" style="width: 100%; font-weight: 800; padding: 11px 14px; font-size: 0.92rem; background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);">
-              ⚔️ Đưa Ra Đảo (Restore 30s)
+          <div class="garage-card-info">
+            <span class="garage-card-eyebrow">ISLEPILOT CLOUD</span>
+            <div class="garage-card-name-row">
+              <h4 class="garage-card-name">${species}</h4>
+              <span class="garage-card-gender">${escapeGarageHtml(s.gender || '—')}</span>
+            </div>
+            <div class="garage-growth">
+              <div class="garage-growth-label"><span>Tiến trình trưởng thành</span><strong>${growth}%</strong></div>
+              <div class="garage-growth-track"><span style="width:${growth}%"></span></div>
+            </div>
+            <details class="garage-mutations">
+              <summary>Đột biến gen <span>${mutations.length ? mutations.length + ' gen' : 'Thuần chủng'}</span></summary>
+              <div class="garage-mutation-list">${mutHtml}</div>
+            </details>
+            <small class="garage-card-stored" title="${escapeGarageHtml(s.stored_at || 'Mới lưu')}">Lưu: ${escapeGarageHtml(s.stored_at || 'Mới lưu')}</small>
+            <button class="btn btn-primary garage-restore-btn" data-id="${escapeGarageHtml(s.id)}" data-species="${species}" data-growth="${growth}"
+              onclick="Garage.startRestoreChanneling(this.dataset.id, this.dataset.species, Number(this.dataset.growth))">
+              Đưa Ra Đảo <span>RESTORE · 30S</span>
             </button>
           </div>
-        </div>
+        </article>
       `;
     }).join('');
   },

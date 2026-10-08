@@ -1,0 +1,80 @@
+/* Storage cards: large dinosaur artwork, compact information and matched CTA. */
+#garage-slots-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  align-items: start;
+  gap: 18px;
+}
+body.st25-garage #garage-slots-grid .garage-storage-card {
+  --storage-border: rgba(255,177,111,.6);
+  display: block !important;
+  padding: 0 !important;
+  border: 1px solid var(--storage-border) !important;
+  border-radius: 12px !important;
+  background: #111112 !important;
+  box-shadow: 0 5px 16px #0004 !important;
+}
+body.st25-garage #garage-slots-grid .garage-storage-card:hover {
+  border-color: #ffdc9d !important;
+  box-shadow: 0 5px 16px #0004 !important;
+}
+.garage-card-hero {
+  position: relative;
+  height: 234px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 18px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #191416, #0a0a0b);
+}
+.garage-card-hero .garage-dino-visual { max-width: 100%; }
+.garage-card-hero .slot-badge-num { z-index: 2; top: 12px; right: 12px; }
+.garage-prime-badge {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  left: 12px;
+  padding: 3px 8px;
+  border: 1px solid #ffb16f66;
+  border-radius: 20px;
+  font-size: .65rem;
+  letter-spacing: .08em;
+  color: #ffca8c;
+  background: #15100ed9;
+}
+.garage-card-info { padding: 14px 16px 16px; }
+.garage-card-eyebrow {
+  color: #ffb16f;
+  font-size: .62rem;
+  font-weight: 600;
+  letter-spacing: .16em;
+}
+.garage-card-name-row { display: flex; align-items: baseline; gap: 8px; margin: 3px 0 10px; }
+.garage-card-name { flex: 1; min-width: 0; margin: 0; color: #f5f5f5; font-size: 1.08rem; line-height: 1.25; overflow-wrap: anywhere; }
+.garage-card-gender { color: #999ca5; font-size: .66rem; }
+.garage-growth-label { display: flex; justify-content: space-between; gap: 8px; font-size: .66rem; color: #9da0aa; }
+.garage-growth-label strong { color: #ffca8c; font-weight: 600; }
+.garage-growth-track { height: 3px; background: #ffffff12; border-radius: 4px; overflow: hidden; margin-top: 5px; }
+.garage-growth-track span { display: block; height: 100%; background: #ffb16f; border-radius: inherit; }
+.garage-mutations { margin-top: 9px; border-top: 1px solid #ffffff0c; padding-top: 7px; font-size: .66rem; color: #a1a4ac; }
+.garage-mutations summary { cursor: pointer; padding: 4px 0; }
+.garage-mutations summary span { float: right; color: #c9c9ce; }
+.garage-mutations summary:focus-visible { outline: 2px solid #ffdc9d; outline-offset: 2px; }
+.garage-mutation-list { display: flex; flex-wrap: wrap; gap: 4px; padding: 7px 0 2px; }
+.garage-mutation-list .mutation-gem { padding: 2px 5px; font-size: .62rem; box-shadow: none; overflow-wrap: anywhere; max-width: 100%; }
+.garage-card-stored { display: block; margin: 5px 0 9px; font-size: .59rem; color: #777b86; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.st25-garage .garage-storage-card .garage-restore-btn {
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 10px;
+  gap: 8px;
+  justify-content: space-between;
+  border-radius: 7px;
+  border-color: var(--storage-border) !important;
+  font-size: .74rem;
+}
+body.st25-garage .garage-storage-card .garage-restore-btn:hover { border-color: #ffdc9d !important; }
+.garage-restore-btn span { font-size: .6rem; font-weight: 500; letter-spacing: .04em; }
+@media (max-width: 380px) {
+  .garage-card-hero { height: 218px; }
+}
