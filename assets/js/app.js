@@ -12,7 +12,6 @@ const App = {
     this.renderEnhancedNav();
     this.renderPlayerHUD();
     this.renderMobileNavigation();
-    this.init3DTiltCards();
     this.updateUI();
 
     // Tự động làm mới thời tiết & ngày/đêm mỗi 30s
@@ -452,36 +451,7 @@ const App = {
   // ==========================================
   // ITEM 3: 3D PERSPECTIVE TILT FOR TCG DINO CARDS
   // ==========================================
-  init3DTiltCards() {
-    const bindTilt = (el) => {
-      if (el.dataset.tiltBound) return;
-      el.dataset.tiltBound = 'true';
-
-      el.addEventListener('mousemove', (e) => {
-        const rect = el.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-        const rotateX = ((y - centerY) / centerY) * -7;
-        const rotateY = ((x - centerX) / centerX) * 7;
-
-        el.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-5px)`;
-      });
-
-      el.addEventListener('mouseleave', () => {
-        el.style.transform = '';
-      });
-    };
-
-    document.querySelectorAll('.dino-card-tcg, .slot-card:not(.empty-slot), .dino-preview-card').forEach(bindTilt);
-
-    // Watch for dynamically added dino cards
-    const observer = new MutationObserver(() => {
-      document.querySelectorAll('.dino-card-tcg, .slot-card:not(.empty-slot), .dino-preview-card').forEach(bindTilt);
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-  },
+  // Card lift and dinosaur glow are handled by CSS; no pointer tracking is needed.
 
   updateUI() {
     const isLoggedIn = !!(this.user && this.user.linked && this.user.steam_id);

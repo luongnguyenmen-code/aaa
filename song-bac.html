@@ -8,7 +8,7 @@
     // Tự động kiểm tra: nếu Sòng Bạc đang tắt trên server thì chuyển hướng về trang chủ
     fetch('/api/casino/stats').then(r => { if (r.status === 404) window.location.replace('index.html'); }).catch(() => {});
   </script>
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261009-smooth-nav">
   <style>
     .casino-tabs {
       display: flex;
@@ -994,7 +994,7 @@
 
   </main>
 
-  <script src="assets/js/app.js"></script>
+  <script src="assets/js/app.js?v=20261009-smooth-nav"></script>
   <script>
     let currentSteamId = null;
     let currentBalance = 0;
