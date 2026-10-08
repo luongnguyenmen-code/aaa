@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sòng Bạc ST25 — Tài Xỉu & Bầu Cua Dino 🎲🦖</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .casino-tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 25px;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 12px;
+    }
+    .casino-tab-btn {
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(20, 26, 21, 0.85);
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .casino-tab-btn:hover {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fff;
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+    .casino-tab-btn.active {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #000;
+      border-color: #fbbf24;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+    }
+
+    /* Arena Container */
+    .casino-arena {
+      background: rgba(15, 22, 17, 0.92);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: var(--radius-md);
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+      margin-bottom: 30px;
+      position: relative;
+      overflow: hidden;
+    }
+    .casino-arena::before {
+      content: "";
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Dice Plate & Cup Area */
+    .plate-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 15px 0 30px 0;
+    }
+    .dice-plate {
+      width: 280px;
+      height: 140px;
+      background: radial-gradient(ellipse, #1c2720 0%, #0d1410 70%, #060a08 100%);
+      border: 6px solid #4a3818;
+      border-radius: 50%;
+      box-shadow: inset 0 0 25px rgba(0,0,0,0.9), 0 8px 25px rgba(0,0,0,0.8), 0 0 15px rgba(245, 158, 11, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      position: relative;
+    }
+    .dice-plate.shaking {
+      animation: plateShake 0.6s infinite alternate;
+    }
+    @keyframes plateShake {
+      0% { transform: translate(2px, 1px) rotate(0deg); }
+      25% { transform: translate(-3px, -2px) rotate(-1deg); }
+      50% { transform: translate(3px, 2px) rotate(1deg); }
+      75% { transform: translate(-2px, 1px) rotate(0deg); }
+      100% { transform: translate(2px, -2px) rotate(1deg); }
+    }
+
+    /* Dice Visuals */
+    .dice-cube {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #fffdfa 0%, #e2e8f0 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #0f172a;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.6), inset 0 0 4px rgba(255,255,255,0.8);
+      border: 1px solid #cbd5e1;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .dice-cube.rolling {
+      animation: diceRoll 0.5s infinite linear;
+    }
+    @keyframes diceRoll {
+      0% { transform: rotate(0deg) scale(0.9); }
+      50% { transform: rotate(180deg) scale(1.1); }
+      100% { transform: rotate(360deg) scale(0.9); }
+    }
+    .dice-cube.red {
+      color: #dc2626;
+    }
+
+    /* Bầu Cua Dice */
+    .baucua-cube {
+      width: 58px;
+      height: 58px;
+      background: linear-gradient(135deg, #2a382e 0%, #17221b 100%);
+      border: 2px solid #fbbf24;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.7), 0 0 10px rgba(245, 158, 11, 0.2);
+    }
+    .baucua-cube .icon {
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+    .baucua-cube .label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #fbbf24;
+      margin-top: 2px;
+    }
+
+    /* Betting Board - Tài Xỉu */
+    .taixiu-board {
+      display: grid;
+      grid-template-columns: 1fr 140px 1fr;
+      gap: 16px;
+      margin-bottom: 25px;
+    }
+    .bet-box {
+      background: rgba(22, 32, 26, 0.7);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+    .bet-box:hover {
+      border-color: rgba(245, 158, 11, 0.5);
+      background: rgba(30, 42, 34, 0.9);
+      transform: translateY(-2px);
+    }
+    .bet-box.selected {
+      border-color: #fbbf24;
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.18) 0%, rgba(30, 42, 34, 0.95) 100%);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+    }
+    .bet-box.selected::after {
+      content: "✓ ĐÃ CHỌN";
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #fbbf24;
+    }
+    .bet-box-title {
+      font-size: 1.6rem;
+      font-weight: 900;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .bet-box-odds {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #34d399;
+      background: rgba(52, 211, 153, 0.1);
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 6px;
+    }
+    .bet-box-range {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Bầu Cua Grid */
+    .baucua-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 25px;
+    }
+    .baucua-cell {
+      background: rgba(22, 32, 26, 0.7);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      padding: 16px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .baucua-cell:hover {
+      border-color: rgba(245, 158, 11, 0.4);
+      background: rgba(30, 42, 34, 0.9);
+      transform: translateY(-2px);
+    }
+    .baucua-cell.active-bet {
+      border-color: #fbbf24;
+      background: rgba(245, 158, 11, 0.12);
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+    }
+    .baucua-cell-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #fbbf24;
+      color: #000;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+
+    /* Chip controls */
+    .chip-selector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .chip-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px dashed rgba(251, 191, 36, 0.5);
+      background: #19231c;
+      color: #fbbf24;
+      font-weight: 800;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .chip-btn:hover, .chip-btn.active {
+      transform: scale(1.12);
+      background: #fbbf24;
+      color: #000;
+      border-style: solid;
+      box-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
+    }
+
+    /* History & Stats Bar */
+    .history-beads {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 10px 14px;
+      background: rgba(10, 15, 12, 0.6);
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .bead {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 900;
+      color: #fff;
+    }
+    .bead.tai { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.4); }
+    .bead.xiu { background: #3b82f6; box-shadow: 0 0 6px rgba(59, 130, 246, 0.4); }
+    .bead.bao { background: #eab308; color: #000; box-shadow: 0 0 8px rgba(234, 179, 8, 0.6); }
+
+    /* Result Toast Overlay */
+    .result-announcement {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 800;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    .result-announcement.win {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1.5px solid #10b981;
+      color: #6ee7b7;
+    }
+    .result-announcement.lose {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1.5px solid #ef4444;
+      color: #fca5a5;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a href="index.html" class="brand">
+        <span style="color: #fbbf24;">🌾 ST25</span>
+        <span class="brand-tag">🎲 SÒNG BẠC</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="index.html" class="nav-link">🌾 Trang chủ</a></li>
+        <li><a href="bando.html" class="nav-link">🗺️ Bản đồ</a></li>
+        <li><a href="nhiem-vu.html" class="nav-link">🌾 Kho Lúa</a></li>
+        <li><a href="song-bac.html" class="nav-link active">🎲 Sòng Bạc</a></li>
+        <li><a href="giao-dich.html" class="nav-link">⚖️ Giao Dịch</a></li>
+        <li><a href="hom-qua.html" class="nav-link">🎁 Mở Hòm</a></li>
+        <li><a href="gara.html" class="nav-link">🦖 Gara</a></li>
+        <li><a href="skin.html" class="nav-link">🎨 Skin</a></li>
+        <li><a href="tha-xac.html" class="nav-link">🥩 Thả Xác</a></li>
+        <li><a href="moi-ban.html" class="nav-link">👥 Mời Bạn</a></li>
+        <li><a href="ho-tro.html" class="nav-link">🆘 Hỗ Trợ</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="lien-ket-steam.html" class="btn btn-secondary btn-sm" id="nav-btn-user">Tài Khoản Của Tôi</a>
+        <a href="https://discord.gg/3xCrA6VyY" target="_blank" class="btn btn-primary btn-sm">Discord ST25</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container" style="padding: 35px 20px; max-width: 1040px;">
+
+    <!-- Top Banner: User Balance & Server Treasury -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 25px;">
+      <!-- Player Wallet -->
+      <div class="card" style="padding: 20px; display: flex; align-items: center; justify-content: space-between; border-color: rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(20, 28, 22, 0.95), rgba(30, 40, 32, 0.9));">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <img id="user-avatar" src="https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #fbbf24;">
+          <div>
+            <div id="user-name" style="font-weight: 800; font-size: 1.05rem; color: #fff;">Đang kết nối...</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted);" id="user-steam-id">SteamID: ---</div>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 0.75rem; color: #fef08a; font-weight: 700; text-transform: uppercase;">🌾 Ví Lúa Live</div>
+          <div id="user-lua-balance" style="font-size: 1.55rem; font-weight: 900; color: #fbbf24; text-shadow: 0 0 12px rgba(245, 158, 11, 0.4);">
+            0 🌾
+          </div>
+        </div>
+      </div>
+
+      <!-- Server Treasury Pool (Kho Bạc Làng ST25) -->
+      <div class="card" style="padding: 20px; display: flex; align-items: center; justify-content: space-between; border-color: rgba(16, 185, 129, 0.35); background: linear-gradient(135deg, rgba(16, 26, 20, 0.95), rgba(22, 36, 28, 0.9));">
+        <div>
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+            <span style="font-size: 1.2rem;">🏛️</span>
+            <span style="font-weight: 800; color: #6ee7b7; font-size: 0.95rem;">KHO BẠC LÀNG ST25</span>
+          </div>
+          <div style="font-size: 0.76rem; color: var(--text-muted);">Quỹ thu hồi Lúa bảo trì & sự kiện server</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 0.75rem; color: #a7f3d0; font-weight: 700;">TỔNG LÚA ĐÃ THU HỒI</div>
+          <div id="server-treasury-amount" style="font-size: 1.55rem; font-weight: 900; color: #34d399; text-shadow: 0 0 12px rgba(52, 211, 153, 0.35);">
+            18,450 🌾
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Casino Switcher Tabs -->
+    <div class="casino-tabs">
+      <button class="casino-tab-btn active" onclick="switchGame('taixiu')">
+        <span>🎲</span> TÀI XỈU DINO (SICBO)
+      </button>
+      <button class="casino-tab-btn" onclick="switchGame('baucua')">
+        <span>🦀</span> BẦU CUA ST25 (REX - TRIKE - DEINO)
+      </button>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- GAME 1: TÀI XỈU DINO (SICBO) -->
+    <!-- ========================================== -->
+    <section id="game-taixiu-sec" class="casino-arena">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div>
+          <h2 style="font-size: 1.35rem; color: #fff; margin-bottom: 2px;">🎲 Tài Xỉu Đảo Gateway</h2>
+          <p style="font-size: 0.82rem; color: var(--text-secondary);">Dự đoán tổng điểm 3 viên xí ngầu. Cược Ăn Thịt (11-17) hoặc Ăn Cỏ (4-10).</p>
+        </div>
+        <span class="rule-badge badge-warn">Tỉ lệ 1 : 1.95</span>
+      </div>
+
+      <!-- Soi Cầu (Recent Beads) -->
+      <div style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Lịch sử cầu gần đây (Đỏ: Tài | Xanh: Xỉu | Vàng: Bão)</span>
+          <span id="taixiu-ratio-stat" style="font-size: 0.75rem; color: #cbd5e1;">---</span>
+        </div>
+        <div id="taixiu-history-beads" class="history-beads">
+          <span style="color: var(--text-muted); font-size: 0.8rem;">Đang tải lịch sử...</span>
+        </div>
+      </div>
+
+      <!-- Dice Plate -->
+      <div class="plate-wrapper">
+        <div id="taixiu-plate" class="dice-plate">
+          <div class="dice-cube red" id="t-dice-1">4</div>
+          <div class="dice-cube" id="t-dice-2">5</div>
+          <div class="dice-cube red" id="t-dice-3">6</div>
+        </div>
+        <div id="taixiu-sum-display" style="margin-top: 12px; font-weight: 800; font-size: 1.1rem; color: #fbbf24;">
+          Tổng: 15 Điểm — [🥩 ĂN THỊT / TÀI]
+        </div>
+      </div>
+
+      <!-- Betting Boxes -->
+      <div class="taixiu-board">
+        <!-- Cửa XỈU (Ăn Cỏ) -->
+        <div id="bet-opt-xiu" class="bet-box" onclick="selectTaiXiuBet('xiu')">
+          <div class="bet-box-title" style="color: #60a5fa;">
+            <span>🥗</span> XỈU (ĂN CỎ)
+          </div>
+          <div class="bet-box-odds">1 ĂN 1.95</div>
+          <div class="bet-box-range">Tổng 4 đến 10 điểm (Trừ bão)</div>
+        </div>
+
+        <!-- Cửa BÃO (Bộ Ba) -->
+        <div id="bet-opt-bao" class="bet-box" onclick="selectTaiXiuBet('bao')">
+          <div class="bet-box-title" style="font-size: 1.25rem; color: #fbbf24;">
+            <span>⚡</span> BÃO DINO
+          </div>
+          <div class="bet-box-odds" style="color: #fbbf24; background: rgba(245, 158, 11, 0.15);">1 ĂN 25.0</div>
+          <div class="bet-box-range">Bộ 3 đồng nhất (111..666)</div>
+        </div>
+
+        <!-- Cửa TÀI (Ăn Thịt) -->
+        <div id="bet-opt-tai" class="bet-box selected" onclick="selectTaiXiuBet('tai')">
+          <div class="bet-box-title" style="color: #f87171;">
+            <span>🥩</span> TÀI (ĂN THỊT)
+          </div>
+          <div class="bet-box-odds">1 ĂN 1.95</div>
+          <div class="bet-box-range">Tổng 11 đến 17 điểm (Trừ bão)</div>
+        </div>
+      </div>
+
+      <!-- Quick Chips & Input -->
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+        <div class="chip-selector">
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-right: 4px;">Mức cược:</span>
+          <button class="chip-btn" onclick="setBetAmount(5)">5</button>
+          <button class="chip-btn active" onclick="setBetAmount(10)">10</button>
+          <button class="chip-btn" onclick="setBetAmount(25)">25</button>
+          <button class="chip-btn" onclick="setBetAmount(50)">50</button>
+          <button class="chip-btn" onclick="setBetAmount(100)">100</button>
+          <button class="chip-btn" onclick="setBetAmount(500)">500</button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; max-width: 420px; width: 100%;">
+          <input type="number" id="taixiu-bet-input" value="10" min="1" max="1000" class="form-control" style="text-align: center; font-size: 1.1rem; font-weight: 800; color: #fbbf24; background: #0f1612; border-color: rgba(245, 158, 11, 0.4);">
+          <span style="font-weight: 800; color: #fef08a;">Lúa 🌾</span>
+        </div>
+
+        <button id="btn-roll-taixiu" onclick="playTaiXiu()" class="btn btn-primary" style="padding: 14px 45px; font-size: 1.15rem; font-weight: 900; background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 20px rgba(245, 158, 11, 0.45); border-radius: 30px;">
+          🎲 LẮC BÁT & ĐẶT CƯỢC NGAY 🚀
+        </button>
+      </div>
+
+      <!-- Result Announcement -->
+      <div id="taixiu-announcement" class="result-announcement"></div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- GAME 2: BẦU CUA ST25 (DINO BẦU CUA) -->
+    <!-- ========================================== -->
+    <section id="game-baucua-sec" class="casino-arena" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div>
+          <h2 style="font-size: 1.35rem; color: #fff; margin-bottom: 2px;">🦀 Bầu Cua Khủng Long ST25</h2>
+          <p style="font-size: 0.82rem; color: var(--text-secondary);">Chọn 1 hoặc nhiều linh vật Gateway để đặt cược Lúa. Ra 1 con ăn x1, ra 2 con ăn x2, ra 3 con ăn x3!</p>
+        </div>
+        <button onclick="clearBauCuaBets()" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">
+          🧹 Xóa Hết Cược
+        </button>
+      </div>
+
+      <!-- Dice Plate (Bầu Cua) -->
+      <div class="plate-wrapper">
+        <div id="baucua-plate" class="dice-plate" style="width: 320px; gap: 18px;">
+          <div class="baucua-cube" id="bc-dice-1">
+            <span class="icon">🦖</span>
+            <span class="label">T-REX</span>
+          </div>
+          <div class="baucua-cube" id="bc-dice-2">
+            <span class="icon">🦀</span>
+            <span class="label">CUA</span>
+          </div>
+          <div class="baucua-cube" id="bc-dice-3">
+            <span class="icon">🐔</span>
+            <span class="label">GÀ</span>
+          </div>
+        </div>
+        <div id="baucua-result-display" style="margin-top: 12px; font-weight: 800; font-size: 1rem; color: #cbd5e1;">
+          Kết quả ván trước: [🦖 T-Rex] - [🦀 Cua Biển] - [🐔 Gà Rừng]
+        </div>
+      </div>
+
+      <!-- Bầu Cua 6 Cells -->
+      <div class="baucua-grid">
+        <!-- 1. T-Rex -->
+        <div class="baucua-cell" onclick="addBauCuaBet('rex')">
+          <div style="font-size: 2.3rem;">🦖</div>
+          <div style="font-weight: 800; font-size: 1rem; color: #fff; margin-top: 4px;">T-REX (BẠO CHÚA)</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Cược: <strong id="bc-bet-rex" style="color: #fbbf24;">0</strong> 🌾</div>
+        </div>
+
+        <!-- 2. Trike -->
+        <div class="baucua-cell" onclick="addBauCuaBet('trike')">
+          <div style="font-size: 2.3rem;">🦣</div>
+          <div style="font-weight: 800; font-size: 1rem; color: #fff; margin-top: 4px;">TRIKE (TAM GIÁC)</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Cược: <strong id="bc-bet-trike" style="color: #fbbf24;">0</strong> 🌾</div>
+        </div>
+
+        <!-- 3. Deinosuchus -->
+        <div class="baucua-cell" onclick="addBauCuaBet('deino')">
+          <div style="font-size: 2.3rem;">🐊</div>
+          <div style="font-weight: 800; font-size: 1rem; color: #fff; margin-top: 4px;">DEINO (CÁ SẤU)</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Cược: <strong id="bc-bet-deino" style="color: #fbbf24;">0</strong> 🌾</div>
+        </div>
+
+        <!-- 4. Cua Biển -->
+        <div class="baucua-cell" onclick="addBauCuaBet('cua')">
+          <div style="font-size: 2.3rem;">🦀</div>
+          <div style="font-weight: 800; font-size: 1rem; color: #fff; margin-top: 4px;">CUA BỜ BIỂN</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Cược: <strong id="bc-bet-cua" style="color: #fbbf24;">0</strong> 🌾</div>
+        </div>
+
+        <!-- 5. Gà Rừng -->
+        <div class="baucua-cell" onclick="addBauCuaBet('ga')">
+          <div style="font-size: 2.3rem;">🐔</div>
+          <div style="font-weight: 800; font-size: 1rem; color: #fff; margin-top: 4px;">GÀ RỪNG (AI)</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Cược: <strong id="bc-bet-ga" style="color: #fbbf24;">0</strong> 🌾</div>
+        </div>
+
+        <!-- 6. Ếch Ương -->
+        <div class="baucua-cell" onclick="addBauCuaBet('ech')">
+          <div style="font-size: 2.3rem;">🐸</div>
+          <div style="font-weight: 800; font-size: 1rem; color: #fff; margin-top: 4px;">ẾCH ƯƠNG (BULLFROG)</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Cược: <strong id="bc-bet-ech" style="color: #fbbf24;">0</strong> 🌾</div>
+        </div>
+      </div>
+
+      <!-- Chip selector for Bầu Cua -->
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+        <div class="chip-selector">
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-right: 4px;">Mệnh giá mỗi cú click:</span>
+          <button class="chip-btn" onclick="setBauCuaChip(5)">+5</button>
+          <button class="chip-btn active" onclick="setBauCuaChip(10)">+10</button>
+          <button class="chip-btn" onclick="setBauCuaChip(25)">+25</button>
+          <button class="chip-btn" onclick="setBauCuaChip(50)">+50</button>
+          <button class="chip-btn" onclick="setBauCuaChip(100)">+100</button>
+        </div>
+
+        <div style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 4px;">
+          Tổng tiền cược: <span id="bc-total-bet-display" style="color: #fbbf24; font-size: 1.3rem;">0</span> Lúa 🌾
+        </div>
+
+        <button id="btn-roll-baucua" onclick="playBauCua()" class="btn btn-primary" style="padding: 14px 45px; font-size: 1.15rem; font-weight: 900; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 20px rgba(16, 185, 129, 0.45); border-radius: 30px;">
+          🦀 XÓC BẦU CUA & MỞ BÁT 🚀
+        </button>
+      </div>
+
+      <!-- Result Announcement -->
+      <div id="baucua-announcement" class="result-announcement"></div>
+    </section>
+
+    <!-- Rules & Safety Note -->
+    <div style="background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: var(--radius-sm); padding: 16px 20px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+      <strong style="color: #fbbf24;">📜 Lưu Ý & Luật Chơi Giải Trí ST25:</strong>
+      <ul style="margin: 6px 0 0 20px;">
+        <li>Số Lúa cược và thắng cược được cộng/trừ <strong>trực tiếp vào ví game IslePilot Cloud</strong> theo thời gian thực.</li>
+        <li>Tất cả số Lúa người chơi thua sẽ được đóng góp vào <strong>Kho Bạc Làng ST25</strong> để duy trì máy chủ và tổ chức các sự kiện giải đấu cuối tuần.</li>
+        <li>Chúc anh em giải trí vui vẻ, giữ vững bản lĩnh và không "cháy túi" trên Đảo Gateway! 🦖🌾</li>
+      </ul>
+    </div>
+
+  </main>
+
+  <script src="assets/js/app.js"></script>
+  <script>
+    let currentSteamId = null;
+    let currentBalance = 0;
+    let selectedTaiXiuType = 'tai';
+    let currentTaiXiuBet = 10;
+    let isRolling = false;
+
+    // Bầu cua state
+    let bauCuaChip = 10;
+    const bauCuaBets = { rex: 0, trike: 0, deino: 0, cua: 0, ga: 0, ech: 0 };
+    const symbolMap = {
+      rex: { icon: '🦖', label: 'T-REX' },
+      trike: { icon: '🦣', label: 'TRIKE' },
+      deino: { icon: '🐊', label: 'DEINO' },
+      cua: { icon: '🦀', label: 'CUA' },
+      ga: { icon: '🐔', label: 'GÀ' },
+      ech: { icon: '🐸', label: 'ẾCH' }
+    };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Identify player
+      try {
+        const stored = localStorage.getItem('st25_steam_user');
+        if (stored) {
+          const u = JSON.parse(stored);
+          if (u && u.steam_id) currentSteamId = u.steam_id;
+        }
+      } catch (_) {}
+
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('steamId')) currentSteamId = params.get('steamId');
+
+      await refreshCasinoStats();
+    });
+
+    async function refreshCasinoStats() {
+      try {
+        let url = '/api/casino/stats';
+        if (currentSteamId) url += `?steamId=${encodeURIComponent(currentSteamId)}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          currentBalance = data.myBalance || 0;
+          document.getElementById('user-lua-balance').textContent = `${currentBalance.toLocaleString()} 🌾`;
+          document.getElementById('server-treasury-amount').textContent = `${(data.totalTreasury || 18450).toLocaleString()} 🌾`;
+
+          if (currentSteamId) {
+            document.getElementById('user-steam-id').textContent = `SteamID: ${currentSteamId}`;
+            // Load persona name if stored
+            try {
+              const u = JSON.parse(localStorage.getItem('st25_steam_user') || '{}');
+              if (u.persona_name) document.getElementById('user-name').textContent = u.persona_name;
+              else document.getElementById('user-name').textContent = `Chiến binh ${currentSteamId.slice(-4)}`;
+              if (u.avatar) document.getElementById('user-avatar').src = u.avatar;
+            } catch (_) {}
+          } else {
+            document.getElementById('user-name').textContent = 'Chưa đăng nhập Steam';
+            document.getElementById('user-steam-id').innerHTML = '<a href="lien-ket-steam.html" style="color: #fbbf24;">Bấm để liên kết Steam</a>';
+          }
+
+          renderTaiXiuHistory(data.taiXiuHistory || []);
+        }
+      } catch (err) {
+        console.error('Failed to load casino stats:', err);
+      }
+    }
+
+    function switchGame(game) {
+      const tabs = document.querySelectorAll('.casino-tab-btn');
+      tabs.forEach(t => t.classList.remove('active'));
+      document.getElementById('game-taixiu-sec').style.display = 'none';
+      document.getElementById('game-baucua-sec').style.display = 'none';
+
+      if (game === 'taixiu') {
+        tabs[0].classList.add('active');
+        document.getElementById('game-taixiu-sec').style.display = 'block';
+      } else {
+        tabs[1].classList.add('active');
+        document.getElementById('game-baucua-sec').style.display = 'block';
+      }
+    }
+
+    // ==========================================
+    // TÀI XỈU FUNCTIONS
+    // ==========================================
+    function selectTaiXiuBet(type) {
+      if (isRolling) return;
+      selectedTaiXiuType = type;
+      document.getElementById('bet-opt-tai').classList.remove('selected');
+      document.getElementById('bet-opt-xiu').classList.remove('selected');
+      document.getElementById('bet-opt-bao').classList.remove('selected');
+      document.getElementById(`bet-opt-${type}`).classList.add('selected');
+    }
+
+    function setBetAmount(amt) {
+      if (isRolling) return;
+      currentTaiXiuBet = amt;
+      document.getElementById('taixiu-bet-input').value = amt;
+      const chips = document.querySelectorAll('#game-taixiu-sec .chip-btn');
+      chips.forEach(c => {
+        if (Number(c.textContent.trim()) === amt) c.classList.add('active');
+        else c.classList.remove('active');
+      });
+    }
+
+    function renderTaiXiuHistory(list) {
+      const beadsWrap = document.getElementById('taixiu-history-beads');
+      if (!list || list.length === 0) {
+        beadsWrap.innerHTML = '<span style="color: var(--text-muted); font-size: 0.8rem;">Chưa có ván cược nào.</span>';
+        return;
+      }
+      let taiCount = 0;
+      let xiuCount = 0;
+      beadsWrap.innerHTML = list.slice(0, 15).map(item => {
+        if (item.result === 'tai') taiCount++;
+        else if (item.result === 'xiu') xiuCount++;
+        const letter = item.result === 'tai' ? 'T' : (item.result === 'xiu' ? 'X' : 'B');
+        return `<div class="bead ${item.result}" title="${item.dice.join('-')} = ${item.sum} (${item.result.toUpperCase()})">${letter}</div>`;
+      }).join('');
+
+      document.getElementById('taixiu-ratio-stat').textContent = `Tài: ${taiCount} | Xỉu: ${xiuCount}`;
+    }
+
+    function getAuthHeaders() {
+      const headers = { 'Content-Type': 'application/json' };
+      if (currentSteamId) headers['x-steam-id'] = currentSteamId;
+      return headers;
+    }
+
+    async function playTaiXiu() {
+      if (isRolling) return;
+      if (!currentSteamId) {
+        App.showToast('Vui lòng liên kết tài khoản Steam trước khi chơi!', 'warning');
+        return;
+      }
+
+      const betVal = Math.floor(Number(document.getElementById('taixiu-bet-input').value));
+      if (isNaN(betVal) || betVal < 1) {
+        App.showToast('Mức cược tối thiểu là 1 Lúa!', 'error');
+        return;
+      }
+      if (betVal > currentBalance) {
+        App.showToast(`Bạn chỉ còn ${currentBalance} Lúa, không đủ cược!`, 'error');
+        return;
+      }
+
+      isRolling = true;
+      const rollBtn = document.getElementById('btn-roll-taixiu');
+      rollBtn.disabled = true;
+      rollBtn.innerHTML = '⏳ ĐANG LẮC BÁT...';
+
+      const plate = document.getElementById('taixiu-plate');
+      const d1 = document.getElementById('t-dice-1');
+      const d2 = document.getElementById('t-dice-2');
+      const d3 = document.getElementById('t-dice-3');
+      const sumDisplay = document.getElementById('taixiu-sum-display');
+      const announce = document.getElementById('taixiu-announcement');
+      announce.style.display = 'none';
+
+      plate.classList.add('shaking');
+      d1.classList.add('rolling');
+      d2.classList.add('rolling');
+      d3.classList.add('rolling');
+      sumDisplay.textContent = '🎲 Đang xóc đĩa... Chờ mở bát!';
+
+      // Sound synthesis
+      playShakeSound();
+
+      try {
+        const res = await fetch('/api/casino/tai-xiu/play', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          credentials: 'include',
+          body: JSON.stringify({
+            betType: selectedTaiXiuType,
+            betAmount: betVal
+          })
+        });
+        const result = await res.json();
+
+        // Delay 1.2s for suspense effect
+        await new Promise(r => setTimeout(r, 1200));
+
+        plate.classList.remove('shaking');
+        d1.classList.remove('rolling');
+        d2.classList.remove('rolling');
+        d3.classList.remove('rolling');
+
+        if (res.ok && result.success) {
+          // Render dice values
+          d1.textContent = result.dice[0];
+          d2.textContent = result.dice[1];
+          d3.textContent = result.dice[2];
+
+          d1.className = `dice-cube ${result.dice[0] % 2 === 0 ? 'red' : ''}`;
+          d2.className = `dice-cube ${result.dice[1] % 2 === 0 ? 'red' : ''}`;
+          d3.className = `dice-cube ${result.dice[2] % 2 === 0 ? 'red' : ''}`;
+
+          const typeName = result.resultType === 'tai' ? '🥩 TÀI (ĂN THỊT)' : (result.resultType === 'xiu' ? '🥗 XỈU (ĂN CỎ)' : '⚡ BÃO DINO');
+          sumDisplay.innerHTML = `Tổng: <strong>${result.sum} Điểm</strong> — [${typeName}]`;
+
+          currentBalance = result.newBalance;
+          document.getElementById('user-lua-balance').textContent = `${currentBalance.toLocaleString()} 🌾`;
+          document.getElementById('server-treasury-amount').textContent = `${result.totalTreasury.toLocaleString()} 🌾`;
+
+          announce.style.display = 'block';
+          if (result.won) {
+            playWinSound();
+            announce.className = 'result-announcement win';
+            announce.innerHTML = `🎉 THẮNG LỚN! Bạn nhận ngay <strong>+${result.netProfit} Lúa 🌾</strong> vào ví!`;
+            App.showToast(`+${result.netProfit} Lúa 🌾`, 'success');
+          } else {
+            announce.className = 'result-announcement lose';
+            announce.innerHTML = `💀 THUA RỒI! Mất <strong>-${betVal} Lúa 🌾</strong> vào Kho Bạc ST25.`;
+            App.showToast(`-${betVal} Lúa`, 'error');
+          }
+
+          await refreshCasinoStats();
+        } else {
+          plate.classList.remove('shaking');
+          sumDisplay.textContent = 'Lỗi kết nối máy chủ.';
+          App.showToast(result.error || 'Có lỗi xảy ra khi đặt cược!', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        plate.classList.remove('shaking');
+        App.showToast('Lỗi mạng khi quay!', 'error');
+      } finally {
+        isRolling = false;
+        rollBtn.disabled = false;
+        rollBtn.innerHTML = '🎲 LẮC BÁT & ĐẶT CƯỢC NGAY 🚀';
+      }
+    }
+
+    // ==========================================
+    // BẦU CUA FUNCTIONS
+    // ==========================================
+    function setBauCuaChip(amt) {
+      bauCuaChip = amt;
+      const chips = document.querySelectorAll('#game-baucua-sec .chip-btn');
+      chips.forEach(c => {
+        if (Number(c.textContent.replace('+', '').trim()) === amt) c.classList.add('active');
+        else c.classList.remove('active');
+      });
+    }
+
+    function addBauCuaBet(sym) {
+      if (isRolling) return;
+      const totalCurrent = Object.values(bauCuaBets).reduce((a,b) => a+b, 0);
+      if (totalCurrent + bauCuaChip > currentBalance) {
+        App.showToast('Số dư Lúa không đủ để cược thêm!', 'warning');
+        return;
+      }
+      bauCuaBets[sym] = (bauCuaBets[sym] || 0) + bauCuaChip;
+      updateBauCuaUI();
+    }
+
+    function clearBauCuaBets() {
+      if (isRolling) return;
+      for (const k in bauCuaBets) bauCuaBets[k] = 0;
+      updateBauCuaUI();
+    }
+
+    function updateBauCuaUI() {
+      let total = 0;
+      for (const k in bauCuaBets) {
+        const val = bauCuaBets[k];
+        total += val;
+        const el = document.getElementById(`bc-bet-${k}`);
+        if (el) el.textContent = val;
+        const parent = el ? el.closest('.baucua-cell') : null;
+        if (parent) {
+          if (val > 0) parent.classList.add('active-bet');
+          else parent.classList.remove('active-bet');
+        }
+      }
+      document.getElementById('bc-total-bet-display').textContent = total.toLocaleString();
+    }
+
+    async function playBauCua() {
+      if (isRolling) return;
+      if (!currentSteamId) {
+        App.showToast('Vui lòng liên kết tài khoản Steam trước khi chơi!', 'warning');
+        return;
+      }
+
+      const totalBet = Object.values(bauCuaBets).reduce((a,b) => a+b, 0);
+      if (totalBet <= 0) {
+        App.showToast('Vui lòng click vào ít nhất 1 linh vật để đặt cược!', 'warning');
+        return;
+      }
+      if (totalBet > currentBalance) {
+        App.showToast('Số dư Lúa không đủ!', 'error');
+        return;
+      }
+
+      isRolling = true;
+      const rollBtn = document.getElementById('btn-roll-baucua');
+      rollBtn.disabled = true;
+      rollBtn.innerHTML = '⏳ ĐANG XÓC ĐĨA BẦU CUA...';
+
+      const plate = document.getElementById('baucua-plate');
+      const d1 = document.getElementById('bc-dice-1');
+      const d2 = document.getElementById('bc-dice-2');
+      const d3 = document.getElementById('bc-dice-3');
+      const resultDisplay = document.getElementById('baucua-result-display');
+      const announce = document.getElementById('baucua-announcement');
+      announce.style.display = 'none';
+
+      plate.classList.add('shaking');
+      resultDisplay.textContent = '🦀 Đang xóc... Hồi hộp chờ kết quả!';
+      playShakeSound();
+
+      try {
+        const res = await fetch('/api/casino/bau-cua/play', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          credentials: 'include',
+          body: JSON.stringify({ bets: bauCuaBets })
+        });
+        const result = await res.json();
+
+        await new Promise(r => setTimeout(r, 1200));
+        plate.classList.remove('shaking');
+
+        if (res.ok && result.success) {
+          // Render dice
+          const s1 = symbolMap[result.dice[0]];
+          const s2 = symbolMap[result.dice[1]];
+          const s3 = symbolMap[result.dice[2]];
+
+          d1.innerHTML = `<span class="icon">${s1.icon}</span><span class="label">${s1.label}</span>`;
+          d2.innerHTML = `<span class="icon">${s2.icon}</span><span class="label">${s2.label}</span>`;
+          d3.innerHTML = `<span class="icon">${s3.icon}</span><span class="label">${s3.label}</span>`;
+
+          resultDisplay.innerHTML = `Kết quả: [${s1.icon} ${s1.label}] - [${s2.icon} ${s2.label}] - [${s3.icon} ${s3.label}]`;
+
+          currentBalance = result.newBalance;
+          document.getElementById('user-lua-balance').textContent = `${currentBalance.toLocaleString()} 🌾`;
+          document.getElementById('server-treasury-amount').textContent = `${result.totalTreasury.toLocaleString()} 🌾`;
+
+          announce.style.display = 'block';
+          if (result.won) {
+            playWinSound();
+            announce.className = 'result-announcement win';
+            announce.innerHTML = `🎉 THẮNG LỚN! Trúng <strong>+${result.netProfit} Lúa 🌾</strong> (Tổng nhận ${result.totalPayout} Lúa)!`;
+            App.showToast(`+${result.netProfit} Lúa 🌾`, 'success');
+          } else if (result.netProfit === 0) {
+            announce.className = 'result-announcement win';
+            announce.innerHTML = `🤝 HÒA VỐN! Bạn nhận lại đủ vốn ván này.`;
+          } else {
+            announce.className = 'result-announcement lose';
+            announce.innerHTML = `💀 THUA! Bị Kho Bạc ST25 hút <strong>-${Math.abs(result.netProfit)} Lúa 🌾</strong>.`;
+            App.showToast(`-${Math.abs(result.netProfit)} Lúa`, 'error');
+          }
+
+          clearBauCuaBets();
+          await refreshCasinoStats();
+        } else {
+          plate.classList.remove('shaking');
+          App.showToast(result.error || 'Có lỗi khi xóc Bầu Cua!', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        plate.classList.remove('shaking');
+        App.showToast('Lỗi mạng khi xóc Bầu Cua!', 'error');
+      } finally {
+        isRolling = false;
+        rollBtn.disabled = false;
+        rollBtn.innerHTML = '🦀 XÓC BẦU CUA & MỞ BÁT 🚀';
+      }
+    }
+
+    // Audio effects using Web Audio API (No external sound files required)
+    function playShakeSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        for (let i = 0; i < 6; i++) {
+          setTimeout(() => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(140 + Math.random() * 80, ctx.currentTime);
+            gain.gain.setValueAtTime(0.15, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.08);
+          }, i * 150);
+        }
+      } catch (_) {}
+    }
+
+    function playWinSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const notes = [261.63, 329.63, 392.00, 523.25];
+        notes.forEach((freq, idx) => {
+          setTimeout(() => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            gain.gain.setValueAtTime(0.2, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.25);
+          }, idx * 100);
+        });
+      } catch (_) {}
+    }
+  </script>
+</body>
+</html>

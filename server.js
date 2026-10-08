@@ -4242,6 +4242,288 @@ app.get('/api/leaderboard', async (req, res) => {
   });
 });
 
+// =======================================================
+// 🎰 SÒNG BẠC ST25 VIETNAM: TÀI XỈU & BẦU CUA DINO
+// Tỉ lệ thắng người chơi: 30% (Nhà cái thắng 70% để thu hồi Lúa)
+// Đồng bộ trực tiếp Lúa vào IslePilot Cloud
+// =======================================================
+
+const CASINO_PLAYER_WIN_RATE = 0.30; // 30% Win rate for player, 70% for house
+
+function getCasinoData() {
+  const data = getPortalData();
+  if (!data.casinoStats) {
+    data.casinoStats = {
+      totalTreasury: 18450,
+      taiXiuHistory: [
+        { dice: [4, 5, 6], sum: 15, result: 'tai' },
+        { dice: [2, 3, 4], sum: 9, result: 'xiu' },
+        { dice: [5, 6, 2], sum: 13, result: 'tai' },
+        { dice: [1, 2, 4], sum: 7, result: 'xiu' },
+        { dice: [6, 4, 3], sum: 13, result: 'tai' },
+        { dice: [3, 3, 3], sum: 9, result: 'bao' },
+        { dice: [2, 5, 5], sum: 12, result: 'tai' },
+        { dice: [1, 3, 2], sum: 6, result: 'xiu' }
+      ],
+      bauCuaHistory: [
+        { dice: ['rex', 'cua', 'ga'] },
+        { dice: ['trike', 'trike', 'deino'] },
+        { dice: ['ech', 'rex', 'cua'] }
+      ]
+    };
+    savePortalData(data);
+  }
+  return data;
+}
+
+// 1. Lấy thông tin thống kê Sòng Bạc & Số dư người chơi
+app.get('/api/casino/stats', async (req, res) => {
+  const data = getCasinoData();
+  const steamId = getRequestSteamId(req);
+  const myBalance = steamId ? await getLivePlayerBalance(steamId) : 0;
+
+  res.json({
+    success: true,
+    steamId: steamId || null,
+    myBalance,
+    totalTreasury: data.casinoStats.totalTreasury || 18450,
+    taiXiuHistory: (data.casinoStats.taiXiuHistory || []).slice(0, 20),
+    bauCuaHistory: (data.casinoStats.bauCuaHistory || []).slice(0, 15)
+  });
+});
+
+// 2. Minigame: Tài Xỉu Gateway (Dino Sicbo)
+app.post('/api/casino/tai-xiu/play', async (req, res) => {
+  const steamId = getRequestSteamId(req);
+  if (!steamId) {
+    return res.status(401).json({ error: "Vui lòng liên kết tài khoản Steam trước khi chơi Sòng Bạc!" });
+  }
+
+  const { betType, betAmount } = req.body;
+  const numBet = Math.floor(Number(betAmount));
+
+  if (!['tai', 'xiu', 'bao'].includes(betType)) {
+    return res.status(400).json({ error: "Cửa cược không hợp lệ (Chọn: Ăn Thịt / Tài, Ăn Cỏ / Xỉu, hoặc Bão)!" });
+  }
+
+  if (isNaN(numBet) || numBet < 1 || numBet > 1000) {
+    return res.status(400).json({ error: "Mức cược phải từ 1 đến 1,000 Lúa 🌾!" });
+  }
+
+  const liveBal = await getLivePlayerBalance(steamId);
+  if (liveBal < numBet) {
+    return res.status(400).json({ error: `Số dư Lúa không đủ! Bạn chỉ còn ${liveBal} Lúa.` });
+  }
+
+  // 1. Trừ Lúa ngay lập tức trên IslePilot Cloud
+  await modifyLivePlayerBalance(steamId, -numBet, `tai_xiu_bet_${betType}_${numBet}`);
+
+  // 2. Thuật toán: Người chơi chỉ thắng 30%, Nhà cái thắng 70%
+  const playerWins = Math.random() < CASINO_PLAYER_WIN_RATE;
+  const randDie = () => Math.floor(Math.random() * 6) + 1;
+  const isTriple = d => d[0] === d[1] && d[1] === d[2];
+  const diceSum = d => d[0] + d[1] + d[2];
+
+  let dice = [];
+  if (playerWins) {
+    let attempts = 0;
+    if (betType === 'tai') {
+      do {
+        dice = [randDie(), randDie(), randDie()];
+        attempts++;
+      } while ((diceSum(dice) < 11 || diceSum(dice) > 17 || isTriple(dice)) && attempts < 100);
+      if (attempts >= 100) dice = [4, 5, 5];
+    } else if (betType === 'xiu') {
+      do {
+        dice = [randDie(), randDie(), randDie()];
+        attempts++;
+      } while ((diceSum(dice) < 4 || diceSum(dice) > 10 || isTriple(dice)) && attempts < 100);
+      if (attempts >= 100) dice = [2, 3, 4];
+    } else if (betType === 'bao') {
+      const v = randDie();
+      dice = [v, v, v];
+    }
+  } else {
+    let attempts = 0;
+    if (betType === 'tai') {
+      do {
+        dice = [randDie(), randDie(), randDie()];
+        attempts++;
+      } while (diceSum(dice) >= 11 && !isTriple(dice) && attempts < 100);
+      if (attempts >= 100) dice = [2, 3, 3];
+    } else if (betType === 'xiu') {
+      do {
+        dice = [randDie(), randDie(), randDie()];
+        attempts++;
+      } while (diceSum(dice) <= 10 && !isTriple(dice) && attempts < 100);
+      if (attempts >= 100) dice = [5, 5, 4];
+    } else if (betType === 'bao') {
+      do {
+        dice = [randDie(), randDie(), randDie()];
+        attempts++;
+      } while (isTriple(dice) && attempts < 100);
+      if (attempts >= 100) dice = [1, 2, 3];
+    }
+  }
+
+  const sum = diceSum(dice);
+  const triple = isTriple(dice);
+  const resultType = triple ? 'bao' : (sum >= 11 ? 'tai' : 'xiu');
+  const won = (betType === 'bao' && triple) || (!triple && betType === resultType);
+
+  let payout = 0;
+  if (won) {
+    if (betType === 'bao') {
+      payout = numBet * 25; // Bão ăn x25
+    } else {
+      payout = Math.floor(numBet * 1.95); // Tài/Xỉu ăn 1.95 (trừ 5% phế nhà cái)
+    }
+    await modifyLivePlayerBalance(steamId, payout, `tai_xiu_payout_${resultType}`);
+  }
+
+  const netProfit = payout - numBet;
+  const newBalance = await getLivePlayerBalance(steamId);
+
+  // 3. Ghi nhận vào thống kê Kho Bạc ST25
+  const data = getCasinoData();
+  data.casinoStats.totalTreasury = Math.max(0, (data.casinoStats.totalTreasury || 18450) + (-netProfit));
+  data.casinoStats.taiXiuHistory = data.casinoStats.taiXiuHistory || [];
+  data.casinoStats.taiXiuHistory.unshift({
+    dice,
+    sum,
+    result: resultType,
+    time: Date.now()
+  });
+  data.casinoStats.taiXiuHistory = data.casinoStats.taiXiuHistory.slice(0, 30);
+  savePortalData(data);
+
+  res.json({
+    success: true,
+    dice,
+    sum,
+    resultType,
+    won,
+    payout,
+    netProfit,
+    newBalance,
+    totalTreasury: data.casinoStats.totalTreasury,
+    message: won ? `🎉 Chúc mừng! Bạn đã thắng +${netProfit} Lúa 🌾!` : `💀 Tiếc quá! Bạn đã mất -${numBet} Lúa vào Kho Bạc ST25.`
+  });
+});
+
+// 3. Minigame: Bầu Cua ST25 (Dino Bầu Cua)
+app.post('/api/casino/bau-cua/play', async (req, res) => {
+  const steamId = getRequestSteamId(req);
+  if (!steamId) {
+    return res.status(401).json({ error: "Vui lòng liên kết tài khoản Steam trước khi chơi Sòng Bạc!" });
+  }
+
+  const { bets } = req.body;
+  if (!bets || typeof bets !== 'object') {
+    return res.status(400).json({ error: "Thông tin cược không hợp lệ!" });
+  }
+
+  const allSymbols = ['rex', 'trike', 'deino', 'cua', 'ga', 'ech'];
+  let totalBet = 0;
+  const cleanedBets = {};
+
+  for (const sym of allSymbols) {
+    const val = Math.floor(Number(bets[sym]) || 0);
+    if (val > 0) {
+      cleanedBets[sym] = val;
+      totalBet += val;
+    }
+  }
+
+  if (totalBet < 1 || totalBet > 1500) {
+    return res.status(400).json({ error: "Tổng cược Bầu Cua phải từ 1 đến 1,500 Lúa 🌾!" });
+  }
+
+  const liveBal = await getLivePlayerBalance(steamId);
+  if (liveBal < totalBet) {
+    return res.status(400).json({ error: `Số dư Lúa không đủ! Bạn chỉ còn ${liveBal} Lúa.` });
+  }
+
+  // 1. Trừ Lúa ngay lập tức trên IslePilot Cloud
+  await modifyLivePlayerBalance(steamId, -totalBet, `bau_cua_bet_${totalBet}`);
+
+  // 2. Thuật toán: Người chơi chỉ thắng 30%, Nhà cái thắng 70%
+  const playerWins = Math.random() < CASINO_PLAYER_WIN_RATE;
+  const betSymbols = allSymbols.filter(s => (cleanedBets[s] || 0) > 0);
+  const unbetSymbols = allSymbols.filter(s => !(cleanedBets[s] > 0));
+
+  let dice = [];
+  if (playerWins && betSymbols.length > 0) {
+    // Ưu tiên cho ra mặt mà người chơi cược nhiều nhất
+    const bestBetSym = betSymbols.sort((a,b) => (cleanedBets[b]||0) - (cleanedBets[a]||0))[0];
+    const matchCount = Math.random() < 0.25 ? 2 : 1;
+    for (let i = 0; i < matchCount; i++) dice.push(bestBetSym);
+    while (dice.length < 3) {
+      dice.push(allSymbols[Math.floor(Math.random() * allSymbols.length)]);
+    }
+  } else {
+    // Nhà cái ăn: Cố gắng ra các mặt người chơi KHÔNG CƯỢC
+    if (unbetSymbols.length >= 3) {
+      dice = [
+        unbetSymbols[Math.floor(Math.random() * unbetSymbols.length)],
+        unbetSymbols[Math.floor(Math.random() * unbetSymbols.length)],
+        unbetSymbols[Math.floor(Math.random() * unbetSymbols.length)]
+      ];
+    } else {
+      // Nếu người chơi cược gần hết, chọn các mặt cược ít tiền nhất
+      const sortedLowest = [...allSymbols].sort((a,b) => (cleanedBets[a]||0) - (cleanedBets[b]||0));
+      dice = [sortedLowest[0], sortedLowest[1] || sortedLowest[0], sortedLowest[2] || sortedLowest[0]];
+    }
+  }
+
+  // Xáo trộn ngẫu nhiên thứ tự 3 viên xí ngầu
+  dice.sort(() => Math.random() - 0.5);
+
+  // 3. Tính tiền thưởng
+  const counts = {};
+  dice.forEach(s => { counts[s] = (counts[s] || 0) + 1; });
+
+  let totalPayout = 0;
+  for (const sym of betSymbols) {
+    const betVal = cleanedBets[sym] || 0;
+    const hit = counts[sym] || 0;
+    if (hit > 0) {
+      // Hoàn vốn + thưởng theo số mặt xuất hiện
+      totalPayout += betVal + (betVal * hit);
+    }
+  }
+
+  if (totalPayout > 0) {
+    await modifyLivePlayerBalance(steamId, totalPayout, `bau_cua_payout_${totalPayout}`);
+  }
+
+  const netProfit = totalPayout - totalBet;
+  const newBalance = await getLivePlayerBalance(steamId);
+
+  // 4. Lưu thống kê
+  const data = getCasinoData();
+  data.casinoStats.totalTreasury = Math.max(0, (data.casinoStats.totalTreasury || 18450) + (-netProfit));
+  data.casinoStats.bauCuaHistory = data.casinoStats.bauCuaHistory || [];
+  data.casinoStats.bauCuaHistory.unshift({
+    dice,
+    time: Date.now()
+  });
+  data.casinoStats.bauCuaHistory = data.casinoStats.bauCuaHistory.slice(0, 30);
+  savePortalData(data);
+
+  res.json({
+    success: true,
+    dice,
+    counts,
+    won: netProfit > 0,
+    totalPayout,
+    netProfit,
+    newBalance,
+    totalTreasury: data.casinoStats.totalTreasury,
+    message: netProfit > 0 ? `🎉 Bạn trúng lớn +${netProfit} Lúa 🌾!` : (netProfit === 0 ? `🤝 Hòa vốn ván này!` : `💀 Bạn bị Kho Bạc ST25 hút -${Math.abs(netProfit)} Lúa.`)
+  });
+});
+
 // Start Server
 app.listen(PORT, () => {
   console.log(`=======================================================`);
