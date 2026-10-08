@@ -143,26 +143,26 @@
     <!-- 2 Column: Claim Code & Leaderboard -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px;">
       
-      <!-- Input Friend Code / Giftcode -->
+      <!-- Input Friend Code -->
       <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 22px;">
         <h3 style="color: #fff; font-size: 1.2rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-          <span>🎁 Bạn Là Người Mới? Nhập Mã Nhận Lúa</span>
+          <span>🤝 Bạn Được Bạn Bè Giới Thiệu? Nhập Mã Nhận Lúa</span>
         </h3>
         <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
-          Nếu bạn được bạn bè giới thiệu hoặc có Giftcode quà tặng từ ST25, hãy nhập bên dưới để nhận ngay <strong>+50 Lúa 🌾</strong> vào ví sinh tồn! <em>(Lưu ý: Mỗi mã chỉ được kích hoạt 1 lần duy nhất).</em>
+          Nhập mã mời từ người bạn đã giới thiệu bạn vào ST25 để nhận ngay <strong>+20 Lúa 🌾</strong> vào ví sinh tồn! <em>(Lưu ý: Mỗi mã mời chỉ có hiệu lực đúng 1 lần duy nhất trên toàn máy chủ, và mỗi tài khoản chỉ được nhập mã mời 1 lần duy nhất trong đời).</em>
         </p>
 
         <form id="claim-code-form" onsubmit="handleClaimCode(event)">
           <div class="form-group" style="margin-bottom: 16px;">
-            <label class="form-label" for="friend-code">Mã giới thiệu hoặc Giftcode:</label>
-            <input type="text" id="friend-code" class="form-input" placeholder="Ví dụ: ST25-88278 hoặc ST25-TANTHU" required style="text-transform: uppercase; font-weight: 700;">
+            <label class="form-label" for="friend-code">Mã Giới Thiệu Bạn Bè (ST25-XXXXX):</label>
+            <input type="text" id="friend-code" class="form-input" placeholder="Ví dụ: ST25-88278" required style="text-transform: uppercase; font-weight: 700;">
             <small style="color: #94a3b8; font-size: 0.8rem; display: block; margin-top: 6px;">
-              💡 Hỗ trợ: Mã bạn bè (<code>ST25-XXXXX</code>) hoặc Giftcode tân thủ (<code>ST25-TANTHU</code>, <code>ST25-WELCOME</code>, <code>ST25-VIP</code>).
+              💡 Hỗ trợ: Mã giới thiệu cá nhân do bạn bè cung cấp (định dạng <code>ST25-XXXXX</code>). Mã chỉ sử dụng được 1 lần duy nhất.
             </small>
           </div>
 
           <button type="submit" class="btn btn-primary" id="btn-submit-claim" style="width: 100%;">
-            🌾 Nhận Ngay +50 Lúa Khởi Nghiệp 🚀
+            🌾 Kích Hoạt Mã Mời (+20 Lúa) 🚀
           </button>
         </form>
       </div>
@@ -277,7 +277,7 @@
           const formBox = document.getElementById('claim-code-form');
           formBox.innerHTML = `
             <div style="background: rgba(16, 185, 129, 0.12); border: 1.5px solid #10b981; padding: 16px; border-radius: 8px; color: #10b981; font-weight: 600; text-align: center;">
-              ✅ Bạn đã kích hoạt mã giới thiệu [<strong>${data.invitedBy}</strong>] và đã nhận +50 Lúa 🌾 vào ví!
+              ✅ Bạn đã kích hoạt mã giới thiệu [<strong>${data.invitedBy}</strong>] và đã nhận +20 Lúa 🌾 vào ví!
             </div>
           `;
         }
@@ -367,7 +367,7 @@
         App.showToast('Lỗi mạng khi kết nối máy chủ!', 'error');
       } finally {
         btn.disabled = false;
-        btn.textContent = '🌾 Nhận Ngay +50 Lúa Khởi Nghiệp 🚀';
+        btn.textContent = '🌾 Kích Hoạt Mã Mời (+20 Lúa) 🚀';
       }
     }
 

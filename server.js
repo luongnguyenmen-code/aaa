@@ -3123,35 +3123,36 @@ app.post('/api/referral/claim', async (req, res) => {
     if (!data.lockedInviteCodes) data.lockedInviteCodes = [];
     if (!data.userCustomInviteCodes) data.userCustomInviteCodes = {};
 
-    // 1. Danh sách Giftcode sự kiện chính thức ST25 (Đã cân bằng lại hợp lý)
-    const OFFICIAL_GIFTCODES = {
-      'ST25-TANTHU': { reward: 20, title: 'Quà Tân Thủ Khởi Nghiệp ST25' },
-      'ST25-WELCOME': { reward: 20, title: 'Chào Mừng Gia Nhập Đảo Gateway' }
-    };
-
-    // 2. Chặn nếu tài khoản này đã từng dùng mã này
-    if (data.claimedCodesPerUser[cleanSteamId].includes(cleanCode)) {
-      return res.status(400).json({ error: `Bạn đã từng sử dụng mã [${cleanCode}] rồi! Mỗi mã chỉ được nhận thưởng 1 lần duy nhất.` });
+    // 1. TỪ CHỐI HOÀN TOÀN TẤT CẢ GIFTCODE SỰ KIỆN CŨ (Đã hủy bỏ theo yêu cầu BQT)
+    if (['ST25-TANTHU', 'ST25-WELCOME', 'ST25-VIP'].includes(cleanCode)) {
+      return res.status(400).json({ 
+        error: "Mã quà tặng sự kiện (Giftcode) đã kết thúc hoặc không tồn tại! Hệ thống hiện chỉ hỗ trợ Mã Giới Thiệu bạn bè cá nhân." 
+      });
     }
 
-    // 3. QUY TẮC MÃ MỜI BẠN BÈ: MỖI MÃ MỜI CHỈ DÙNG ĐÚNG 1 LẦN DUY NHẤT TOÀN MÁY CHỦ, DÙNG XONG LÀ BLOCK VĨNH VIỄN
-    if (!OFFICIAL_GIFTCODES[cleanCode]) {
-      if (data.lockedInviteCodes.includes(cleanCode)) {
-        return res.status(400).json({ 
-          error: `Mã giới thiệu [${cleanCode}] này đã có người sử dụng và đã bị KHÓA VĨNH VIỄN! Mỗi mã mời chỉ có hiệu lực đúng 1 lần duy nhất.` 
-        });
-      }
+    // 2. MỖI TÀI KHOẢN NGƯỜI CHƠI CHỈ ĐƯỢC NHẬP MÃ MỜI ĐÚNG 1 LẦN DUY NHẤT TRONG ĐỜI
+    if (data.referrals[cleanSteamId].invitedBy) {
+      return res.status(400).json({ 
+        error: `Tài khoản của bạn đã từng kích hoạt mã mời bạn bè [${data.referrals[cleanSteamId].invitedBy}] rồi! Mỗi tài khoản chỉ được nhập mã mời 1 lần duy nhất trong đời.` 
+      });
+    }
 
-      const alreadyUsed = data.claimedCodeHistory.some(h => h.code === cleanCode);
-      if (alreadyUsed) {
-        if (!data.lockedInviteCodes.includes(cleanCode)) {
-          data.lockedInviteCodes.push(cleanCode);
-          savePortalData(data);
-        }
-        return res.status(400).json({ 
-          error: `Mã giới thiệu [${cleanCode}] này đã có người sử dụng và đã bị KHÓA VĨNH VIỄN! Mỗi mã mời chỉ có hiệu lực đúng 1 lần duy nhất.` 
-        });
+    // 3. MỖI MÃ MỜI BẠN BÈ CHỈ DÙNG ĐÚNG 1 LẦN DUY NHẤT TOÀN MÁY CHỦ, DÙNG XONG LÀ BLOCK VĨNH VIỄN
+    if (data.lockedInviteCodes.includes(cleanCode)) {
+      return res.status(400).json({ 
+        error: `Mã giới thiệu [${cleanCode}] này đã có người sử dụng và đã bị KHÓA VĨNH VIỄN! Mỗi mã mời chỉ có hiệu lực đúng 1 lần duy nhất.` 
+      });
+    }
+
+    const alreadyUsed = data.claimedCodeHistory.some(h => h.code === cleanCode);
+    if (alreadyUsed) {
+      if (!data.lockedInviteCodes.includes(cleanCode)) {
+        data.lockedInviteCodes.push(cleanCode);
+        savePortalData(data);
       }
+      return res.status(400).json({ 
+        error: `Mã giới thiệu [${cleanCode}] này đã có người sử dụng và đã bị KHÓA VĨNH VIỄN! Mỗi mã mời chỉ có hiệu lực đúng 1 lần duy nhất.` 
+      });
     }
 
     const myCode = (data.userCustomInviteCodes[cleanSteamId] || `ST25-${cleanSteamId.slice(-5)}`).toUpperCase();
@@ -3163,19 +3164,6 @@ app.post('/api/referral/claim', async (req, res) => {
     let successMsg = "";
     let referrerSteamId = null;
     let referrerName = null;
-
-    if (OFFICIAL_GIFTCODES[cleanCode]) {
-      // Xử lý mã quà tặng sự kiện (Giftcode)
-      const gift = OFFICIAL_GIFTCODES[cleanCode];
-      rewardAmount = gift.reward;
-      successMsg = `Chúc mừng! Bạn đã kích hoạt thành công [${gift.title}] và nhận ngay +${rewardAmount} Lúa 🌾!`;
-    } else {
-      // Xử lý mã bạn bè (Referral Code): Mỗi người chơi chỉ được nhận quà giới thiệu 1 lần duy nhất
-      if (data.referrals[cleanSteamId].invitedBy) {
-        return res.status(400).json({ 
-          error: `Tài khoản của bạn đã từng nhập mã giới thiệu [${data.referrals[cleanSteamId].invitedBy}] trước đây! Mỗi tài khoản chỉ được nhập mã mời 1 lần duy nhất.` 
-        });
-      }
 
       // Tìm kiếm người giới thiệu:
       for (const [sId, uCode] of Object.entries(data.userCustomInviteCodes || {})) {
@@ -3225,7 +3213,6 @@ app.post('/api/referral/claim', async (req, res) => {
       referrerName = matched ? matched.name : `Player_${referrerSteamId.slice(-4)}`;
 
       successMsg = `Chúc mừng! Bạn đã kích hoạt mã giới thiệu từ [${referrerName}] và nhận ngay +20 Lúa 🌾!`;
-    }
 
     // ĐÁNH DẤU VÀ LƯU DỮ LIỆU TRƯỚC ĐỂ CHỐNG CONCURRENT DUPLICATE
     data.claimedCodesPerUser[cleanSteamId].push(cleanCode);
