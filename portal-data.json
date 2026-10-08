@@ -90,6 +90,30 @@
         "growth": 100,
         "gender": "Đực (Male)",
         "purchased_at": "07:44:21 7/10/2026"
+      },
+      {
+        "id": "dino-1791365498163-172",
+        "name": "Tyrannosaurus 80% (Cái (Female))",
+        "icon": "🦖",
+        "desc": "Phần thưởng từ: Giao Dịch ST25 (Nhận từ: Thích Thì Var)",
+        "type": "dino_voucher",
+        "species": "Tyrannosaurus",
+        "growth": 80,
+        "gender": "Cái (Female)",
+        "isPrimeElder": false,
+        "date": "2026-10-08T01:08:31.490Z"
+      },
+      {
+        "id": "dino-1791397419672-224",
+        "name": "Tyrannosaurus 40% (Đực (Male))",
+        "icon": "🦖",
+        "desc": "Phần thưởng từ: Gacha IslePilot Cloud (Hòm Halloween Huyền Bí 🎃)",
+        "type": "dino_voucher",
+        "species": "Tyrannosaurus",
+        "growth": 40,
+        "gender": "Đực (Male)",
+        "isPrimeElder": false,
+        "date": "2026-10-08T01:08:31.504Z"
       }
     ],
     "76561198838095252": [
@@ -107,33 +131,6 @@
     ]
   },
   "marketListings": [
-    {
-      "id": "mkt-1791336308886",
-      "seller": "Maico Dol",
-      "sellerSteamId": "76561198354289789",
-      "title": "1",
-      "species": "Allosaurus",
-      "gender": "Đực (Male)",
-      "price": 80,
-      "growth": 60,
-      "diet": "S-S-D",
-      "icon": "🦖",
-      "dinoData": {
-        "id": "cmuwjve0y00axp7015omvmy62",
-        "name": null,
-        "species": "Allosaurus",
-        "gender": "Male",
-        "growth": 0.6,
-        "health": 1,
-        "hunger": 1,
-        "thirst": 1,
-        "stamina": null,
-        "isPrimeElder": true,
-        "mutations": [],
-        "parkedAt": "2026-10-06T10:42:55.043Z"
-      },
-      "createdAt": "08:25:08 7/10/2026"
-    },
     {
       "id": "mkt-2",
       "seller": "Sát Thủ Đầm Lầy",
@@ -381,54 +378,7 @@
         "isLocal": true
       }
     ],
-    "76561198354289789": [
-      {
-        "id": "dino-1791365498163-172",
-        "species": "Tyrannosaurus",
-        "gender": "Cái (Female)",
-        "growth": 80,
-        "health": 1,
-        "hunger": 0.9636355584269429,
-        "thirst": 0.9528150000000001,
-        "diet": [
-          "S",
-          "S",
-          "D"
-        ],
-        "mutations": [
-          "None",
-          "None",
-          "None",
-          "None"
-        ],
-        "stored_at": "16:31:38 7/10/2026",
-        "source": "Giao Dịch ST25 (Nhận từ: Thích Thì Var)",
-        "isLocal": true
-      },
-      {
-        "id": "dino-1791397419672-224",
-        "species": "Tyrannosaurus",
-        "gender": "Đực (Male)",
-        "growth": 40,
-        "health": 100,
-        "hunger": 100,
-        "thirst": 100,
-        "diet": [
-          "S",
-          "S",
-          "D"
-        ],
-        "mutations": [
-          "Hemomania",
-          "Multichambered Lungs",
-          "Osteophagic",
-          "Gastronomic Regeneration"
-        ],
-        "stored_at": "01:23:39 8/10/2026",
-        "source": "Gacha IslePilot Cloud (Hòm Halloween Huyền Bí 🎃)",
-        "isLocal": true
-      }
-    ],
+    "76561198354289789": [],
     "76561198838095252": [
       {
         "id": "dino-1791334448673-768",
@@ -476,10 +426,7 @@
     ]
   },
   "withdrawnDinos": {
-    "76561198354289789": [
-      "cmuwjve0y00axp7015omvmy62",
-      "cmuwkxsoo09qjrz01nz42tye5"
-    ]
+    "76561198354289789": []
   },
   "adminAssignments": {
     "76561198789527189": {
