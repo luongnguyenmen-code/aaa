@@ -458,6 +458,85 @@ app.post('/api/player/logout', (req, res) => {
 });
 
 
+// Helper: Kiểm tra nhiệm vụ đã hoàn thành thực sự hay chưa (chuẩn xác theo từng loại config)
+function isQuestCompleted(q) {
+  if (!q) return false;
+  if (q.completedAt) return true;
+  if (!q.config) return false;
+
+  const prog = Number(q.progress) || 0;
+  if (q.config.minutes !== undefined) {
+    return prog >= Number(q.config.minutes);
+  }
+  if (q.config.km !== undefined) {
+    // q.progress tính bằng mét, q.config.km tính bằng km
+    return (prog / 1000) >= Number(q.config.km);
+  }
+  if (q.config.count !== undefined) {
+    return prog >= Number(q.config.count);
+  }
+  if (q.config.days !== undefined) {
+    return prog >= Number(q.config.days);
+  }
+  if (q.config.growthPct !== undefined) {
+    return prog >= Number(q.config.growthPct);
+  }
+  return false;
+}
+
+// Helper: Xác định chu kỳ (periodKey) của nhiệm vụ (Daily: YYYY-MM-DD, Weekly: YYYY-Www, Monthly: YYYY-MM)
+function getQuestPeriodKey(q, dateObj = new Date()) {
+  if (q && q.periodKey && typeof q.periodKey === 'string' && q.periodKey.trim() !== '') {
+    return q.periodKey.trim();
+  }
+  const yyyy = dateObj.getUTCFullYear();
+  const mm = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(dateObj.getUTCDate()).padStart(2, '0');
+
+  if (q?.period === 'monthly') {
+    return `${yyyy}-${mm}`;
+  }
+  if (q?.period === 'weekly') {
+    const d = new Date(Date.UTC(yyyy, dateObj.getUTCMonth(), dateObj.getUTCDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+  }
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+// Helper: Kiểm tra nhiệm vụ đã được nhận thưởng trong chu kỳ hiện tại hay chưa (tự động reset mỗi ngày/tuần/tháng)
+function isQuestClaimedInPeriod(q, userClaimedQuests) {
+  if (!userClaimedQuests) return false;
+  if (q.claimedAt) return true; // IslePilot Cloud đã ghi nhận đã claim
+
+  const currentPeriodKey = getQuestPeriodKey(q);
+  const claimKey = `${q.id}_${currentPeriodKey}`;
+
+  // Kiểm tra key mới dạng [questId]_[periodKey]
+  if (userClaimedQuests[claimKey]) return true;
+
+  // Kiểm tra bản ghi cũ theo ID
+  const legacyRecord = userClaimedQuests[q.id];
+  if (legacyRecord) {
+    if (legacyRecord.periodKey) {
+      return legacyRecord.periodKey === currentPeriodKey;
+    }
+    if (legacyRecord.claimedAt) {
+      const claimDate = new Date(legacyRecord.claimedAt);
+      if (!isNaN(claimDate.getTime())) {
+        const legacyPeriodKey = getQuestPeriodKey(q, claimDate);
+        return legacyPeriodKey === currentPeriodKey;
+      }
+    }
+    return true;
+  }
+
+  return false;
+}
+
 // 6. Quests (Nhiệm Vụ Cá Nhân) Endpoint
 app.get('/api/player/quests', async (req, res) => {
   const steamId = req.query.steamId || getRequestSteamId(req);
@@ -501,12 +580,16 @@ app.get('/api/player/quests', async (req, res) => {
         rewardAmount = q.period === 'monthly' ? 50 : (q.period === 'weekly' ? 24 : 8);
       }
 
-      const isCompleted = !!q.completedAt || (q.config && q.progress >= (q.config.count || q.config.days || q.config.km || 1));
-      const isClaimed = !!q.claimedAt || !!userClaimedQuests[q.id];
+      const periodKey = getQuestPeriodKey(q);
+      const claimKey = `${q.id}_${periodKey}`;
+      const isCompleted = isQuestCompleted(q);
+      const isClaimed = isQuestClaimedInPeriod(q, userClaimedQuests);
       const canClaim = isCompleted && !isClaimed;
 
       return {
         id: q.id,
+        periodKey,
+        claimKey,
         name: q.name,
         description: q.description,
         period: q.period, // daily, weekly, monthly
@@ -601,7 +684,7 @@ app.post('/api/player/quests/claim', async (req, res) => {
     return res.status(404).json({ error: "Nhiệm vụ không tồn tại hoặc đã hết hạn kỳ này!" });
   }
 
-  const isDone = !!quest.completedAt || (quest.config && quest.progress >= (quest.config.count || quest.config.days || quest.config.km || 1));
+  const isDone = isQuestCompleted(quest);
   if (!isDone) {
     return res.status(400).json({ error: `Nhiệm vụ [${quest.name}] chưa hoàn thành! Hãy tiếp tục sinh tồn để đạt điều kiện.` });
   }
@@ -610,9 +693,9 @@ app.post('/api/player/quests/claim', async (req, res) => {
   if (!data.claimedQuests) data.claimedQuests = {};
   if (!data.claimedQuests[steamId]) data.claimedQuests[steamId] = {};
 
-  const alreadyClaimed = !!quest.claimedAt || !!data.claimedQuests[steamId][questId];
+  const alreadyClaimed = isQuestClaimedInPeriod(quest, data.claimedQuests[steamId]);
   if (alreadyClaimed) {
-    return res.status(400).json({ error: `Bạn đã nhận thưởng Lúa cho nhiệm vụ [${quest.name}] rồi!` });
+    return res.status(400).json({ error: `Bạn đã nhận thưởng Lúa cho nhiệm vụ [${quest.name}] trong chu kỳ hôm nay rồi!` });
   }
 
   let rewardAmount = 0;
@@ -631,8 +714,18 @@ app.post('/api/player/quests/claim', async (req, res) => {
   const balRes = await modifyLivePlayerBalance(steamId, rewardAmount, `quest_reward_${questId}`);
   clearPlayerCache(steamId);
 
+  const periodKey = getQuestPeriodKey(quest);
+  const claimKey = `${quest.id}_${periodKey}`;
+
+  data.claimedQuests[steamId][claimKey] = {
+    claimedAt: new Date().toISOString(),
+    periodKey,
+    amount: rewardAmount,
+    questName: quest.name
+  };
   data.claimedQuests[steamId][questId] = {
     claimedAt: new Date().toISOString(),
+    periodKey,
     amount: rewardAmount,
     questName: quest.name
   };
@@ -645,6 +738,8 @@ app.post('/api/player/quests/claim', async (req, res) => {
     message: `Chúc mừng! Bạn đã hoàn thành nhiệm vụ [${quest.name}] và nhận ngay +${rewardAmount} Lúa 🌾 vào ví!`,
     rewardAmount,
     questId,
+    claimKey,
+    periodKey,
     newBalance
   });
 });
@@ -667,10 +762,11 @@ app.post('/api/player/quests/claim-all', async (req, res) => {
 
   let totalReward = 0;
   const claimedNames = [];
+  const claimedKeys = [];
 
   for (const quest of questsData.quests) {
-    const isDone = !!quest.completedAt || (quest.config && quest.progress >= (quest.config.count || quest.config.days || quest.config.km || 1));
-    const alreadyClaimed = !!quest.claimedAt || !!data.claimedQuests[steamId][quest.id];
+    const isDone = isQuestCompleted(quest);
+    const alreadyClaimed = isQuestClaimedInPeriod(quest, data.claimedQuests[steamId]);
 
     if (isDone && !alreadyClaimed) {
       let rewardAmount = 0;
@@ -687,8 +783,20 @@ app.post('/api/player/quests/claim-all', async (req, res) => {
 
       totalReward += rewardAmount;
       claimedNames.push(quest.name);
+      
+      const periodKey = getQuestPeriodKey(quest);
+      const claimKey = `${quest.id}_${periodKey}`;
+      claimedKeys.push(claimKey);
+
+      data.claimedQuests[steamId][claimKey] = {
+        claimedAt: new Date().toISOString(),
+        periodKey,
+        amount: rewardAmount,
+        questName: quest.name
+      };
       data.claimedQuests[steamId][quest.id] = {
         claimedAt: new Date().toISOString(),
+        periodKey,
         amount: rewardAmount,
         questName: quest.name
       };
@@ -713,6 +821,8 @@ app.post('/api/player/quests/claim-all', async (req, res) => {
     message: `Thành công! Đã nhận tổng cộng +${totalReward} Lúa 🌾 từ ${claimedNames.length} nhiệm vụ đã hoàn thành!`,
     totalReward,
     claimedCount: claimedNames.length,
+    claimedKeys,
+    claimedIds: Object.keys(data.claimedQuests[steamId] || {}),
     newBalance
   });
 });
