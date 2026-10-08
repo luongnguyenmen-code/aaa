@@ -1,6 +1,6 @@
+:where(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"]) { position: relative; }
 /* Shared ST25 warm glass buttons. Motion uses transform and opacity only. */
 body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"]) {
-  position: relative;
   isolation: isolate;
   overflow: hidden;
   border: 1px solid rgba(255, 177, 111, .6) !important;
@@ -10,8 +10,7 @@ body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], in
   box-shadow: inset 0 1px 3px #ffc08a88, inset 0 -3px 8px #ffab5880,
     0 4px 12px #0005, 0 0 10px #ff853324 !important;
   text-shadow: 0 1px 3px #0008;
-  transition: transform 160ms cubic-bezier(.2,.8,.2,1),
-    border-color 160ms ease;
+  transition: transform 160ms cubic-bezier(.2,.8,.2,1);
 }
 
 body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"])::before {
@@ -66,12 +65,6 @@ body :is(.btn-danger, .tab-danger) {
   border-color: #f8717180 !important;
   background: linear-gradient(180deg, #452321, #271a1a 60%, #692d25) !important;
 }
-@media (prefers-reduced-motion: reduce) {
-  body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"]), body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"])::before, body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"])::after { transition: none; }
-  body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"])::after { display: none; }
-  body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"]):hover, body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"]):active { transform: none !important; }
-}
-
 /* Fast press response, with no perpetual animation or pointer listeners. */
 body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"]) {
   touch-action: manipulation;
@@ -90,10 +83,18 @@ body :is(button, .btn, [role="button"]):is(.active, [aria-pressed="true"], [aria
 body :is(button, .btn, [role="button"])[aria-busy="true"] {
   cursor: progress;
 }
+
+/* Touch screens do not need a moving shine layer. */
+@media (hover: none), (pointer: coarse) {
+  body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"])::after { display: none; }
+}
+body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"]):is(:disabled, [aria-disabled="true"])::after { display: none; }
 @media (prefers-reduced-motion: reduce) {
-  body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"]),
-  body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"]):active {
+  body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"]), body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"]):active,
+  body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"])::before, body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"])::after {
     transition: none !important;
+    animation: none !important;
     transform: none !important;
   }
+  body :is(button, .btn, .btn-steam-big, [role="button"], input[type="submit"], input[type="button"])::after { display: none; }
 }

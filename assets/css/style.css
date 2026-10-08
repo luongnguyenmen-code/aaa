@@ -1189,3 +1189,6 @@ a:hover {
 
 
 
+
+/* Fixed full-page backgrounds repaint heavily on mobile scroll. */
+@media (max-width: 768px) { body { background-attachment: scroll; } }

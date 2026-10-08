@@ -1,29 +1,47 @@
 // ST25 Garage System — Synchronized 100% with IslePilot Cloud API (st25.islepilot.eu/garage)
 
 // ── Helper: Lấy ảnh PNG thực tế theo species ──────────────────────────────
-function getDinoImage(species, size = '80px') {
-  const knownDinos = [
-    'Allosaurus','Austroraptor','Beipiaosaurus','Carnotaurus','Ceratosaurus',
-    'Deinosuchus','Diabloceratops','Dilophosaurus','Dryosaurus','Gallimimus',
-    'Herrerasaurus','Hypsilophodon','Kentrosaurus','Maiasaura','Omniraptor',
-    'Pachycephalosaurus','Pteranodon','Stegosaurus','Tenontosaurus',
-    'Triceratops','Troodon','Tyrannosaurus'
-  ];
+const GARAGE_DINO_CATALOG = Object.freeze({
+  allosaurus: ['Allosaurus', 'red'], austroraptor: ['Austroraptor', 'green'],
+  beipiaosaurus: ['Beipiaosaurus', 'green'], carnotaurus: ['Carnotaurus', 'red'],
+  ceratosaurus: ['Ceratosaurus', 'red'], deinosuchus: ['Deinosuchus', 'red'],
+  diabloceratops: ['Diabloceratops', 'green'], dilophosaurus: ['Dilophosaurus', 'red'],
+  dryosaurus: ['Dryosaurus', 'green'], gallimimus: ['Gallimimus', 'green'],
+  herrerasaurus: ['Herrerasaurus', 'red'], hypsilophodon: ['Hypsilophodon', 'green'],
+  kentrosaurus: ['Kentrosaurus', 'green'], maiasaura: ['Maiasaura', 'green'],
+  omniraptor: ['Omniraptor', 'green'], pachycephalosaurus: ['Pachycephalosaurus', 'green'],
+  pteranodon: ['Pteranodon', 'red'], stegosaurus: ['Stegosaurus', 'green'],
+  tenontosaurus: ['Tenontosaurus', 'green'], triceratops: ['Triceratops', 'green'],
+  troodon: ['troodon', 'red'], tyrannosaurus: ['Tyrannosaurus', 'red']
+});
+
+function getGarageDinoVisual(species) {
   const key = String(species || '').replace(/[^a-z]/gi, '').toLowerCase();
-  const aliases = { trex: 'tyrannosaurus', tyrannosaurusrex: 'tyrannosaurus' };
-  const matched = knownDinos.find(name => name.toLowerCase() === (aliases[key] || key)) || 'Tyrannosaurus';
-  const filename = matched === 'Troodon' ? 'troodon' : matched;
-  return `<img src="assets/imges/${filename}.png" alt="${matched}"
-    style="width:${size};height:${size};object-fit:contain;filter:drop-shadow(0 0 8px rgba(16,185,129,0.5));display:block;"
-    onerror="this.onerror=null;this.src='assets/imges/Tyrannosaurus.png';">`;
+  const normalized = key === 'trex' || key === 'tyrannosaurusrex' ? 'tyrannosaurus' : key;
+  const entry = Object.hasOwn(GARAGE_DINO_CATALOG, normalized)
+    ? GARAGE_DINO_CATALOG[normalized] : GARAGE_DINO_CATALOG.tyrannosaurus;
+  return { filename: entry[0], color: entry[1] };
+}
+
+function getDinoImage(species, size = '80px', loading = 'eager') {
+  const { filename, color } = getGarageDinoVisual(species);
+  const pixels = Math.max(1, Math.min(224, parseInt(size, 10) || 80));
+  const imageLoading = loading === 'lazy' ? 'lazy' : 'eager';
+  return `<span class="garage-dino-visual garage-dino-visual--${color}" style="width:${pixels}px;height:${pixels}px;">
+    <img src="assets/imges/thumbs/${filename}.png" alt="${filename}" width="${pixels}" height="${pixels}" decoding="async" loading="${imageLoading}"
+      style="width:100%;height:100%;object-fit:contain;display:block;"
+      onerror="this.onerror=null;this.src='assets/imges/${filename}.png';">
+  </span>`;
 }
 
 function updateGarageDinoIcon(id, species) {
   const icon = document.getElementById(id);
   if (!icon) return;
-  const container = document.createElement('div');
-  container.innerHTML = getDinoImage(species);
-  icon.src = container.firstElementChild.getAttribute('src');
+  const { filename, color } = getGarageDinoVisual(species);
+  icon.onerror = () => { icon.onerror = null; icon.src = 'assets/imges/' + filename + '.png'; };
+  icon.src = 'assets/imges/thumbs/' + filename + '.png';
+  icon.parentElement.classList.toggle('garage-dino-visual--red', color === 'red');
+  icon.parentElement.classList.toggle('garage-dino-visual--green', color === 'green');
   icon.alt = String(species || 'Khủng long');
 }
 // ──────────────────────────────────────────────────────────────────────────
@@ -468,7 +486,7 @@ const Garage = {
           <span class="slot-badge-num">Ô #${s.slot}</span>
           <div style="position: relative; z-index: 1;">
             <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 10px;">
-              <div style="width:70px;height:70px;flex-shrink:0;">${getDinoImage(s.species, '70px')}</div>
+              <div style="width:70px;height:70px;flex-shrink:0;">${getDinoImage(s.species, '70px', 'lazy')}</div>
               <div>
                 <h4 style="color: #fff; margin: 0 0 4px; font-size: 1.25rem; font-weight: 800;">${s.species}</h4>
                 <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
