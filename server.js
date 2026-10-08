@@ -1360,6 +1360,32 @@ app.post('/api/player/garage/park', async (req, res) => {
   });
 });
 
+// 9.2.0 Chuẩn bị Cất Vào Gara (Người chơi bắt buộc đứng yên in-game trong 30 giây)
+app.post('/api/player/garage/park-prepare', async (req, res) => {
+  const { species } = req.body;
+  const steamId = getRequestSteamId(req);
+  if (!steamId) return res.status(401).json({ error: "Vui lòng đăng nhập Steam!" });
+
+  let playerName = `Player_${steamId.slice(-4)}`;
+  try {
+    const p = await callIslePilot(`/players/${steamId}`);
+    if (p && p.name) playerName = p.name;
+  } catch (_) {}
+
+  try {
+    await callIslePilot('/commands', 'POST', {
+      action: 'announce',
+      message: `📦 [GARA PARK]: [${playerName}] đang niêm phong cất [${species || 'Khủng Long'}] vào Gara. Người chơi bắt buộc đứng yên trong 30 giây!`
+    });
+  } catch (_) {}
+
+  res.json({
+    success: true,
+    countdownSeconds: 30,
+    message: "Bắt đầu đếm ngược 30 giây niêm phong cất Gara."
+  });
+});
+
 // 9.2.1 Chuẩn bị Đưa Ra Đảo & Phát Cảnh Báo 500m (Thời gian chuẩn bị 30 giây)
 app.post('/api/player/garage/restore-prepare', async (req, res) => {
   const { garageDinoId, species, growth } = req.body;
@@ -4284,6 +4310,10 @@ function getCasinoData() {
         { dice: ['rex', 'cua', 'ga'] },
         { dice: ['trike', 'trike', 'deino'] },
         { dice: ['ech', 'rex', 'cua'] }
+      ],
+      raceHistory: [
+        { winnerId: 'galli', winnerName: 'Gallimimus (Gà Gió Lốc)', time: Date.now() - 360000 },
+        { winnerId: 'carno', winnerName: 'Carnotaurus (Tên Lửa Đỏ)', time: Date.now() - 180000 }
       ]
     };
     savePortalData(data);
@@ -4303,7 +4333,8 @@ app.get('/api/casino/stats', async (req, res) => {
     myBalance,
     totalTreasury: data.casinoStats.totalTreasury || 18450,
     taiXiuHistory: (data.casinoStats.taiXiuHistory || []).slice(0, 20),
-    bauCuaHistory: (data.casinoStats.bauCuaHistory || []).slice(0, 15)
+    bauCuaHistory: (data.casinoStats.bauCuaHistory || []).slice(0, 15),
+    raceHistory: (data.casinoStats.raceHistory || []).slice(0, 15)
   });
 });
 
@@ -4536,6 +4567,111 @@ app.post('/api/casino/bau-cua/play', async (req, res) => {
     newBalance,
     totalTreasury: data.casinoStats.totalTreasury,
     message: netProfit > 0 ? `🎉 Bạn trúng lớn +${netProfit} Lúa 🌾!` : (netProfit === 0 ? `🤝 Hòa vốn ván này!` : `💀 Bạn bị Kho Bạc ST25 hút -${Math.abs(netProfit)} Lúa.`)
+  });
+});
+
+// 4. Minigame: Đua Khủng Long Ảo (Dino Racing / Dino Derby)
+app.post('/api/casino/dino-race/play', async (req, res) => {
+  const steamId = getRequestSteamId(req);
+  if (!steamId) {
+    return res.status(401).json({ error: "Vui lòng liên kết tài khoản Steam trước khi chơi Sòng Bạc!" });
+  }
+
+  const { bets } = req.body;
+  if (!bets || typeof bets !== 'object') {
+    return res.status(400).json({ error: "Thông tin đặt cược không hợp lệ!" });
+  }
+
+  const racers = [
+    { id: 'galli', name: 'Gallimimus (Gà Gió Lốc)', icon: '🏃', odds: 2.2 },
+    { id: 'carno', name: 'Carnotaurus (Tên Lửa Đỏ)', icon: '🦖', odds: 3.0 },
+    { id: 'pachy', name: 'Pachycephalosaurus (Thiết Đầu Công)', icon: '🦘', odds: 4.5 },
+    { id: 'cera', name: 'Ceratosaurus (Độc Nhãn Vương)', icon: '🐊', odds: 6.0 },
+    { id: 'deino', name: 'Deinosuchus (Thần Cá Sấu)', icon: '🦆', odds: 10.0 }
+  ];
+
+  let totalBet = 0;
+  const cleanedBets = {};
+  for (const r of racers) {
+    const val = Math.floor(Number(bets[r.id]) || 0);
+    if (val > 0) {
+      cleanedBets[r.id] = val;
+      totalBet += val;
+    }
+  }
+
+  if (totalBet < 1 || totalBet > 1500) {
+    return res.status(400).json({ error: "Tổng cược Đua Khủng Long phải từ 1 đến 1,500 Lúa 🌾!" });
+  }
+
+  const liveBal = await getLivePlayerBalance(steamId);
+  if (liveBal < totalBet) {
+    return res.status(400).json({ error: `Số dư Lúa không đủ! Bạn chỉ còn ${liveBal} Lúa.` });
+  }
+
+  // 1. Trừ Lúa trực tiếp trên IslePilot Cloud
+  await modifyLivePlayerBalance(steamId, -totalBet, `dino_race_bet_${totalBet}`);
+
+  // 2. Thuật toán: Người chơi chỉ thắng 30%, Nhà cái thắng 70%
+  const playerWins = Math.random() < CASINO_PLAYER_WIN_RATE;
+  const betRacerIds = Object.keys(cleanedBets);
+  const unbetRacerIds = racers.map(r => r.id).filter(id => !cleanedBets[id]);
+
+  let winnerId = null;
+  if (playerWins && betRacerIds.length > 0) {
+    // Cho con người chơi cược (ưu tiên con cược nhiều nhất) về Nhất
+    winnerId = betRacerIds.sort((a,b) => (cleanedBets[b]||0) - (cleanedBets[a]||0))[0];
+  } else {
+    // Cho con người chơi KHÔNG CƯỢC về Nhất
+    if (unbetRacerIds.length > 0) {
+      winnerId = unbetRacerIds[Math.floor(Math.random() * unbetRacerIds.length)];
+    } else {
+      // Nếu cược cả 5 con, chọn con cược ít nhất
+      winnerId = racers.map(r => r.id).sort((a,b) => (cleanedBets[a]||0) - (cleanedBets[b]||0))[0];
+    }
+  }
+
+  // Sắp xếp thứ hạng (Rankings 1st -> 5th)
+  const remainingIds = racers.map(r => r.id).filter(id => id !== winnerId).sort(() => Math.random() - 0.5);
+  const rankings = [winnerId, ...remainingIds];
+
+  // 3. Tính tiền thưởng
+  const winningRacer = racers.find(r => r.id === winnerId);
+  const betOnWinner = cleanedBets[winnerId] || 0;
+  let totalPayout = 0;
+  if (betOnWinner > 0) {
+    totalPayout = Math.floor(betOnWinner * winningRacer.odds * 0.95); // trừ 5% phế nhà cái
+    await modifyLivePlayerBalance(steamId, totalPayout, `dino_race_payout_${winnerId}`);
+  }
+
+  const netProfit = totalPayout - totalBet;
+  const newBalance = await getLivePlayerBalance(steamId);
+
+  // 4. Lưu thống kê
+  const data = getCasinoData();
+  data.casinoStats.totalTreasury = Math.max(0, (data.casinoStats.totalTreasury || 18450) + (-netProfit));
+  data.casinoStats.raceHistory = data.casinoStats.raceHistory || [];
+  data.casinoStats.raceHistory.unshift({
+    winnerId,
+    winnerName: winningRacer.name,
+    time: Date.now()
+  });
+  data.casinoStats.raceHistory = data.casinoStats.raceHistory.slice(0, 20);
+  savePortalData(data);
+
+  res.json({
+    success: true,
+    winnerId,
+    winnerName: winningRacer.name,
+    rankings,
+    won: netProfit > 0,
+    totalPayout,
+    netProfit,
+    newBalance,
+    totalTreasury: data.casinoStats.totalTreasury,
+    message: netProfit > 0 
+      ? `🎉 VÔ ĐỊCH! [${winningRacer.name}] về Nhất! Bạn nhận +${netProfit} Lúa 🌾!` 
+      : `💀 [${winningRacer.name}] về Nhất! Bạn bị Kho Bạc ST25 hút -${Math.abs(netProfit)} Lúa.`
   });
 });
 

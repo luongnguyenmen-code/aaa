@@ -459,6 +459,9 @@ const Garage = {
     }).join('');
   },
 
+  parkChannelingTimer: null,
+  parkRemainingSeconds: 30,
+
   async parkActiveDino() {
     if (this.cooldownSeconds > 0) {
       this.showActionAlert('⏳ Đang Trong Thời Gian Giãn Cách 30 Giây', `Vui lòng chờ thêm ${this.cooldownSeconds}s trước khi cất hoặc đổi khủng long!`, 'warning');
@@ -471,22 +474,79 @@ const Garage = {
       return;
     }
 
-    if (!confirm(`Xác nhận cất [${this.activeDino.species}] vào Gara IslePilot? Lưu ý: Bạn bắt buộc phải không bị nhận sát thương trong 30 giây gần nhất!`)) {
+    if (!confirm(`Xác nhận niêm phong cất [${this.activeDino.species}] vào Gara IslePilot?\n\n⚠️ QUY ĐỊNH BẮT BUỘC TỪ MÁY CHỦ:\n• Bạn PHẢI đứng yên hoàn toàn trong game trong suốt 30 giây tới!\n• Không di chuyển, không tấn công và không nhận sát thương.\n• Lệnh cất sẽ được gửi đi sau đúng 30 giây đếm ngược!`)) {
       return;
     }
 
     const sid = this.getActiveSteamId();
+    this.hideActionAlert();
+
+    // 1. Gửi tín hiệu chuẩn bị cất lên server
     try {
-      this.hideActionAlert();
-      App.showToast('Đang kết nối IslePilot để cất khủng long...', 'info');
+      await fetch('/api/player/garage/park-prepare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(sid ? { 'x-steam-id': sid } : {}) },
+        body: JSON.stringify({ species: this.activeDino.species, steamId: sid })
+      });
+    } catch (_) {}
+
+    // 2. Mở Modal Đếm Ngược 30 Giây
+    const modal = document.getElementById('park-channeling-modal');
+    const nameEl = document.getElementById('park-modal-dino-name');
+    const countEl = document.getElementById('park-countdown-big');
+    const progressEl = document.getElementById('park-countdown-progress');
+
+    if (nameEl) nameEl.textContent = `${this.activeDino.species} (${this.activeDino.growth}% Growth)`;
+    if (countEl) countEl.textContent = '30s';
+    if (progressEl) progressEl.style.width = '100%';
+    if (modal) modal.style.display = 'flex';
+
+    this.parkRemainingSeconds = 30;
+    if (this.parkChannelingTimer) clearInterval(this.parkChannelingTimer);
+
+    this.parkChannelingTimer = setInterval(async () => {
+      this.parkRemainingSeconds--;
+      if (countEl) countEl.textContent = `${this.parkRemainingSeconds}s`;
+      if (progressEl) {
+        const pct = Math.max(0, (this.parkRemainingSeconds / 30) * 100);
+        progressEl.style.width = `${pct}%`;
+      }
+
+      if (this.parkRemainingSeconds <= 0) {
+        clearInterval(this.parkChannelingTimer);
+        this.parkChannelingTimer = null;
+        if (countEl) countEl.textContent = '0s';
+        await this.executeFinalPark();
+      }
+    }, 1000);
+  },
+
+  cancelParkChanneling() {
+    if (this.parkChannelingTimer) {
+      clearInterval(this.parkChannelingTimer);
+      this.parkChannelingTimer = null;
+    }
+    const modal = document.getElementById('park-channeling-modal');
+    if (modal) modal.style.display = 'none';
+    App.showToast('Đã hủy bỏ lệnh cất khủng long vào Gara.', 'info');
+  },
+
+  async executeFinalPark() {
+    const modal = document.getElementById('park-channeling-modal');
+    const sid = this.getActiveSteamId();
+
+    try {
+      App.showToast('Hết 30 giây! Đang gửi lệnh niêm phong vào Gara...', 'info');
       const res = await fetch('/api/player/garage/park', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(sid ? { 'x-steam-id': sid } : {}) },
         body: JSON.stringify({ steamId: sid })
       });
       const data = await res.json();
+      if (modal) modal.style.display = 'none';
+
       if (res.ok && data.success) {
-        App.showToast(data.message, 'success');
+        App.showToast(data.message || 'Đã cất khủng long vào Gara thành công!', 'success');
         this.hideActionAlert();
         localStorage.setItem('the_isle_garage_cooldown', Date.now() + 30000);
         this.cooldownSeconds = 30;
@@ -499,6 +559,7 @@ const Garage = {
         this.showActionAlert('⚠️ Chưa Thể Cất Vào Gara Lúc Này', errMsg, 'error');
       }
     } catch (e) {
+      if (modal) modal.style.display = 'none';
       App.showToast('Lỗi mạng khi cất khủng long!', 'error');
       this.showActionAlert('Lỗi Kết Nối', 'Không thể kết nối máy chủ ST25. Vui lòng kiểm tra lại đường truyền!', 'error');
     }

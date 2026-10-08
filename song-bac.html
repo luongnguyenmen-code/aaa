@@ -328,6 +328,195 @@
       from { opacity: 0; transform: translateY(-5px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    /* ========================================== */
+    /* DINO DERBY RACETRACK STYLES */
+    /* ========================================== */
+    .race-track-wrapper {
+      background: radial-gradient(circle at top, #1b261e 0%, #0c130f 100%);
+      border: 2px solid rgba(245, 158, 11, 0.35);
+      border-radius: var(--radius-md);
+      padding: 18px 16px;
+      margin-bottom: 24px;
+      position: relative;
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9), 0 8px 30px rgba(0, 0, 0, 0.7);
+    }
+    .race-commentary-bar {
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      border-radius: 8px;
+      padding: 10px 16px;
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #fbbf24;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 46px;
+      text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+    }
+    .race-track-field {
+      position: relative;
+      background: linear-gradient(180deg, #141c16 0%, #1e2b22 50%, #141c16 100%);
+      border: 2px solid #2f3e33;
+      border-radius: 10px;
+      padding: 10px 0;
+      overflow: hidden;
+    }
+    .race-lane {
+      display: flex;
+      align-items: center;
+      height: 54px;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.12);
+      position: relative;
+      padding: 0 12px;
+    }
+    .race-lane:last-child {
+      border-bottom: none;
+    }
+    .race-lane-meta {
+      width: 140px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 2;
+    }
+    .lane-num-badge {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 900;
+      color: #cbd5e1;
+    }
+    .lane-racer-name {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+    }
+    .lane-racer-odds {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #34d399;
+    }
+    .race-lane-field {
+      flex: 1;
+      position: relative;
+      height: 100%;
+      margin: 0 50px 0 10px;
+    }
+    .finish-line-marker {
+      position: absolute;
+      right: 35px;
+      top: 0;
+      bottom: 0;
+      width: 18px;
+      background: repeating-linear-gradient(
+        45deg,
+        #fff,
+        #fff 6px,
+        #000 6px,
+        #000 12px
+      );
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+      z-index: 1;
+      opacity: 0.85;
+    }
+    .finish-cup-flag {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.3rem;
+      z-index: 2;
+    }
+    .racer-runner {
+      position: absolute;
+      top: 50%;
+      left: 0%;
+      transform: translateY(-50%);
+      font-size: 1.85rem;
+      line-height: 1;
+      transition: left 0.1s linear;
+      z-index: 3;
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.7));
+    }
+    .racer-runner.running {
+      animation: racerGallop 0.22s infinite alternate ease-in-out;
+    }
+    @keyframes racerGallop {
+      0% { transform: translateY(-52%) rotate(-4deg); }
+      100% { transform: translateY(-44%) rotate(5deg) scale(1.04); }
+    }
+    .racer-runner.winner-boost {
+      filter: drop-shadow(0 0 12px #fbbf24) brightness(1.2);
+    }
+
+    /* Dino Bet Cards Grid */
+    .race-bets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .race-bet-card {
+      background: rgba(22, 32, 26, 0.7);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      padding: 14px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .race-bet-card:hover {
+      border-color: rgba(245, 158, 11, 0.5);
+      background: rgba(30, 42, 34, 0.9);
+      transform: translateY(-2px);
+    }
+    .race-bet-card.active-bet {
+      border-color: #fbbf24;
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.15) 0%, rgba(30, 42, 34, 0.95) 100%);
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.25);
+    }
+    .race-bet-card .racer-avatar {
+      font-size: 2.2rem;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .race-bet-card .racer-title {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+    .race-bet-card .racer-odds {
+      display: inline-block;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #34d399;
+      background: rgba(52, 211, 153, 0.12);
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+    }
+    .race-bet-card .racer-current-bet {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .race-bet-card .racer-current-bet strong {
+      color: #fbbf24;
+      font-size: 0.95rem;
+    }
   </style>
 </head>
 <body>
@@ -408,6 +597,9 @@
       </button>
       <button class="casino-tab-btn" onclick="switchGame('baucua')">
         <span>🦀</span> BẦU CUA ST25 (REX - TRIKE - DEINO)
+      </button>
+      <button class="casino-tab-btn" onclick="switchGame('race')">
+        <span>🏁</span> ĐUA KHỦNG LONG (DINO DERBY)
       </button>
     </div>
 
@@ -607,6 +799,181 @@
       <div id="baucua-announcement" class="result-announcement"></div>
     </section>
 
+    <!-- ========================================== -->
+    <!-- GAME 3: ĐUA KHỦNG LONG (DINO DERBY) -->
+    <!-- ========================================== -->
+    <section id="game-race-sec" class="casino-arena" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h2 style="font-size: 1.35rem; color: #fff; margin-bottom: 2px;">🏁 Đua Khủng Long Ảo Gateway Derby</h2>
+          <p style="font-size: 0.82rem; color: var(--text-secondary);">Chọn chiến mã khủng long bạn tin tưởng, đặt cược và theo dõi màn bứt tốc ngoạn mục 6 giây!</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="rule-badge badge-warn" style="font-size: 0.75rem;">⚡ Tốc độ cao 6s</span>
+          <button onclick="clearRaceBets()" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">
+            🧹 Xóa Cược
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Commentary Bar -->
+      <div id="race-commentary-text" class="race-commentary-bar">
+        <span>📢</span> <span id="race-live-narrator">Chào mừng các chiến binh đến với Trường Đua ST25 Derby! Hãy đặt cược vào chiến mã bạn tin tưởng.</span>
+      </div>
+
+      <!-- Virtual Racetrack -->
+      <div class="race-track-wrapper">
+        <div class="race-track-field">
+          <!-- Vạch đích toàn đường đua -->
+          <div class="finish-line-marker"></div>
+          <div class="finish-cup-flag">🏆</div>
+
+          <!-- Làn 1: Gallimimus -->
+          <div class="race-lane" id="lane-row-galli">
+            <div class="race-lane-meta">
+              <span class="lane-num-badge" style="border: 1px solid #fbbf24; color: #fbbf24;">1</span>
+              <div>
+                <div class="lane-racer-name">Gallimimus</div>
+                <div class="lane-racer-odds">x2.2 (Gà Gió Lốc)</div>
+              </div>
+            </div>
+            <div class="race-lane-field">
+              <div class="racer-runner" id="runner-galli" style="left: 0%;">🏃</div>
+            </div>
+          </div>
+
+          <!-- Làn 2: Carnotaurus -->
+          <div class="race-lane" id="lane-row-carno">
+            <div class="race-lane-meta">
+              <span class="lane-num-badge" style="border: 1px solid #f87171; color: #f87171;">2</span>
+              <div>
+                <div class="lane-racer-name">Carnotaurus</div>
+                <div class="lane-racer-odds">x3.0 (Tên Lửa Đỏ)</div>
+              </div>
+            </div>
+            <div class="race-lane-field">
+              <div class="racer-runner" id="runner-carno" style="left: 0%;">🦖</div>
+            </div>
+          </div>
+
+          <!-- Làn 3: Pachycephalosaurus -->
+          <div class="race-lane" id="lane-row-pachy">
+            <div class="race-lane-meta">
+              <span class="lane-num-badge" style="border: 1px solid #60a5fa; color: #60a5fa;">3</span>
+              <div>
+                <div class="lane-racer-name">Pachycephalo</div>
+                <div class="lane-racer-odds">x4.5 (Thiết Đầu)</div>
+              </div>
+            </div>
+            <div class="race-lane-field">
+              <div class="racer-runner" id="runner-pachy" style="left: 0%;">🦘</div>
+            </div>
+          </div>
+
+          <!-- Làn 4: Ceratosaurus -->
+          <div class="race-lane" id="lane-row-cera">
+            <div class="race-lane-meta">
+              <span class="lane-num-badge" style="border: 1px solid #34d399; color: #34d399;">4</span>
+              <div>
+                <div class="lane-racer-name">Ceratosaurus</div>
+                <div class="lane-racer-odds">x6.0 (Độc Nhãn)</div>
+              </div>
+            </div>
+            <div class="race-lane-field">
+              <div class="racer-runner" id="runner-cera" style="left: 0%;">🐊</div>
+            </div>
+          </div>
+
+          <!-- Làn 5: Deinosuchus -->
+          <div class="race-lane" id="lane-row-deino">
+            <div class="race-lane-meta">
+              <span class="lane-num-badge" style="border: 1px solid #c084fc; color: #c084fc;">5</span>
+              <div>
+                <div class="lane-racer-name">Deinosuchus</div>
+                <div class="lane-racer-odds">x10.0 (Cá Sấu Thần)</div>
+              </div>
+            </div>
+            <div class="race-lane-field">
+              <div class="racer-runner" id="runner-deino" style="left: 0%;">🦆</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Winners Strip -->
+      <div style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">🏆 Các Quán Quân Derby Trận Gần Đây:</span>
+          <span id="race-recent-winner-tag" style="font-size: 0.75rem; color: #fbbf24;"></span>
+        </div>
+        <div id="race-history-ribbon" style="display: flex; gap: 8px; flex-wrap: wrap; padding: 8px 12px; background: rgba(10, 15, 12, 0.6); border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.06);">
+          <span style="color: var(--text-muted); font-size: 0.8rem;">Đang tải lịch sử trận...</span>
+        </div>
+      </div>
+
+      <!-- Betting Cards Grid -->
+      <div class="race-bets-grid">
+        <!-- Galli -->
+        <div class="race-bet-card" id="card-bet-galli" onclick="addRaceBet('galli')">
+          <div class="racer-avatar">🏃</div>
+          <div class="racer-title">Gallimimus</div>
+          <div class="racer-odds">1 ĂN 2.2</div>
+          <div class="racer-current-bet">Cược: <strong id="race-bet-val-galli">0</strong> 🌾</div>
+        </div>
+        <!-- Carno -->
+        <div class="race-bet-card" id="card-bet-carno" onclick="addRaceBet('carno')">
+          <div class="racer-avatar">🦖</div>
+          <div class="racer-title">Carnotaurus</div>
+          <div class="racer-odds">1 ĂN 3.0</div>
+          <div class="racer-current-bet">Cược: <strong id="race-bet-val-carno">0</strong> 🌾</div>
+        </div>
+        <!-- Pachy -->
+        <div class="race-bet-card" id="card-bet-pachy" onclick="addRaceBet('pachy')">
+          <div class="racer-avatar">🦘</div>
+          <div class="racer-title">Pachycephalo</div>
+          <div class="racer-odds">1 ĂN 4.5</div>
+          <div class="racer-current-bet">Cược: <strong id="race-bet-val-pachy">0</strong> 🌾</div>
+        </div>
+        <!-- Cera -->
+        <div class="race-bet-card" id="card-bet-cera" onclick="addRaceBet('cera')">
+          <div class="racer-avatar">🐊</div>
+          <div class="racer-title">Ceratosaurus</div>
+          <div class="racer-odds">1 ĂN 6.0</div>
+          <div class="racer-current-bet">Cược: <strong id="race-bet-val-cera">0</strong> 🌾</div>
+        </div>
+        <!-- Deino -->
+        <div class="race-bet-card" id="card-bet-deino" onclick="addRaceBet('deino')">
+          <div class="racer-avatar">🦆</div>
+          <div class="racer-title">Deinosuchus</div>
+          <div class="racer-odds" style="color: #fbbf24; background: rgba(245, 158, 11, 0.15);">1 ĂN 10.0</div>
+          <div class="racer-current-bet">Cược: <strong id="race-bet-val-deino">0</strong> 🌾</div>
+        </div>
+      </div>
+
+      <!-- Chip Selector & Controls -->
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+        <div class="chip-selector">
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-right: 4px;">Mệnh giá mỗi click:</span>
+          <button class="chip-btn" onclick="setRaceChip(5)">+5</button>
+          <button class="chip-btn active" onclick="setRaceChip(10)">+10</button>
+          <button class="chip-btn" onclick="setRaceChip(25)">+25</button>
+          <button class="chip-btn" onclick="setRaceChip(50)">+50</button>
+          <button class="chip-btn" onclick="setRaceChip(100)">+100</button>
+        </div>
+
+        <div style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 4px;">
+          Tổng tiền cược trận: <span id="race-total-bet-display" style="color: #fbbf24; font-size: 1.3rem;">0</span> Lúa 🌾
+        </div>
+
+        <button id="btn-start-race" onclick="startDinoRace()" class="btn btn-primary" style="padding: 14px 45px; font-size: 1.15rem; font-weight: 900; background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 20px rgba(245, 158, 11, 0.45); border-radius: 30px;">
+          🏁 XUẤT PHÁT ĐUA NGAY 🚀
+        </button>
+      </div>
+
+      <!-- Result Announcement -->
+      <div id="race-announcement" class="result-announcement"></div>
+    </section>
+
     <!-- Rules & Safety Note -->
     <div style="background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: var(--radius-sm); padding: 16px 20px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
       <strong style="color: #fbbf24;">📜 Lưu Ý & Luật Chơi Giải Trí ST25:</strong>
@@ -638,6 +1005,18 @@
       ga: { icon: '🐔', label: 'GÀ' },
       ech: { icon: '🐸', label: 'ẾCH' }
     };
+
+    // Đua Khủng Long state
+    let raceChip = 10;
+    const raceBets = { galli: 0, carno: 0, pachy: 0, cera: 0, deino: 0 };
+    const raceInfo = {
+      galli: { name: 'Gallimimus (Gà Gió Lốc)', icon: '🏃', odds: 2.2, color: '#fbbf24' },
+      carno: { name: 'Carnotaurus (Tên Lửa Đỏ)', icon: '🦖', odds: 3.0, color: '#f87171' },
+      pachy: { name: 'Pachycephalosaurus (Thiết Đầu)', icon: '🦘', odds: 4.5, color: '#60a5fa' },
+      cera: { name: 'Ceratosaurus (Độc Nhãn)', icon: '🐊', odds: 6.0, color: '#34d399' },
+      deino: { name: 'Deinosuchus (Thần Cá Sấu)', icon: '🦆', odds: 10.0, color: '#c084fc' }
+    };
+    let isRacing = false;
 
     document.addEventListener('DOMContentLoaded', async () => {
       // 1. Identify player
@@ -681,6 +1060,7 @@
           }
 
           renderTaiXiuHistory(data.taiXiuHistory || []);
+          renderRaceHistory(data.raceHistory || []);
         }
       } catch (err) {
         console.error('Failed to load casino stats:', err);
@@ -692,13 +1072,17 @@
       tabs.forEach(t => t.classList.remove('active'));
       document.getElementById('game-taixiu-sec').style.display = 'none';
       document.getElementById('game-baucua-sec').style.display = 'none';
+      document.getElementById('game-race-sec').style.display = 'none';
 
       if (game === 'taixiu') {
         tabs[0].classList.add('active');
         document.getElementById('game-taixiu-sec').style.display = 'block';
-      } else {
+      } else if (game === 'baucua') {
         tabs[1].classList.add('active');
         document.getElementById('game-baucua-sec').style.display = 'block';
+      } else if (game === 'race') {
+        tabs[2].classList.add('active');
+        document.getElementById('game-race-sec').style.display = 'block';
       }
     }
 
@@ -1032,6 +1416,243 @@
             osc.stop(ctx.currentTime + 0.25);
           }, idx * 100);
         });
+      } catch (_) {}
+    }
+
+    // ==========================================
+    // ĐUA KHỦNG LONG FUNCTIONS
+    // ==========================================
+    function setRaceChip(amt) {
+      raceChip = amt;
+      const chips = document.querySelectorAll('#game-race-sec .chip-btn');
+      chips.forEach(c => {
+        if (Number(c.textContent.replace('+', '').trim()) === amt) c.classList.add('active');
+        else c.classList.remove('active');
+      });
+    }
+
+    function addRaceBet(racerId) {
+      if (isRacing) return;
+      const totalCurrent = Object.values(raceBets).reduce((a, b) => a + b, 0);
+      if (totalCurrent + raceChip > currentBalance) {
+        App.showToast('Số dư Lúa không đủ để cược thêm!', 'warning');
+        return;
+      }
+      raceBets[racerId] = (raceBets[racerId] || 0) + raceChip;
+      updateRaceUI();
+    }
+
+    function clearRaceBets() {
+      if (isRacing) return;
+      for (const k in raceBets) raceBets[k] = 0;
+      updateRaceUI();
+    }
+
+    function updateRaceUI() {
+      let total = 0;
+      for (const k in raceBets) {
+        const val = raceBets[k];
+        total += val;
+        const valEl = document.getElementById(`race-bet-val-${k}`);
+        if (valEl) valEl.textContent = val;
+        const card = document.getElementById(`card-bet-${k}`);
+        if (card) {
+          if (val > 0) card.classList.add('active-bet');
+          else card.classList.remove('active-bet');
+        }
+      }
+      document.getElementById('race-total-bet-display').textContent = total.toLocaleString();
+    }
+
+    function renderRaceHistory(list) {
+      const ribbon = document.getElementById('race-history-ribbon');
+      if (!list || list.length === 0) {
+        ribbon.innerHTML = '<span style="color: var(--text-muted); font-size: 0.8rem;">Chưa có trận đua nào gần đây.</span>';
+        return;
+      }
+      ribbon.innerHTML = list.slice(0, 8).map(item => {
+        const info = raceInfo[item.winnerId] || { icon: '🦖', name: item.winnerName };
+        return `<span style="background: rgba(255,255,255,0.06); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; color: #fbbf24; border: 1px solid rgba(245,158,11,0.2);">${info.icon} ${item.winnerName.split(' ')[0]}</span>`;
+      }).join('');
+      if (list[0]) {
+        document.getElementById('race-recent-winner-tag').textContent = `Mới nhất: ${list[0].winnerName}`;
+      }
+    }
+
+    async function startDinoRace() {
+      if (isRacing) return;
+      if (!currentSteamId) {
+        App.showToast('Vui lòng liên kết tài khoản Steam trước khi chơi!', 'warning');
+        return;
+      }
+
+      const totalBet = Object.values(raceBets).reduce((a, b) => a + b, 0);
+      if (totalBet <= 0) {
+        App.showToast('Vui lòng đặt cược vào ít nhất 1 chiến mã khủng long!', 'warning');
+        return;
+      }
+      if (totalBet > currentBalance) {
+        App.showToast('Số dư Lúa không đủ!', 'error');
+        return;
+      }
+
+      isRacing = true;
+      const startBtn = document.getElementById('btn-start-race');
+      startBtn.disabled = true;
+      startBtn.innerHTML = '🔥 ĐANG TRANH TÀI QUYẾT LIỆT...';
+
+      const announcer = document.getElementById('race-live-narrator');
+      const announce = document.getElementById('race-announcement');
+      announce.style.display = 'none';
+
+      const racerIds = ['galli', 'carno', 'pachy', 'cera', 'deino'];
+      const runners = {};
+      racerIds.forEach(id => {
+        const el = document.getElementById(`runner-${id}`);
+        el.style.left = '0%';
+        el.classList.remove('winner-boost');
+        el.classList.add('running');
+        runners[id] = el;
+      });
+
+      announcer.innerHTML = '🚨 <strong>CÁC CHIẾN MÃ VÀO VẠCH XUẤT PHÁT!</strong> 3... 2... 1... XUẤT PHÁT! 🚀';
+      playRaceStartSound();
+
+      try {
+        // Gửi lệnh đặt cược lên server
+        const res = await fetch('/api/casino/dino-race/play', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          credentials: 'include',
+          body: JSON.stringify({ bets: raceBets })
+        });
+        const result = await res.json();
+
+        if (!res.ok || !result.success) {
+          racerIds.forEach(id => runners[id].classList.remove('running'));
+          App.showToast(result.error || 'Lỗi khi xuất phát cuộc đua!', 'error');
+          isRacing = false;
+          startBtn.disabled = false;
+          startBtn.innerHTML = '🏁 XUẤT PHÁT ĐUA NGAY 🚀';
+          return;
+        }
+
+        // Bắt đầu simulation chạy đua 6 giây cực kỳ chân thực & kịch tính
+        const winnerId = result.winnerId;
+        const rankings = result.rankings || [winnerId, ...racerIds.filter(x => x !== winnerId)];
+
+        const commentaryStages = [
+          { time: 1000, text: '🏃 Gallimimus bứt tốc ban đầu cực nhanh! Các chiến mã lao đi như vũ bão!' },
+          { time: 2200, text: '🦖 Carnotaurus và Ceratosaurus đang sải bước cuồng phong áp sát!' },
+          { time: 3500, text: '🦘 Pachycephalosaurus và Deinosuchus rướn lên! Trận đấu vô cùng căng thẳng!' },
+          { time: 4800, text: `⚡ KHÚC CUA QUYẾT ĐỊNH! ${raceInfo[winnerId]?.name || 'Chiến mã'} BẮT ĐẦU BỨT PHÁ DẪN ĐẦU! 🔥` }
+        ];
+
+        commentaryStages.forEach(st => {
+          setTimeout(() => {
+            if (isRacing) announcer.innerHTML = `📢 ${st.text}`;
+          }, st.time);
+        });
+
+        // Loop animation cập nhật vị trí các chiến mã trong 6 giây
+        const startTime = Date.now();
+        const raceDuration = 6000; // 6 seconds
+
+        const interval = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(1, elapsed / raceDuration);
+
+          if (progress < 0.75) {
+            // Giai đoạn 0 -> 4.5s: Giằng co ngẫu nhiên giữa 5 con
+            racerIds.forEach(id => {
+              const baseDist = progress * 65; // tiến dần đến 65%
+              const jitter = (Math.random() - 0.45) * 12;
+              const pos = Math.max(0, Math.min(70, baseDist + jitter));
+              runners[id].style.left = `${pos}%`;
+            });
+          } else {
+            // Giai đoạn nước rút 4.5s -> 6s: Con chiến thắng bứt phá về đích
+            const sprintProgress = (progress - 0.75) / 0.25; // 0 -> 1
+            runners[winnerId].style.left = `${70 + sprintProgress * 23}%`; // chạm vạch đích ~93%
+
+            // Các con còn lại về sau theo thứ tự rankings
+            rankings.forEach((id, rankIdx) => {
+              if (id === winnerId) return;
+              const maxTarget = 88 - (rankIdx * 6); // lùi dần phía sau
+              runners[id].style.left = `${65 + sprintProgress * (maxTarget - 65)}%`;
+            });
+          }
+
+          if (progress >= 1) {
+            clearInterval(interval);
+            finishRace(result);
+          }
+        }, 120);
+
+      } catch (err) {
+        console.error(err);
+        racerIds.forEach(id => runners[id].classList.remove('running'));
+        App.showToast('Lỗi mạng khi tham gia cuộc đua!', 'error');
+        isRacing = false;
+        startBtn.disabled = false;
+        startBtn.innerHTML = '🏁 XUẤT PHÁT ĐUA NGAY 🚀';
+      }
+    }
+
+    function finishRace(result) {
+      const racerIds = ['galli', 'carno', 'pachy', 'cera', 'deino'];
+      racerIds.forEach(id => {
+        const el = document.getElementById(`runner-${id}`);
+        el.classList.remove('running');
+      });
+
+      const winnerEl = document.getElementById(`runner-${result.winnerId}`);
+      if (winnerEl) winnerEl.classList.add('winner-boost');
+
+      const announcer = document.getElementById('race-live-narrator');
+      announcer.innerHTML = `🏆 <strong>VỀ ĐÍCH!</strong> [${result.winnerName}] đã xuất sắc giành NGÔI VƯƠNG Derby ST25! 🎉`;
+
+      currentBalance = result.newBalance;
+      document.getElementById('user-lua-balance').textContent = `${currentBalance.toLocaleString()} 🌾`;
+      document.getElementById('server-treasury-amount').textContent = `${result.totalTreasury.toLocaleString()} 🌾`;
+
+      const announce = document.getElementById('race-announcement');
+      announce.style.display = 'block';
+
+      if (result.won) {
+        playWinSound();
+        announce.className = 'result-announcement win';
+        announce.innerHTML = `🎉 VÔ ĐỊCH! ${result.winnerName} về Nhất! Bạn nhận ngay <strong>+${result.netProfit} Lúa 🌾</strong> (Tổng nhận ${result.totalPayout} Lúa)!`;
+        App.showToast(`+${result.netProfit} Lúa 🌾`, 'success');
+      } else {
+        announce.className = 'result-announcement lose';
+        announce.innerHTML = `💀 THUA RỒI! ${result.winnerName} về Nhất. Mất <strong>-${Math.abs(result.netProfit)} Lúa 🌾</strong> vào Kho Bạc ST25.`;
+        App.showToast(`-${Math.abs(result.netProfit)} Lúa`, 'error');
+      }
+
+      clearRaceBets();
+      refreshCasinoStats();
+
+      isRacing = false;
+      const startBtn = document.getElementById('btn-start-race');
+      startBtn.disabled = false;
+      startBtn.innerHTML = '🏁 XUẤT PHÁT ĐUA NGAY 🚀';
+    }
+
+    function playRaceStartSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.35);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.4);
       } catch (_) {}
     }
   </script>
