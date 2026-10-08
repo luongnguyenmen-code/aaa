@@ -325,6 +325,8 @@ const App = {
       </div>
     `;
 
+    window.ST25Motion?.refresh();
+
     // Click outside to close popovers
     document.addEventListener('click', (e) => {
       const notifPopover = document.getElementById('hud-notification-popover');

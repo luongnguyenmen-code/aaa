@@ -19,7 +19,33 @@ body > header.site-header { view-transition-name: st25-header; }
   from { opacity: .25; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* Kodilion-inspired rolling text; the link hit area and width stay fixed. */
+.st25-roll {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  vertical-align: middle;
+  line-height: inherit;
+  max-width: 100%;
+}
+.st25-roll > span { display: block; }
+.st25-roll::after {
+  content: attr(data-label) / "";
+  position: absolute;
+  inset: 0;
+  transform: translateY(115%);
+  pointer-events: none;
+}
+.st25-roll > span, .st25-roll::after {
+  transition: transform 420ms cubic-bezier(.16,1,.3,1);
+}
+@media (hover: hover) and (pointer: fine) {
+  a:is(:hover, :focus-visible) > .st25-roll > span { transform: translateY(-115%); }
+  a:is(:hover, :focus-visible) > .st25-roll::after { transform: translateY(0); }
+}
 @media (prefers-reduced-motion: reduce) {
+  .st25-roll > span, .st25-roll::after { transition: none; transform: none !important; }
+  .st25-roll::after { content: none; }
   @view-transition { navigation: none; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) {
     animation: none !important;

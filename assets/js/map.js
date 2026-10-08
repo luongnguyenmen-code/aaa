@@ -115,7 +115,7 @@ const IsleMap = {
           iconAnchor: [20, 10]
         });
 
-        L.marker([centerLat, centerLng], { icon: labelIcon, interactive: false }).addTo(this.gridLayerGroup);
+        L.marker([centerLat, centerLng], { icon: labelIcon, interactive: false, keyboard: false }).addTo(this.gridLayerGroup);
       }
     }
   },
