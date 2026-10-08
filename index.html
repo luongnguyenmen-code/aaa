@@ -122,41 +122,25 @@
         </div>
 
         <div>
-          <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-lg);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-              <h3 style="color: #fff; font-size: 1.1rem;">Khủng Long Đang Chơi Trên Server ST25</h3>
-              <span class="rule-badge badge-allow">Live Data</span>
+          <div id="player-active-dino-card" style="background: var(--bg-card); border: 1.5px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-lg); position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h3 style="color: #fff; font-size: 1.15rem; display: flex; align-items: center; gap: 8px; margin: 0;">
+                <span>🦖</span> Khủng Long Đang Trong Game
+              </h3>
+              <span id="dino-status-badge" class="rule-badge badge-allow" style="font-size: 0.75rem; padding: 4px 10px;">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: #34d399; display: inline-block; margin-right: 4px; box-shadow: 0 0 8px #34d399;"></span> LIVE DATA
+              </span>
             </div>
 
-            <div style="display: flex; flex-direction: column; gap: 14px;">
-              <div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
-                  <span>Carnivore (Ăn thịt)</span>
-                  <strong style="color: #f43f5e;">55% (23 con)</strong>
-                </div>
-                <div class="stat-bar-track"><div class="stat-bar-fill fill-health" style="width: 55%;"></div></div>
-              </div>
-
-              <div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
-                  <span>Herbivore (Ăn cỏ)</span>
-                  <strong style="color: #10b981;">35% (15 con)</strong>
-                </div>
-                <div class="stat-bar-track"><div class="stat-bar-fill fill-stamina" style="width: 35%;"></div></div>
-              </div>
-
-              <div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
-                  <span>Omnivore (Ăn tạp)</span>
-                  <strong style="color: #f59e0b;">10% (4 con)</strong>
-                </div>
-                <div class="stat-bar-track"><div class="stat-bar-fill fill-hunger" style="width: 10%;"></div></div>
+            <div id="player-active-dino-body">
+              <div style="text-align: center; padding: 30px 0; color: var(--text-muted); font-size: 0.9rem;">
+                Đang đồng bộ dữ liệu khủng long từ máy chủ ST25...
               </div>
             </div>
 
-            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-              <h4 style="font-size: 0.9rem; color: #fff; margin-bottom: 8px;">Quy định nổi bật tại ST25</h4>
-              <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+              <h4 style="font-size: 0.85rem; color: #fff; margin-bottom: 6px;">Quy định nổi bật tại ST25</h4>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
                 • Vùng Cam: <strong>Rừng Dừa</strong> — Cấm CAMP đồ sát người mới / con non (Điều 6)<br>
                 • Gara: Sau khi lấy Dino ra phải chờ <strong>5 phút</strong> mới được chủ động giao tranh (Điều 12)<br>
                 • Báo cáo vi phạm: Bắt buộc gửi bằng chứng trong <strong>24h</strong> qua Ticket Discord (Điều 4)
@@ -326,5 +310,184 @@
   </footer>
 
   <script src="assets/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadActiveDinoWidget();
+    });
+
+    async function loadActiveDinoWidget() {
+      const bodyEl = document.getElementById('player-active-dino-body');
+      const badgeEl = document.getElementById('dino-status-badge');
+      if (!bodyEl) return;
+
+      const dinoIcons = {
+        'Tyrannosaurus': '🦖',
+        'Carnotaurus': '⚡',
+        'Ceratosaurus': '🐊',
+        'Allosaurus': '🦕',
+        'Dilophosaurus': '🦎',
+        'Herrerasaurus': '🦎',
+        'Deinosuchus': '🐊',
+        'Pteranodon': '🦅',
+        'Triceratops': '🦣',
+        'Stegosaurus': '🛡️',
+        'Diabloceratops': '🦣',
+        'Tenontosaurus': '🦕',
+        'Pachycephalosaurus': '🦘',
+        'Gallimimus': '🦤',
+        'Hypsilophodon': '🦎',
+        'Dryosaurus': '🦎',
+        'Troodon': '👁️',
+        'Beipiaosaurus': '🦆'
+      };
+
+      try {
+        const headers = {};
+        const stored = localStorage.getItem('st25_steam_user');
+        if (stored) {
+          try {
+            const u = JSON.parse(stored);
+            if (u && u.steam_id) headers['x-steam-id'] = u.steam_id;
+          } catch (_) {}
+        }
+
+        const res = await fetch('/api/player/me', { headers, credentials: 'include' });
+        if (!res.ok) throw new Error('Network error');
+        const data = await res.json();
+
+        // 1. Chưa đăng nhập Steam
+        if (!data || !data.linked || !data.steam_id) {
+          if (badgeEl) {
+            badgeEl.className = 'rule-badge badge-warn';
+            badgeEl.textContent = 'CHƯA LIÊN KẾT';
+          }
+          bodyEl.innerHTML = `
+            <div style="text-align: center; padding: 15px 0;">
+              <span style="font-size: 2.5rem; display: block; margin-bottom: 8px;">🎮</span>
+              <h4 style="color: #fff; margin-bottom: 6px; font-size: 1.05rem;">Chưa Liên Kết Tài Khoản Steam</h4>
+              <p style="color: var(--text-secondary); font-size: 0.82rem; margin-bottom: 14px; line-height: 1.5;">
+                Đăng nhập để xem thời gian thực: Khủng long đang sống, Tọa độ bản đồ, Chỉ số sinh tồn & Quản lý cất Gara an toàn.
+              </p>
+              <a href="/api/player/steam/login?redirect=/index.html" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);">
+                🎮 Đăng Nhập Steam Ngay
+              </a>
+            </div>
+          `;
+          return;
+        }
+
+        // 2. Đã đăng nhập nhưng chưa có Dino in-game
+        if (!data.dino || !data.dino.species || data.dino.species === 'Chưa xác định' || data.dino.species === 'Chưa chọn') {
+          if (badgeEl) {
+            badgeEl.className = 'rule-badge badge-orange';
+            badgeEl.textContent = 'CHƯA SPAWN';
+          }
+          bodyEl.innerHTML = `
+            <div style="text-align: center; padding: 15px 0;">
+              <span style="font-size: 2.5rem; display: block; margin-bottom: 8px;">🦖</span>
+              <h4 style="color: #fff; margin-bottom: 4px; font-size: 1.05rem;">Chào ${data.persona_name || 'Chiến Binh'}!</h4>
+              <p style="color: var(--text-secondary); font-size: 0.82rem; margin-bottom: 14px; line-height: 1.5;">
+                Bạn hiện chưa có khủng long nào sống trong game. Hãy vào game tạo nhân vật mới hoặc mở Gara để đưa khủng long ra đảo sinh tồn nhé!
+              </p>
+              <div style="display: flex; gap: 8px; justify-content: center;">
+                <a href="gara.html" class="btn btn-primary btn-sm" style="font-weight: 800;">
+                  🦖 Vào Gara Lấy Dino
+                </a>
+                <a href="nhiem-vu.html" class="btn btn-secondary btn-sm">
+                  🌾 Xem Kho Lúa
+                </a>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        // 3. Đang có Khủng Long In-Game
+        const d = data.dino;
+        const icon = dinoIcons[d.species] || '🦖';
+        const growthStage = d.growth < 35 ? 'Con non (Juv)' : (d.growth < 75 ? 'Thiếu niên (Sub)' : 'Trưởng thành (Adult)');
+        
+        if (badgeEl) {
+          badgeEl.className = 'rule-badge badge-allow';
+          badgeEl.innerHTML = `<span style="width: 7px; height: 7px; border-radius: 50%; background: #34d399; display: inline-block; margin-right: 4px; box-shadow: 0 0 8px #34d399;"></span> ONLINE`;
+        }
+
+        bodyEl.innerHTML = `
+          <!-- Info Header -->
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; background: rgba(0,0,0,0.25); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.06);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 2.1rem; line-height: 1;">${icon}</span>
+              <div>
+                <h4 style="color: #fff; font-size: 1.15rem; font-weight: 800; margin: 0; line-height: 1.2;">
+                  ${d.species}
+                </h4>
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  <span>${d.gender || 'Đực (Male)'}</span>
+                  <span>•</span>
+                  <span>${growthStage}</span>
+                  ${d.isPrimeElder ? '<span class="rule-badge badge-gold" style="font-size: 0.65rem; padding: 2px 6px;">⭐ PRIME</span>' : ''}
+                </div>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Tăng trưởng</div>
+              <div style="font-size: 1.35rem; font-weight: 900; color: #34d399; text-shadow: 0 0 10px rgba(52, 211, 153, 0.4);">
+                ${d.growth}%
+              </div>
+            </div>
+          </div>
+
+          <!-- Vital Bars -->
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+            <!-- Health -->
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 3px;">
+                <span style="color: var(--text-secondary);">❤️ Máu (Health)</span>
+                <strong style="color: #f43f5e;">${d.health}%</strong>
+              </div>
+              <div class="stat-bar-track" style="height: 6px; background: rgba(255,255,255,0.08);"><div class="stat-bar-fill fill-health" style="width: ${d.health}%;"></div></div>
+            </div>
+
+            <!-- Hunger -->
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 3px;">
+                <span style="color: var(--text-secondary);">🍖 Đói (Hunger)</span>
+                <strong style="color: #f59e0b;">${d.hunger}%</strong>
+              </div>
+              <div class="stat-bar-track" style="height: 6px; background: rgba(255,255,255,0.08);"><div class="stat-bar-fill fill-hunger" style="width: ${d.hunger}%;"></div></div>
+            </div>
+
+            <!-- Thirst -->
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 3px;">
+                <span style="color: var(--text-secondary);">💧 Khát (Thirst)</span>
+                <strong style="color: #38bdf8;">${d.thirst}%</strong>
+              </div>
+              <div class="stat-bar-track" style="height: 6px; background: rgba(255,255,255,0.08);"><div class="stat-bar-fill fill-thirst" style="width: ${d.thirst}%; background: #38bdf8;"></div></div>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <a href="bando.html" class="btn btn-secondary btn-sm" style="text-align: center; font-size: 0.8rem; padding: 7px 10px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+              📍 Tọa Độ: <strong style="color: #fbbf24;">${d.grid || 'F5'}</strong>
+            </a>
+            <a href="gara.html" class="btn btn-primary btn-sm" style="text-align: center; font-size: 0.8rem; font-weight: 800; padding: 7px 10px; background: linear-gradient(135deg, #10b981, #059669); border: none;">
+              📥 Cất Vào Gara
+            </a>
+          </div>
+        `;
+      } catch (e) {
+        console.error('Failed to load active dino:', e);
+        if (bodyEl) {
+          bodyEl.innerHTML = `
+            <div style="text-align: center; padding: 15px 0; color: var(--text-muted); font-size: 0.85rem;">
+              Không thể nạp dữ liệu từ máy chủ. <a href="javascript:void(0)" onclick="loadActiveDinoWidget()" style="color: #fbbf24; text-decoration: underline;">Thử lại</a>
+            </div>
+          `;
+        }
+      }
+    }
+  </script>
 </body>
 </html>

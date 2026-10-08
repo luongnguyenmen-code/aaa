@@ -317,6 +317,21 @@ app.get('/api/player/steam/callback', async (req, res) => {
   res.redirect(redirect);
 });
 
+// Helper: Chuẩn hóa phần trăm chỉ số (Health, Hunger, Thirst, Stamina) không vượt quá 100%
+function normalizeStatPct(val, maxVal) {
+  if (val === undefined || val === null) return 100;
+  const num = Number(val);
+  const max = Number(maxVal);
+  if (isNaN(num)) return 100;
+  if (!isNaN(max) && max > 0 && max !== 1) {
+    const pct = Math.round((num / max) * 100);
+    return Math.min(100, Math.max(0, pct));
+  }
+  if (num > 100) return 100;
+  if (num > 1) return Math.min(100, Math.max(0, Math.round(num)));
+  return Math.min(100, Math.max(0, Math.round(num * 100)));
+}
+
 // Helper: Link player by SteamID from IslePilot API
 async function linkPlayerBySteamId(steamId, customName = null) {
   const pilotPlayer = await callIslePilot(`/players/${steamId}`);
@@ -341,9 +356,9 @@ async function linkPlayerBySteamId(steamId, customName = null) {
         species: pilotPlayer.species,
         gender: pilotPlayer.female ? "Cái (Female)" : "Đực (Male)",
         growth: Math.round((pilotPlayer.growth || 0) * 100),
-        health: Math.round(((pilotPlayer.health || 0) / (pilotPlayer.maxHealth || 1)) * 100) || 100,
-        hunger: Math.round(((pilotPlayer.hunger || 0) / (pilotPlayer.maxHunger || 1)) * 100) || 100,
-        thirst: Math.round(((pilotPlayer.thirst || 0) / (pilotPlayer.maxThirst || 1)) * 100) || 100,
+        health: normalizeStatPct(pilotPlayer.health, pilotPlayer.maxHealth),
+        hunger: normalizeStatPct(pilotPlayer.hunger, pilotPlayer.maxHunger),
+        thirst: normalizeStatPct(pilotPlayer.thirst, pilotPlayer.maxThirst),
         stamina: 100,
         diet: ["S", "S", "D"],
         isPrimeElder: pilotPlayer.isPrimeElder || false,
@@ -1174,9 +1189,9 @@ app.get('/api/player/garage', async (req, res) => {
       gender: pilotPlayer.female ? "Cái (Female)" : "Đực (Male)",
       growth: Math.round((pilotPlayer.growth || 0) * 100),
       rawGrowth: pilotPlayer.growth || 0,
-      health: Math.round(((pilotPlayer.health || 0) / (pilotPlayer.maxHealth || 1)) * 100) || 100,
-      hunger: Math.round(((pilotPlayer.hunger || 0) / (pilotPlayer.maxHunger || 1)) * 100) || 100,
-      thirst: Math.round(((pilotPlayer.thirst || 0) / (pilotPlayer.maxThirst || 1)) * 100) || 100,
+      health: normalizeStatPct(pilotPlayer.health, pilotPlayer.maxHealth),
+      hunger: normalizeStatPct(pilotPlayer.hunger, pilotPlayer.maxHunger),
+      thirst: normalizeStatPct(pilotPlayer.thirst, pilotPlayer.maxThirst),
       stamina: 100,
       diet: ["S", "S", "D"],
       isPrimeElder: pilotPlayer.isPrimeElder || false,
