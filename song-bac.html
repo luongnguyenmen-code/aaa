@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sòng Bạc ST25 — Tài Xỉu & Bầu Cua Dino 🎲🦖</title>
+  <script>
+    // Tự động kiểm tra: nếu Sòng Bạc đang tắt trên server thì chuyển hướng về trang chủ
+    fetch('/api/casino/stats').then(r => { if (r.status === 404) window.location.replace('index.html'); }).catch(() => {});
+  </script>
   <link rel="stylesheet" href="assets/css/style.css">
   <style>
     .casino-tabs {

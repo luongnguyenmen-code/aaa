@@ -18,6 +18,17 @@ let memoryPortalData = null;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Chuyển hướng khi người dùng truy cập trang Sòng Bạc nếu tính năng đang bị tắt
+app.get('/song-bac.html', (req, res, next) => {
+  const cfg = getConfig();
+  const isEnabled = cfg.casino && typeof cfg.casino.enabled === 'boolean' ? cfg.casino.enabled : false;
+  if (!isEnabled) {
+    return res.redirect('/');
+  }
+  next();
+});
+
 app.use(express.static(__dirname));
 
 // ==========================================
@@ -38,8 +49,6 @@ function releasePlayerLock(steamId, action = 'default') {
 }
 
 function getConfig() {
-  if (memoryConfig) return memoryConfig;
-
   // 1. Đọc từ CONFIG_FILE gốc trong thư mục dự án (Nguồn dữ liệu chính)
   try {
     if (fs.existsSync(CONFIG_FILE)) {
@@ -50,6 +59,8 @@ function getConfig() {
   } catch (e) {
     console.error('Lỗi đọc server-config.json gốc:', e.message);
   }
+
+  if (memoryConfig) return memoryConfig;
 
   // 2. Fallback đọc từ TMP_CONFIG_FILE (dành cho môi trường Serverless tạm thời)
   try {
@@ -4553,6 +4564,20 @@ function getCasinoData() {
   }
   return data;
 }
+
+// 🚫 KIỂM TRA TRẠNG THÁI HOẠT ĐỘNG SÒNG BẠC ST25
+app.use('/api/casino', (req, res, next) => {
+  const cfg = getConfig();
+  const isEnabled = cfg.casino && typeof cfg.casino.enabled === 'boolean' ? cfg.casino.enabled : false;
+  if (!isEnabled) {
+    return res.status(404).json({
+      success: false,
+      disabled: true,
+      error: "Chức năng Sòng Bạc ST25 đã bị tắt hoàn toàn trên hệ thống."
+    });
+  }
+  next();
+});
 
 // 1. Lấy thông tin thống kê Sòng Bạc & Số dư người chơi
 app.get('/api/casino/stats', async (req, res) => {

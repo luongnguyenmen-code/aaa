@@ -23,6 +23,10 @@
     "realm": "http://localhost:3000",
     "return_url": "http://localhost:3000/api/player/steam/callback"
   },
+  "casino": {
+    "enabled": false,
+    "maintenance_message": "Tính năng Sòng Bạc ST25 hiện đang tạm thời đóng để bảo trì & cân bằng hệ thống. Vui lòng quay lại sau!"
+  },
   "garage": {
     "default_slots": 3,
     "role_limits": {

@@ -148,7 +148,7 @@ const App = {
     const isAdmin = !!(this.user && this.user.isAdmin);
 
     const isSurvivalActive = ['bando.html', 'gara.html', 'tha-xac.html', 'skin.html'].includes(currentFile);
-    const isEconomyActive = ['nhiem-vu.html', 'giao-dich.html', 'hom-qua.html', 'song-bac.html'].includes(currentFile);
+    const isEconomyActive = ['nhiem-vu.html', 'giao-dich.html', 'hom-qua.html'].includes(currentFile);
     const isCommunityActive = ['bxh.html', 'moi-ban.html', 'ho-tro.html', 'noi-quy.html', 'cai-dat.html'].includes(currentFile);
 
     navUl.innerHTML = `
@@ -194,9 +194,11 @@ const App = {
           <a href="hom-qua.html" class="nav-dropdown-item ${currentFile === 'hom-qua.html' ? 'active' : ''}">
             🎁 Mở Hòm May Mắn
           </a>
+          <!-- [TẮT TẠM THỜI] Bỏ comment dòng dưới khi muốn bật lại Sòng Bạc:
           <a href="song-bac.html" class="nav-dropdown-item ${currentFile === 'song-bac.html' ? 'active' : ''}">
             🎲 Sòng Bạc ST25
           </a>
+          -->
         </div>
       </li>
 
@@ -417,7 +419,7 @@ const App = {
         <a href="nhiem-vu.html" class="nav-dropdown-item">🌾 Kho Lúa & Nhiệm Vụ</a>
         <a href="giao-dich.html" class="nav-dropdown-item">⚖️ Chợ Giao Dịch P2P</a>
         <a href="hom-qua.html" class="nav-dropdown-item">🎁 Mở Hòm May Mắn</a>
-        <a href="song-bac.html" class="nav-dropdown-item">🎲 Sòng Bạc ST25</a>
+        <!-- [TẮT TẠM THỜI] Bỏ comment dòng dưới khi muốn bật lại: <a href="song-bac.html" class="nav-dropdown-item">🎲 Sòng Bạc ST25</a> -->
       </div>
 
       <div>
