@@ -970,9 +970,6 @@ async function getPlayerGarageStatus(steamId) {
   const pilotGarage = await callIslePilot(`/players/${cleanSteamId}/garage`, 'GET', null, true);
   const cloudDinos = (pilotGarage && pilotGarage.garage && Array.isArray(pilotGarage.garage)) ? pilotGarage.garage : [];
   
-  // Đọc thêm thú trúng thưởng từ Hòm Quà hoặc Giao dịch lưu trong portal-data
-  const localDinos = (portalData.userGarage && portalData.userGarage[cleanSteamId]) ? portalData.userGarage[cleanSteamId] : [];
-  
   // Lọc bỏ triệt để các khủng long ĐANG ĐĂNG BÁN trên Chợ (ký gửi Chợ của người chơi này)
   const activeSellingDinoIds = new Set(
     (portalData.marketListings || [])
@@ -992,7 +989,9 @@ async function getPlayerGarageStatus(steamId) {
     ((portalData.soldDinos && portalData.soldDinos[cleanSteamId]) || []).map(id => String(id))
   );
 
-  const dinos = [...cloudDinos, ...localDinos].filter(d => {
+  // Đồng bộ thuần túy 100% thời gian thực từ IslePilot Cloud (Single Source of Truth)
+  // Không gộp thú cục bộ ảo để tránh tình trạng phân tán container serverless khiến F5 lúc ra 6 lúc ra 7
+  const dinos = cloudDinos.filter(d => {
     const strId = String(d.id);
     if (activeSellingDinoIds.has(strId)) return false;
     if (activeTradeDinoIds.has(strId)) return false;
@@ -3500,14 +3499,31 @@ app.post('/api/crates/open', async (req, res) => {
     const growth = wonReward.growth !== undefined ? Number(wonReward.growth) : (dinoData.growth !== undefined ? Number(dinoData.growth) : 80);
     const isPrimeElder = wonReward.isPrimeElder !== undefined ? !!wonReward.isPrimeElder : !!dinoData.isPrimeElder;
 
-    addDinoToGarage(cleanSteamId, {
+    // 1. Gửi lệnh swap trực tiếp lên IslePilot để khi vào game người chơi nhận dino ngay
+    try {
+      await callIslePilot('/commands', 'POST', {
+        action: 'swap',
+        steamId: cleanSteamId,
+        species: species,
+        growth: growth > 1 ? growth / 100 : growth
+      });
+    } catch (_) {}
+
+    // 2. Lưu vào Túi Đồ của người chơi
+    if (!data.userInventory) data.userInventory = {};
+    if (!data.userInventory[cleanSteamId]) data.userInventory[cleanSteamId] = [];
+    data.userInventory[cleanSteamId].push({
+      id: `dino-${Date.now()}`,
+      name: `${species} ${growth}%`,
+      icon: "🦖",
+      desc: `Trúng thưởng từ ${crate.name}`,
+      type: "dino_voucher",
       species: species,
       growth: growth,
       gender: dinoData.gender || (Math.random() > 0.5 ? "Đực (Male)" : "Cái (Female)"),
       isPrimeElder: isPrimeElder,
-      mutations: isPrimeElder ? ["Hemomania", "Multichambered Lungs", "Osteophagic", "Gastronomic Regeneration"] : [],
-      source: `Gacha IslePilot Cloud (${crate.name})`
-    }, data);
+      date: new Date().toISOString()
+    });
     savePortalData(data);
     transferredToGarage = true;
   } else if (wonReward.type === 'skin' || wonReward.prizeKind === 'skin') {
