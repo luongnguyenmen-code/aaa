@@ -20,6 +20,23 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
+// ==========================================
+// MUTEX / CONCURRENCY LOCK MANAGER (CHỐNG SPAM & RACE CONDITION DUPLICATE LÚA)
+// ==========================================
+const playerActionLocks = new Set();
+function acquirePlayerLock(steamId, action = 'default') {
+  if (!steamId) return false;
+  const lockKey = `${steamId}:${action}`;
+  if (playerActionLocks.has(lockKey)) return false;
+  playerActionLocks.add(lockKey);
+  return true;
+}
+function releasePlayerLock(steamId, action = 'default') {
+  if (!steamId) return;
+  const lockKey = `${steamId}:${action}`;
+  playerActionLocks.delete(lockKey);
+}
+
 function getConfig() {
   if (memoryConfig) return memoryConfig;
 
@@ -473,10 +490,50 @@ app.post('/api/player/logout', (req, res) => {
 });
 
 
-// Helper: Kiểm tra nhiệm vụ đã hoàn thành thực sự hay chưa (chuẩn xác theo từng loại config)
+// Helper: Xác định chu kỳ (periodKey) của nhiệm vụ (Daily: YYYY-MM-DD, Weekly: YYYY-Www, Monthly: YYYY-MM)
+function getQuestPeriodKey(q, dateObj = new Date()) {
+  const yyyy = dateObj.getUTCFullYear();
+  const mm = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(dateObj.getUTCDate()).padStart(2, '0');
+
+  if (q?.period === 'monthly') {
+    return `${yyyy}-${mm}`;
+  }
+  if (q?.period === 'weekly') {
+    const d = new Date(Date.UTC(yyyy, dateObj.getUTCMonth(), dateObj.getUTCDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+  }
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+// Helper: Kiểm tra nhiệm vụ đã hoàn thành thực sự hay chưa trong chu kỳ hiện tại
 function isQuestCompleted(q) {
   if (!q) return false;
-  if (q.completedAt) return true;
+  const currentPeriod = getQuestPeriodKey(q, new Date());
+
+  // 1. Nếu có completedAt: Bắt buộc completedAt phải nằm trong đúng chu kỳ hiện tại
+  if (q.completedAt) {
+    const compDate = new Date(q.completedAt);
+    if (!isNaN(compDate.getTime())) {
+      const compPeriod = getQuestPeriodKey(q, compDate);
+      if (compPeriod !== currentPeriod) {
+        return false; // Hoàn thành từ ngày/tuần trước, không áp dụng cho chu kỳ hôm nay!
+      }
+    }
+    return true;
+  }
+
+  // 2. Nếu IslePilot gán periodKey cụ thể cho quest mà periodKey đó đã cũ
+  if (q.periodKey && typeof q.periodKey === 'string' && q.periodKey.trim() !== '') {
+    if (q.periodKey.trim() !== currentPeriod) {
+      return false; // Tiến độ này thuộc về chu kỳ ngày cũ
+    }
+  }
+
   if (!q.config) return false;
 
   const prog = Number(q.progress) || 0;
@@ -497,29 +554,6 @@ function isQuestCompleted(q) {
     return prog >= Number(q.config.growthPct);
   }
   return false;
-}
-
-// Helper: Xác định chu kỳ (periodKey) của nhiệm vụ (Daily: YYYY-MM-DD, Weekly: YYYY-Www, Monthly: YYYY-MM)
-function getQuestPeriodKey(q, dateObj = new Date()) {
-  if (q && q.periodKey && typeof q.periodKey === 'string' && q.periodKey.trim() !== '') {
-    return q.periodKey.trim();
-  }
-  const yyyy = dateObj.getUTCFullYear();
-  const mm = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(dateObj.getUTCDate()).padStart(2, '0');
-
-  if (q?.period === 'monthly') {
-    return `${yyyy}-${mm}`;
-  }
-  if (q?.period === 'weekly') {
-    const d = new Date(Date.UTC(yyyy, dateObj.getUTCMonth(), dateObj.getUTCDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-    return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
-  }
-  return `${yyyy}-${mm}-${dd}`;
 }
 
 // Helper: Kiểm tra nhiệm vụ đã được nhận thưởng trong chu kỳ hiện tại hay chưa (tự động reset mỗi ngày/tuần/tháng)
@@ -689,74 +723,96 @@ app.post('/api/player/quests/claim', async (req, res) => {
     return res.status(400).json({ error: "Thiếu thông tin nhiệm vụ cần nhận thưởng!" });
   }
 
-  const questsData = await callIslePilot(`/players/${steamId}/quests`, 'GET', null, true);
-  if (!questsData || !Array.isArray(questsData.quests)) {
-    return res.status(400).json({ error: "Không tìm thấy dữ liệu nhiệm vụ từ máy chủ ST25!" });
+  // Khóa chống Race Condition / Spam Click Duplicate Lúa
+  if (!acquirePlayerLock(steamId, 'quest')) {
+    return res.status(429).json({ error: "Giao dịch đang được xử lý, vui lòng không bấm nhận liên tục!" });
   }
 
-  const quest = questsData.quests.find(q => q.id === questId);
-  if (!quest) {
-    return res.status(404).json({ error: "Nhiệm vụ không tồn tại hoặc đã hết hạn kỳ này!" });
-  }
+  try {
+    const questsData = await callIslePilot(`/players/${steamId}/quests`, 'GET', null, true);
+    if (!questsData || !Array.isArray(questsData.quests)) {
+      return res.status(400).json({ error: "Không tìm thấy dữ liệu nhiệm vụ từ máy chủ ST25!" });
+    }
 
-  const isDone = isQuestCompleted(quest);
-  if (!isDone) {
-    return res.status(400).json({ error: `Nhiệm vụ [${quest.name}] chưa hoàn thành! Hãy tiếp tục sinh tồn để đạt điều kiện.` });
-  }
+    const quest = questsData.quests.find(q => q.id === questId);
+    if (!quest) {
+      return res.status(404).json({ error: "Nhiệm vụ không tồn tại hoặc đã hết hạn kỳ này!" });
+    }
 
-  const data = getPortalData();
-  if (!data.claimedQuests) data.claimedQuests = {};
-  if (!data.claimedQuests[steamId]) data.claimedQuests[steamId] = {};
+    const isDone = isQuestCompleted(quest);
+    if (!isDone) {
+      return res.status(400).json({ error: `Nhiệm vụ [${quest.name}] chưa hoàn thành! Hãy tiếp tục sinh tồn để đạt điều kiện.` });
+    }
 
-  const alreadyClaimed = isQuestClaimedInPeriod(quest, data.claimedQuests[steamId]);
-  if (alreadyClaimed) {
-    return res.status(400).json({ error: `Bạn đã nhận thưởng Lúa cho nhiệm vụ [${quest.name}] trong chu kỳ hôm nay rồi!` });
-  }
+    const data = getPortalData();
+    if (!data.claimedQuests) data.claimedQuests = {};
+    if (!data.claimedQuests[steamId]) data.claimedQuests[steamId] = {};
 
-  let rewardAmount = 0;
-  if (Array.isArray(quest.rewards)) {
-    quest.rewards.forEach(r => {
-      if (r.kind === 'coins' || r.kind === 'coin' || r.kind === 'lua') {
-        rewardAmount += Number(r.amount) || 0;
-      }
+    const alreadyClaimed = isQuestClaimedInPeriod(quest, data.claimedQuests[steamId]);
+    if (alreadyClaimed) {
+      return res.status(400).json({ error: `Bạn đã nhận thưởng Lúa cho nhiệm vụ [${quest.name}] trong chu kỳ hôm nay rồi!` });
+    }
+
+    let rewardAmount = 0;
+    if (Array.isArray(quest.rewards)) {
+      quest.rewards.forEach(r => {
+        if (r.kind === 'coins' || r.kind === 'coin' || r.kind === 'lua') {
+          rewardAmount += Number(r.amount) || 0;
+        }
+      });
+    }
+    if (rewardAmount <= 0) {
+      rewardAmount = quest.period === 'monthly' ? 50 : (quest.period === 'weekly' ? 24 : 8);
+    }
+
+    const periodKey = getQuestPeriodKey(quest);
+    const claimKey = `${quest.id}_${periodKey}`;
+
+    // ĐÁNH DẤU ĐÃ NHẬN VÀ LƯU TRƯỚC (CHỐNG CONCURRENCY SPAM)
+    data.claimedQuests[steamId][claimKey] = {
+      claimedAt: new Date().toISOString(),
+      periodKey,
+      amount: rewardAmount,
+      questName: quest.name
+    };
+    data.claimedQuests[steamId][questId] = {
+      claimedAt: new Date().toISOString(),
+      periodKey,
+      amount: rewardAmount,
+      questName: quest.name
+    };
+    savePortalData(data);
+
+    // CỘNG LÚA TRỰC TIẾP VÀO VÍ GAME & ISLEPILOT
+    let balRes;
+    try {
+      balRes = await modifyLivePlayerBalance(steamId, rewardAmount, `quest_reward_${questId}`);
+      clearPlayerCache(steamId);
+    } catch (err) {
+      // Revert nếu lỗi kết nối
+      delete data.claimedQuests[steamId][claimKey];
+      delete data.claimedQuests[steamId][questId];
+      savePortalData(data);
+      throw err;
+    }
+
+    const newBalance = balRes?.balance !== undefined ? balRes.balance : (data.userWallets[steamId] || 0);
+
+    res.json({
+      success: true,
+      message: `Chúc mừng! Bạn đã hoàn thành nhiệm vụ [${quest.name}] và nhận ngay +${rewardAmount} Lúa 🌾 vào ví!`,
+      rewardAmount,
+      questId,
+      claimKey,
+      periodKey,
+      newBalance
     });
+  } catch (err) {
+    console.error('Lỗi nhận thưởng nhiệm vụ:', err);
+    res.status(500).json({ error: "Lỗi hệ thống khi nhận Lúa thưởng! Vui lòng thử lại sau." });
+  } finally {
+    releasePlayerLock(steamId, 'quest');
   }
-  if (rewardAmount <= 0) {
-    rewardAmount = quest.period === 'monthly' ? 50 : (quest.period === 'weekly' ? 24 : 8);
-  }
-
-  // CỘNG LÚA TRỰC TIẾP VÀO VÍ GAME & ISLEPILOT
-  const balRes = await modifyLivePlayerBalance(steamId, rewardAmount, `quest_reward_${questId}`);
-  clearPlayerCache(steamId);
-
-  const periodKey = getQuestPeriodKey(quest);
-  const claimKey = `${quest.id}_${periodKey}`;
-
-  data.claimedQuests[steamId][claimKey] = {
-    claimedAt: new Date().toISOString(),
-    periodKey,
-    amount: rewardAmount,
-    questName: quest.name
-  };
-  data.claimedQuests[steamId][questId] = {
-    claimedAt: new Date().toISOString(),
-    periodKey,
-    amount: rewardAmount,
-    questName: quest.name
-  };
-  savePortalData(data);
-
-  const newBalance = balRes?.balance !== undefined ? balRes.balance : (data.userWallets[steamId] || 0);
-
-  res.json({
-    success: true,
-    message: `Chúc mừng! Bạn đã hoàn thành nhiệm vụ [${quest.name}] và nhận ngay +${rewardAmount} Lúa 🌾 vào ví!`,
-    rewardAmount,
-    questId,
-    claimKey,
-    periodKey,
-    newBalance
-  });
 });
 
 // 6.2 Nhận Tất Cả Lúa Thưởng Nhiệm Vụ (Claim All Completed Rewards)
@@ -766,80 +822,102 @@ app.post('/api/player/quests/claim-all', async (req, res) => {
     return res.status(401).json({ error: "Vui lòng đăng nhập Steam trước khi nhận Lúa thưởng!" });
   }
 
-  const questsData = await callIslePilot(`/players/${steamId}/quests`, 'GET', null, true);
-  if (!questsData || !Array.isArray(questsData.quests)) {
-    return res.status(400).json({ error: "Không tìm thấy dữ liệu nhiệm vụ!" });
+  // Khóa chống Race Condition / Spam Click Duplicate Lúa
+  if (!acquirePlayerLock(steamId, 'quest')) {
+    return res.status(429).json({ error: "Giao dịch đang được xử lý, vui lòng không bấm nhận liên tục!" });
   }
 
-  const data = getPortalData();
-  if (!data.claimedQuests) data.claimedQuests = {};
-  if (!data.claimedQuests[steamId]) data.claimedQuests[steamId] = {};
-
-  let totalReward = 0;
-  const claimedNames = [];
-  const claimedKeys = [];
-
-  for (const quest of questsData.quests) {
-    const isDone = isQuestCompleted(quest);
-    const alreadyClaimed = isQuestClaimedInPeriod(quest, data.claimedQuests[steamId]);
-
-    if (isDone && !alreadyClaimed) {
-      let rewardAmount = 0;
-      if (Array.isArray(quest.rewards)) {
-        quest.rewards.forEach(r => {
-          if (r.kind === 'coins' || r.kind === 'coin' || r.kind === 'lua') {
-            rewardAmount += Number(r.amount) || 0;
-          }
-        });
-      }
-      if (rewardAmount <= 0) {
-        rewardAmount = quest.period === 'monthly' ? 50 : (quest.period === 'weekly' ? 24 : 8);
-      }
-
-      totalReward += rewardAmount;
-      claimedNames.push(quest.name);
-      
-      const periodKey = getQuestPeriodKey(quest);
-      const claimKey = `${quest.id}_${periodKey}`;
-      claimedKeys.push(claimKey);
-
-      data.claimedQuests[steamId][claimKey] = {
-        claimedAt: new Date().toISOString(),
-        periodKey,
-        amount: rewardAmount,
-        questName: quest.name
-      };
-      data.claimedQuests[steamId][quest.id] = {
-        claimedAt: new Date().toISOString(),
-        periodKey,
-        amount: rewardAmount,
-        questName: quest.name
-      };
+  try {
+    const questsData = await callIslePilot(`/players/${steamId}/quests`, 'GET', null, true);
+    if (!questsData || !Array.isArray(questsData.quests)) {
+      return res.status(400).json({ error: "Không tìm thấy dữ liệu nhiệm vụ!" });
     }
-  }
 
-  if (totalReward <= 0) {
-    return res.json({
-      success: false,
-      message: "Hiện tại bạn chưa có nhiệm vụ nào mới đủ điều kiện nhận thưởng."
+    const data = getPortalData();
+    if (!data.claimedQuests) data.claimedQuests = {};
+    if (!data.claimedQuests[steamId]) data.claimedQuests[steamId] = {};
+
+    let totalReward = 0;
+    const claimedNames = [];
+    const claimedKeys = [];
+
+    for (const quest of questsData.quests) {
+      const isDone = isQuestCompleted(quest);
+      const alreadyClaimed = isQuestClaimedInPeriod(quest, data.claimedQuests[steamId]);
+
+      if (isDone && !alreadyClaimed) {
+        let rewardAmount = 0;
+        if (Array.isArray(quest.rewards)) {
+          quest.rewards.forEach(r => {
+            if (r.kind === 'coins' || r.kind === 'coin' || r.kind === 'lua') {
+              rewardAmount += Number(r.amount) || 0;
+            }
+          });
+        }
+        if (rewardAmount <= 0) {
+          rewardAmount = quest.period === 'monthly' ? 50 : (quest.period === 'weekly' ? 24 : 8);
+        }
+
+        totalReward += rewardAmount;
+        claimedNames.push(quest.name);
+        
+        const periodKey = getQuestPeriodKey(quest);
+        const claimKey = `${quest.id}_${periodKey}`;
+        claimedKeys.push(claimKey);
+
+        data.claimedQuests[steamId][claimKey] = {
+          claimedAt: new Date().toISOString(),
+          periodKey,
+          amount: rewardAmount,
+          questName: quest.name
+        };
+        data.claimedQuests[steamId][quest.id] = {
+          claimedAt: new Date().toISOString(),
+          periodKey,
+          amount: rewardAmount,
+          questName: quest.name
+        };
+      }
+    }
+
+    if (totalReward <= 0) {
+      return res.json({
+        success: false,
+        message: "Hiện tại bạn chưa có nhiệm vụ nào mới đủ điều kiện nhận thưởng."
+      });
+    }
+
+    // LƯU NGAY TRƯỚC KHI GỌI MẠNG ĐỂ CHỐNG SPAM CONCURRENT
+    savePortalData(data);
+
+    let balRes;
+    try {
+      balRes = await modifyLivePlayerBalance(steamId, totalReward, `quest_rewards_batch`);
+      clearPlayerCache(steamId);
+    } catch (err) {
+      // Revert nếu lỗi
+      claimedKeys.forEach(k => delete data.claimedQuests[steamId][k]);
+      savePortalData(data);
+      throw err;
+    }
+
+    const newBalance = balRes?.balance !== undefined ? balRes.balance : (data.userWallets[steamId] || 0);
+
+    res.json({
+      success: true,
+      message: `Thành công! Đã nhận tổng cộng +${totalReward} Lúa 🌾 từ ${claimedNames.length} nhiệm vụ đã hoàn thành!`,
+      totalReward,
+      claimedCount: claimedNames.length,
+      claimedKeys,
+      claimedIds: Object.keys(data.claimedQuests[steamId] || {}),
+      newBalance
     });
+  } catch (err) {
+    console.error('Lỗi nhận tất cả nhiệm vụ:', err);
+    res.status(500).json({ error: "Lỗi hệ thống khi nhận Lúa thưởng! Vui lòng thử lại sau." });
+  } finally {
+    releasePlayerLock(steamId, 'quest');
   }
-
-  const balRes = await modifyLivePlayerBalance(steamId, totalReward, `quest_rewards_batch`);
-  clearPlayerCache(steamId);
-  savePortalData(data);
-
-  const newBalance = balRes?.balance !== undefined ? balRes.balance : (data.userWallets[steamId] || 0);
-
-  res.json({
-    success: true,
-    message: `Thành công! Đã nhận tổng cộng +${totalReward} Lúa 🌾 từ ${claimedNames.length} nhiệm vụ đã hoàn thành!`,
-    totalReward,
-    claimedCount: claimedNames.length,
-    claimedKeys,
-    claimedIds: Object.keys(data.claimedQuests[steamId] || {}),
-    newBalance
-  });
 });
 
 // 7. Live Map Coordinates (Member View - Only show this player, hide others)
@@ -1482,42 +1560,64 @@ app.post('/api/player/garage/sell', async (req, res) => {
   if (!steamId) return res.status(401).json({ error: "Vui lòng đăng nhập Steam!" });
   if (!garageDinoId) return res.status(400).json({ error: "Thiếu mã khủng long cần bán!" });
 
-  // Nếu là khủng long trúng từ Hòm Quà (id bắt đầu bằng dino-)
-  if (garageDinoId.startsWith('dino-')) {
-    const data = getPortalData();
-    const dIdx = (data.userGarage && data.userGarage[steamId]) ? data.userGarage[steamId].findIndex(d => d.id === garageDinoId) : -1;
-    if (dIdx !== -1) {
-      const dino = data.userGarage[steamId][dIdx];
-      // Tính giá bán cơ bản theo growth: ví dụ 20-50 Lúa
-      const sellPrice = Math.max(10, Math.round(((dino.growth || 100) / 100) * 35));
-      await modifyLivePlayerBalance(steamId, sellPrice, `Bán khủng long [${dino.species} ${dino.growth}%] từ Gara`);
-      data.userGarage[steamId].splice(dIdx, 1);
-      savePortalData(data);
-      apiCache.delete(`/players/${steamId}/garage`);
-      apiCache.delete(`/players/${steamId}`);
+  if (!acquirePlayerLock(steamId, 'garage')) {
+    return res.status(429).json({ error: "Giao dịch đang được xử lý, vui lòng không bấm bán liên tục!" });
+  }
+
+  try {
+    // Nếu là khủng long trúng từ Hòm Quà (id bắt đầu bằng dino-)
+    if (garageDinoId.startsWith('dino-')) {
+      const data = getPortalData();
+      const dIdx = (data.userGarage && data.userGarage[steamId]) ? data.userGarage[steamId].findIndex(d => d.id === garageDinoId) : -1;
+      if (dIdx !== -1) {
+        const dino = data.userGarage[steamId][dIdx];
+        // Tính giá bán cơ bản theo growth: ví dụ 20-50 Lúa
+        const sellPrice = Math.max(10, Math.round(((dino.growth || 100) / 100) * 35));
+        
+        // Xóa khỏi Gara trước để chống duplicate
+        data.userGarage[steamId].splice(dIdx, 1);
+        savePortalData(data);
+
+        try {
+          await modifyLivePlayerBalance(steamId, sellPrice, `Bán khủng long [${dino.species} ${dino.growth}%] từ Gara`);
+        } catch (err) {
+          // Revert nếu lỗi
+          data.userGarage[steamId].splice(dIdx, 0, dino);
+          savePortalData(data);
+          throw err;
+        }
+
+        apiCache.delete(`/players/${steamId}/garage`);
+        apiCache.delete(`/players/${steamId}`);
+        return res.json({
+          success: true,
+          message: `Đã bán [${dino.species} ${dino.growth}%] thành công! Nhận được +${sellPrice} Lúa 🌾 vào ví!`,
+          earned: sellPrice
+        });
+      }
+    }
+
+    const result = await callIslePilot(`/players/${steamId}/garage/${garageDinoId}/sell`, 'POST', {});
+    apiCache.delete(`/players/${steamId}/garage`);
+    apiCache.delete(`/players/${steamId}`);
+
+    if (result && !result.error) {
       return res.json({
         success: true,
-        message: `Đã bán [${dino.species} ${dino.growth}%] thành công! Nhận được +${sellPrice} Lúa 🌾 vào ví!`,
-        earned: sellPrice
+        message: "Đã bán khủng long thành công! Tiền Lúa 🌾 đã được cộng vào ví của bạn.",
+        data: result
       });
     }
-  }
 
-  const result = await callIslePilot(`/players/${steamId}/garage/${garageDinoId}/sell`, 'POST', {});
-  apiCache.delete(`/players/${steamId}/garage`);
-  apiCache.delete(`/players/${steamId}`);
-
-  if (result && !result.error) {
-    return res.json({
-      success: true,
-      message: "Đã bán khủng long thành công! Tiền Lúa 🌾 đã được cộng vào ví của bạn.",
-      data: result
+    res.status(result?._status || 400).json({
+      error: result?.error || "Không thể bán khủng long này (vui lòng kiểm tra điều kiện Prime và Growth trong Quy Định Bán)!"
     });
+  } catch (err) {
+    console.error('Lỗi bán khủng long:', err);
+    res.status(500).json({ error: "Lỗi hệ thống khi bán khủng long! Vui lòng thử lại sau." });
+  } finally {
+    releasePlayerLock(steamId, 'garage');
   }
-
-  res.status(result?._status || 400).json({
-    error: result?.error || "Không thể bán khủng long này (vui lòng kiểm tra điều kiện Prime và Growth trong Quy Định Bán)!"
-  });
 });
 
 // 9.5 Bảng Quy Định Bán Khủng Long (GET /sell-rules)
@@ -2176,32 +2276,53 @@ app.post('/api/market/cancel-listing', async (req, res) => {
 
 app.post('/api/market/transfer', async (req, res) => {
   const { receiverSteamId, amount, note } = req.body;
-  const data = getPortalData();
-  const senderSteamId = (req.body.senderSteamId || getRequestSteamId(req));
+  // BẢO MẬT: Bắt buộc lấy người gửi từ phiên đăng nhập thực tế của hệ thống! TUYỆT ĐỐI KHÔNG LẤY TỪ BODY
+  const senderSteamId = getRequestSteamId(req);
   if (!senderSteamId) {
     return res.status(401).json({ error: "Vui lòng đăng nhập Steam để chuyển Lúa!" });
   }
 
-  if (!receiverSteamId || !amount || Number(amount) <= 0) {
-    return res.status(400).json({ error: "Số Lúa chuyển và người nhận không hợp lệ!" });
+  const cleanReceiver = String(receiverSteamId || '').trim();
+  if (!cleanReceiver || !/^\d{17}$/.test(cleanReceiver)) {
+    return res.status(400).json({ error: "Steam ID người nhận không hợp lệ! Vui lòng nhập đúng 17 chữ số Steam ID 64." });
   }
 
-  const numAmount = Number(amount);
-  const senderBal = await getLivePlayerBalance(senderSteamId);
-  if (senderBal < numAmount) {
-    return res.status(400).json({ error: `Số dư trong tài khoản không đủ! Bạn chỉ có ${senderBal} Lúa 🌾 trên server.` });
+  if (cleanReceiver === senderSteamId) {
+    return res.status(400).json({ error: "Bạn không thể tự chuyển Lúa cho chính mình!" });
   }
 
-  // Deduct from sender via API
-  const deductRes = await modifyLivePlayerBalance(senderSteamId, -numAmount, `Chuyển Lúa tới ${receiverSteamId}: ${note || ''}`);
-  // Add to receiver via API
-  await modifyLivePlayerBalance(receiverSteamId, numAmount, `Nhận Lúa từ ${senderSteamId}: ${note || ''}`);
+  const numAmount = Math.floor(Number(amount));
+  if (isNaN(numAmount) || numAmount < 1 || numAmount > 10000) {
+    return res.status(400).json({ error: "Số Lúa chuyển phải là số nguyên từ 1 đến 10,000 Lúa 🌾!" });
+  }
 
-  res.json({
-    success: true,
-    message: `Đã chuyển thành công ${numAmount} Lúa 🌾 từ tài khoản của bạn tới ${receiverSteamId}!`,
-    newBalance: deductRes.balance
-  });
+  // Khóa chống spam click / race condition
+  if (!acquirePlayerLock(senderSteamId, 'transfer')) {
+    return res.status(429).json({ error: "Giao dịch đang được xử lý, vui lòng không bấm liên tục!" });
+  }
+
+  try {
+    const senderBal = await getLivePlayerBalance(senderSteamId);
+    if (senderBal < numAmount) {
+      return res.status(400).json({ error: `Số dư trong tài khoản không đủ! Bạn chỉ có ${senderBal} Lúa 🌾 trên server.` });
+    }
+
+    // Deduct from sender via API
+    const deductRes = await modifyLivePlayerBalance(senderSteamId, -numAmount, `Chuyển Lúa tới ${cleanReceiver}: ${note || ''}`);
+    // Add to receiver via API
+    await modifyLivePlayerBalance(cleanReceiver, numAmount, `Nhận Lúa từ ${senderSteamId}: ${note || ''}`);
+
+    res.json({
+      success: true,
+      message: `Đã chuyển thành công ${numAmount} Lúa 🌾 từ tài khoản của bạn tới ${cleanReceiver}!`,
+      newBalance: deductRes.balance
+    });
+  } catch (err) {
+    console.error('Lỗi chuyển Lúa:', err);
+    res.status(500).json({ error: "Lỗi hệ thống khi chuyển Lúa! Vui lòng thử lại sau." });
+  } finally {
+    releasePlayerLock(senderSteamId, 'transfer');
+  }
 });
 
 // 10.1 Mua Dino từ Chợ (Tự Động Chuyển Thẳng Vào Gara Của Người Mua)
@@ -2766,24 +2887,7 @@ app.post('/api/carcass/order', async (req, res) => {
     bones: false
   });
 
-  // - 2.2 Hồi phục chỉ số đói khát (hunger, thirst) ngay lập tức
-  await callIslePilot('/commands', 'POST', {
-    action: 'setstats',
-    steamId: steamId,
-    hunger: 100,
-    thirst: 100
-  });
-
-  // - 2.3 Nạp 3 nhóm chất dinh dưỡng tương ứng với loại xác
-  await callIslePilot('/commands', 'POST', {
-    action: 'setnutrition',
-    steamId: steamId,
-    carb: 100,
-    protein: 100,
-    lipid: 100
-  });
-
-  // - 2.4 Phát thông báo tiếp tế toàn server qua IslePilot
+  // - 2.2 Phát thông báo tiếp tế toàn server qua IslePilot
   await callIslePilot('/commands', 'POST', {
     action: 'announce',
     message: `🌾 TIẾP TẾ ST25: Đã thả xác [${carcass.name}] ngay vị trí ${playerName}! 🥩`,
@@ -2797,7 +2901,7 @@ app.post('/api/carcass/order', async (req, res) => {
     price: carcass.price,
     orderedAt: new Date().toLocaleString('vi-VN'),
     status: "Đã Rớt Xác Thành Công",
-    note: "Đã thả xác vật lý rơi ngay vị trí của bạn trong game và hồi phục cơn đói khát!"
+    note: "Đã thả xác vật lý rơi ngay vị trí của bạn trong game để ăn thịt!"
   };
   data.carcassOrders.unshift(order);
   savePortalData(data);
@@ -2941,173 +3045,183 @@ app.post('/api/referral/claim', async (req, res) => {
   }
 
   const cleanSteamId = String(steamId).trim();
-  const data = getPortalData();
-  if (!data.referrals) data.referrals = {};
-  if (!data.referrals[cleanSteamId]) {
-    data.referrals[cleanSteamId] = { count: 0, earnedLua: 0, invitedBy: null };
-  }
-  if (!data.userWallets) data.userWallets = {};
-  if (!data.claimedCodeHistory) data.claimedCodeHistory = [];
-  if (!data.claimedCodesPerUser) data.claimedCodesPerUser = {};
-  if (!data.claimedCodesPerUser[cleanSteamId]) data.claimedCodesPerUser[cleanSteamId] = [];
-  if (!data.lockedInviteCodes) data.lockedInviteCodes = [];
-  if (!data.userCustomInviteCodes) data.userCustomInviteCodes = {};
 
-  // 1. Danh sách Giftcode sự kiện chính thức ST25 (Tân thủ, Tri ân...)
-  const OFFICIAL_GIFTCODES = {
-    'ST25-TANTHU': { reward: 50, title: 'Quà Tân Thủ Khởi Nghiệp ST25' },
-    'ST25-WELCOME': { reward: 50, title: 'Chào Mừng Gia Nhập Đảo Gateway' },
-    'ST25-VIP': { reward: 100, title: 'Quà Tặng VIP Tri Ân Nông Dân' },
-    'ST25-TRIAN': { reward: 50, title: 'Tri Ân Cộng Đồng ST25' },
-    'ST25-2026': { reward: 50, title: 'Sự Kiện Khủng Long ST25 Năm 2026' },
-    'ST25-LUA50': { reward: 50, title: 'Hỗ Trợ Khởi Nghiệp Sinh Tồn' }
-  };
-
-  // 2. Chặn nếu tài khoản này đã từng dùng mã này
-  if (data.claimedCodesPerUser[cleanSteamId].includes(cleanCode)) {
-    return res.status(400).json({ error: `Bạn đã từng sử dụng mã [${cleanCode}] rồi! Mỗi mã chỉ được nhận thưởng 1 lần duy nhất.` });
+  // Khóa chống Race Condition / Spam Click Duplicate Lúa
+  if (!acquirePlayerLock(cleanSteamId, 'code')) {
+    return res.status(429).json({ error: "Hệ thống đang xử lý mã của bạn, vui lòng không bấm liên tục!" });
   }
 
-  // 3. QUY TẮC MÃ MỜI BẠN BÈ: MỖI MÃ MỜI CHỈ DÙNG ĐÚNG 1 LẦN DUY NHẤT TOÀN MÁY CHỦ, DÙNG XONG LÀ BLOCK VĨNH VIỄN
-  if (!OFFICIAL_GIFTCODES[cleanCode]) {
-    if (data.lockedInviteCodes.includes(cleanCode)) {
-      return res.status(400).json({ 
-        error: `Mã giới thiệu [${cleanCode}] này đã có người sử dụng và đã bị KHÓA VĨNH VIỄN! Mỗi mã mời chỉ có hiệu lực đúng 1 lần duy nhất.` 
-      });
+  try {
+    // BẢO VỆ CHỐNG BOT / ACC CLONE ẢO: Bắt buộc tài khoản đã từng vào chơi trên server ST25
+    const playerInfo = await callIslePilot(`/players/${cleanSteamId}`);
+    if (!playerInfo || !playerInfo.lastSeenAt) {
+      return res.status(400).json({ error: "Tài khoản của bạn chưa từng tham gia máy chủ ST25 in-game! Vui lòng vào game trước khi kích hoạt mã quà tặng." });
     }
 
-    const alreadyUsed = data.claimedCodeHistory.some(h => h.code === cleanCode);
-    if (alreadyUsed) {
-      if (!data.lockedInviteCodes.includes(cleanCode)) {
-        data.lockedInviteCodes.push(cleanCode);
-        savePortalData(data);
+    const data = getPortalData();
+    if (!data.referrals) data.referrals = {};
+    if (!data.referrals[cleanSteamId]) {
+      data.referrals[cleanSteamId] = { count: 0, earnedLua: 0, invitedBy: null };
+    }
+    if (!data.userWallets) data.userWallets = {};
+    if (!data.claimedCodeHistory) data.claimedCodeHistory = [];
+    if (!data.claimedCodesPerUser) data.claimedCodesPerUser = {};
+    if (!data.claimedCodesPerUser[cleanSteamId]) data.claimedCodesPerUser[cleanSteamId] = [];
+    if (!data.lockedInviteCodes) data.lockedInviteCodes = [];
+    if (!data.userCustomInviteCodes) data.userCustomInviteCodes = {};
+
+    // 1. Danh sách Giftcode sự kiện chính thức ST25 (Đã cân bằng lại hợp lý)
+    const OFFICIAL_GIFTCODES = {
+      'ST25-TANTHU': { reward: 20, title: 'Quà Tân Thủ Khởi Nghiệp ST25' },
+      'ST25-WELCOME': { reward: 20, title: 'Chào Mừng Gia Nhập Đảo Gateway' }
+    };
+
+    // 2. Chặn nếu tài khoản này đã từng dùng mã này
+    if (data.claimedCodesPerUser[cleanSteamId].includes(cleanCode)) {
+      return res.status(400).json({ error: `Bạn đã từng sử dụng mã [${cleanCode}] rồi! Mỗi mã chỉ được nhận thưởng 1 lần duy nhất.` });
+    }
+
+    // 3. QUY TẮC MÃ MỜI BẠN BÈ: MỖI MÃ MỜI CHỈ DÙNG ĐÚNG 1 LẦN DUY NHẤT TOÀN MÁY CHỦ, DÙNG XONG LÀ BLOCK VĨNH VIỄN
+    if (!OFFICIAL_GIFTCODES[cleanCode]) {
+      if (data.lockedInviteCodes.includes(cleanCode)) {
+        return res.status(400).json({ 
+          error: `Mã giới thiệu [${cleanCode}] này đã có người sử dụng và đã bị KHÓA VĨNH VIỄN! Mỗi mã mời chỉ có hiệu lực đúng 1 lần duy nhất.` 
+        });
       }
-      return res.status(400).json({ 
-        error: `Mã giới thiệu [${cleanCode}] này đã có người sử dụng và đã bị KHÓA VĨNH VIỄN! Mỗi mã mời chỉ có hiệu lực đúng 1 lần duy nhất.` 
-      });
-    }
-  }
 
-  const myCode = (data.userCustomInviteCodes[cleanSteamId] || `ST25-${cleanSteamId.slice(-5)}`).toUpperCase();
-  if (cleanCode === myCode || cleanCode === cleanSteamId.slice(-5)) {
-    return res.status(400).json({ error: "Bạn không thể tự nhập mã giới thiệu của chính mình!" });
-  }
-
-  let rewardAmount = 50;
-  let successMsg = "";
-  let referrerSteamId = null;
-  let referrerName = null;
-
-  if (OFFICIAL_GIFTCODES[cleanCode]) {
-    // Xử lý mã quà tặng sự kiện (Giftcode)
-    const gift = OFFICIAL_GIFTCODES[cleanCode];
-    rewardAmount = gift.reward;
-    successMsg = `Chúc mừng! Bạn đã kích hoạt thành công [${gift.title}] và nhận ngay +${rewardAmount} Lúa 🌾!`;
-  } else {
-    // Xử lý mã bạn bè (Referral Code): Mỗi người chơi chỉ được nhận quà giới thiệu 1 lần duy nhất
-    if (data.referrals[cleanSteamId].invitedBy) {
-      return res.status(400).json({ 
-        error: `Tài khoản của bạn đã từng nhập mã giới thiệu [${data.referrals[cleanSteamId].invitedBy}] trước đây! Mỗi tài khoản chỉ được nhập mã mời 1 lần duy nhất.` 
-      });
-    }
-
-    // Tìm kiếm người giới thiệu:
-    // a. Kiểm tra trong userCustomInviteCodes
-    for (const [sId, uCode] of Object.entries(data.userCustomInviteCodes || {})) {
-      if (String(uCode).trim().toUpperCase() === cleanCode) {
-        referrerSteamId = sId;
-        break;
+      const alreadyUsed = data.claimedCodeHistory.some(h => h.code === cleanCode);
+      if (alreadyUsed) {
+        if (!data.lockedInviteCodes.includes(cleanCode)) {
+          data.lockedInviteCodes.push(cleanCode);
+          savePortalData(data);
+        }
+        return res.status(400).json({ 
+          error: `Mã giới thiệu [${cleanCode}] này đã có người sử dụng và đã bị KHÓA VĨNH VIỄN! Mỗi mã mời chỉ có hiệu lực đúng 1 lần duy nhất.` 
+        });
       }
     }
 
-    // b. Kiểm tra theo suffix mặc định ST25-XXXXX
-    if (!referrerSteamId) {
-      const codeSuffix = cleanCode.replace(/^ST25-/, '');
+    const myCode = (data.userCustomInviteCodes[cleanSteamId] || `ST25-${cleanSteamId.slice(-5)}`).toUpperCase();
+    if (cleanCode === myCode || cleanCode === cleanSteamId.slice(-5)) {
+      return res.status(400).json({ error: "Bạn không thể tự nhập mã giới thiệu của chính mình!" });
+    }
+
+    let rewardAmount = 20;
+    let successMsg = "";
+    let referrerSteamId = null;
+    let referrerName = null;
+
+    if (OFFICIAL_GIFTCODES[cleanCode]) {
+      // Xử lý mã quà tặng sự kiện (Giftcode)
+      const gift = OFFICIAL_GIFTCODES[cleanCode];
+      rewardAmount = gift.reward;
+      successMsg = `Chúc mừng! Bạn đã kích hoạt thành công [${gift.title}] và nhận ngay +${rewardAmount} Lúa 🌾!`;
+    } else {
+      // Xử lý mã bạn bè (Referral Code): Mỗi người chơi chỉ được nhận quà giới thiệu 1 lần duy nhất
+      if (data.referrals[cleanSteamId].invitedBy) {
+        return res.status(400).json({ 
+          error: `Tài khoản của bạn đã từng nhập mã giới thiệu [${data.referrals[cleanSteamId].invitedBy}] trước đây! Mỗi tài khoản chỉ được nhập mã mời 1 lần duy nhất.` 
+        });
+      }
+
+      // Tìm kiếm người giới thiệu:
+      for (const [sId, uCode] of Object.entries(data.userCustomInviteCodes || {})) {
+        if (String(uCode).trim().toUpperCase() === cleanCode) {
+          referrerSteamId = sId;
+          break;
+        }
+      }
+
+      if (!referrerSteamId) {
+        const codeSuffix = cleanCode.replace(/^ST25-/, '');
+        let allPlayers = [];
+        try {
+          allPlayers = await getRealServerPlayers();
+        } catch (_) {}
+
+        const candidateIds = new Set([
+          ...Object.keys(data.userWallets || {}),
+          ...Object.keys(data.referrals || {}),
+          ...allPlayers.map(p => p.steamId),
+          ...SUPER_ADMINS
+        ]);
+
+        for (const candId of candidateIds) {
+          if (candId.endsWith(codeSuffix)) {
+            referrerSteamId = candId;
+            break;
+          }
+        }
+      }
+
+      if (!referrerSteamId) {
+        return res.status(400).json({ 
+          error: `Mã giới thiệu [${cleanCode}] không tồn tại trên máy chủ ST25! Vui lòng kiểm tra lại mã từ bạn bè.` 
+        });
+      }
+
+      if (referrerSteamId === cleanSteamId) {
+        return res.status(400).json({ error: "Bạn không thể tự nhập mã giới thiệu của chính mình!" });
+      }
+
       let allPlayers = [];
       try {
         allPlayers = await getRealServerPlayers();
       } catch (_) {}
+      const matched = allPlayers.find(p => p.steamId === referrerSteamId);
+      referrerName = matched ? matched.name : `Player_${referrerSteamId.slice(-4)}`;
 
-      const candidateIds = new Set([
-        ...Object.keys(data.userWallets || {}),
-        ...Object.keys(data.referrals || {}),
-        ...allPlayers.map(p => p.steamId),
-        ...SUPER_ADMINS
-      ]);
+      successMsg = `Chúc mừng! Bạn đã kích hoạt mã giới thiệu từ [${referrerName}] và nhận ngay +20 Lúa 🌾!`;
+    }
 
-      for (const candId of candidateIds) {
-        if (candId.endsWith(codeSuffix)) {
-          referrerSteamId = candId;
-          break;
-        }
+    // ĐÁNH DẤU VÀ LƯU DỮ LIỆU TRƯỚC ĐỂ CHỐNG CONCURRENT DUPLICATE
+    data.claimedCodesPerUser[cleanSteamId].push(cleanCode);
+    data.claimedCodeHistory.push({
+      steamId: cleanSteamId,
+      code: cleanCode,
+      reward: rewardAmount,
+      claimedAt: new Date().toISOString()
+    });
+
+    if (referrerSteamId) {
+      if (!data.referrals[referrerSteamId]) {
+        data.referrals[referrerSteamId] = { count: 0, earnedLua: 0, invitedBy: null };
+      }
+      data.referrals[referrerSteamId].count = (data.referrals[referrerSteamId].count || 0) + 1;
+      data.referrals[referrerSteamId].earnedLua = (data.referrals[referrerSteamId].earnedLua || 0) + 20;
+      data.referrals[cleanSteamId].invitedBy = cleanCode;
+
+      if (!data.lockedInviteCodes.includes(cleanCode)) {
+        data.lockedInviteCodes.push(cleanCode);
       }
     }
+    savePortalData(data);
 
-    if (!referrerSteamId) {
-      return res.status(400).json({ 
-        error: `Mã giới thiệu [${cleanCode}] không tồn tại trên máy chủ ST25! Vui lòng kiểm tra lại mã từ bạn bè.` 
-      });
+    // THỰC HIỆN CỘNG LÚA TRỰC TIẾP VÀO VÍ GAME & ISLEPILOT
+    const userBalanceResult = await modifyLivePlayerBalance(cleanSteamId, rewardAmount, `claim_code_${cleanCode}`);
+    clearPlayerCache(cleanSteamId);
+
+    if (referrerSteamId) {
+      await modifyLivePlayerBalance(referrerSteamId, 20, `referral_friend_${cleanSteamId}`);
+      clearPlayerCache(referrerSteamId);
     }
 
-    if (referrerSteamId === cleanSteamId) {
-      return res.status(400).json({ error: "Bạn không thể tự nhập mã giới thiệu của chính mình!" });
-    }
+    const finalBalance = userBalanceResult?.balance !== undefined ? userBalanceResult.balance : (data.userWallets[cleanSteamId] || 0);
 
-    let allPlayers = [];
-    try {
-      allPlayers = await getRealServerPlayers();
-    } catch (_) {}
-    const matched = allPlayers.find(p => p.steamId === referrerSteamId);
-    referrerName = matched ? matched.name : `Player_${referrerSteamId.slice(-4)}`;
-
-    successMsg = `Chúc mừng! Bạn đã kích hoạt mã giới thiệu từ [${referrerName}] và nhận ngay +50 Lúa 🌾!`;
+    res.json({
+      success: true,
+      message: successMsg,
+      reward: rewardAmount,
+      newBalance: finalBalance,
+      code: cleanCode,
+      locked: !!referrerSteamId
+    });
+  } catch (err) {
+    console.error('Lỗi nhận giftcode:', err);
+    res.status(500).json({ error: "Lỗi hệ thống khi nhận mã quà tặng! Vui lòng thử lại sau." });
+  } finally {
+    releasePlayerLock(cleanSteamId, 'code');
   }
-
-  // 4. THỰC HIỆN CỘNG LÚA TRỰC TIẾP VÀO VÍ GAME & ISLEPILOT
-  const userBalanceResult = await modifyLivePlayerBalance(cleanSteamId, rewardAmount, `claim_code_${cleanCode}`);
-  clearPlayerCache(cleanSteamId);
-
-  // 5. NẾU LÀ MÃ BẠN BÈ: CỘNG LÚA CHO NGƯỜI GIỚI THIỆU & BLOCK MÃ NGAY LẬP TỨC
-  if (referrerSteamId) {
-    await modifyLivePlayerBalance(referrerSteamId, 50, `referral_friend_${cleanSteamId}`);
-    clearPlayerCache(referrerSteamId);
-
-    if (!data.referrals[referrerSteamId]) {
-      data.referrals[referrerSteamId] = { count: 0, earnedLua: 0, invitedBy: null };
-    }
-    data.referrals[referrerSteamId].count = (data.referrals[referrerSteamId].count || 0) + 1;
-    data.referrals[referrerSteamId].earnedLua = (data.referrals[referrerSteamId].earnedLua || 0) + 50;
-
-    data.referrals[cleanSteamId].invitedBy = cleanCode;
-
-    // KHÓA VĨNH VIỄN MÃ MỜI NÀY - KHÔNG AI ĐƯỢC NHẬP LẠI NỮA
-    if (!data.lockedInviteCodes.includes(cleanCode)) {
-      data.lockedInviteCodes.push(cleanCode);
-    }
-  }
-
-  // 6. GHI NHẬN LỊCH SỬ DÙNG MÃ
-  data.claimedCodesPerUser[cleanSteamId].push(cleanCode);
-  data.claimedCodeHistory.push({
-    steamId: cleanSteamId,
-    code: cleanCode,
-    rewardAmount,
-    timestamp: new Date().toISOString(),
-    referrerSteamId: referrerSteamId || null
-  });
-
-  savePortalData(data);
-
-  const finalBalance = userBalanceResult?.balance !== undefined ? userBalanceResult.balance : (data.userWallets[cleanSteamId] || 0);
-
-  res.json({
-    success: true,
-    message: successMsg,
-    reward: rewardAmount,
-    newBalance: finalBalance,
-    code: cleanCode,
-    locked: !!referrerSteamId
-  });
 });
 
 /* ==================== ISLEPILOT V1 OFFICIAL STANDARD ENDPOINTS ==================== */
