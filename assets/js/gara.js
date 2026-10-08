@@ -1,4 +1,33 @@
 // ST25 Garage System — Synchronized 100% with IslePilot Cloud API (st25.islepilot.eu/garage)
+
+// ── Helper: Lấy ảnh PNG thực tế theo species ──────────────────────────────
+function getDinoImage(species, size = '80px') {
+  const knownDinos = [
+    'Allosaurus','Austroraptor','Beipiaosaurus','Carnotaurus','Ceratosaurus',
+    'Deinosuchus','Diabloceratops','Dilophosaurus','Dryosaurus','Gallimimus',
+    'Herrerasaurus','Hypsilophodon','Kentrosaurus','Maiasaura','Omniraptor',
+    'Pachycephalosaurus','Pteranodon','Stegosaurus','Tenontosaurus',
+    'Triceratops','Troodon','Tyrannosaurus'
+  ];
+  const key = String(species || '').replace(/[^a-z]/gi, '').toLowerCase();
+  const aliases = { trex: 'tyrannosaurus', tyrannosaurusrex: 'tyrannosaurus' };
+  const matched = knownDinos.find(name => name.toLowerCase() === (aliases[key] || key)) || 'Tyrannosaurus';
+  const filename = matched === 'Troodon' ? 'troodon' : matched;
+  return `<img src="assets/imges/${filename}.png" alt="${matched}"
+    style="width:${size};height:${size};object-fit:contain;filter:drop-shadow(0 0 8px rgba(16,185,129,0.5));display:block;"
+    onerror="this.onerror=null;this.src='assets/imges/Tyrannosaurus.png';">`;
+}
+
+function updateGarageDinoIcon(id, species) {
+  const icon = document.getElementById(id);
+  if (!icon) return;
+  const container = document.createElement('div');
+  container.innerHTML = getDinoImage(species);
+  icon.src = container.firstElementChild.getAttribute('src');
+  icon.alt = String(species || 'Khủng long');
+}
+// ──────────────────────────────────────────────────────────────────────────
+
 const Garage = {
   activeDino: null,
   slots: [],
@@ -310,7 +339,7 @@ const Garage = {
     if (!this.playerInfo || !this.playerInfo.steamId) {
       panel.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
-          <span style="font-size: 2.5rem; display: block; margin-bottom: 12px;">🦖</span>
+          <div style="display:flex;justify-content:center;margin-bottom:12px;">${getDinoImage("Tyrannosaurus", "80px")}</div>
           <h3 style="color: #fff; margin-bottom: 6px;">Chưa Đăng Nhập Tài Khoản Steam</h3>
           <p style="color: #94a3b8; max-width: 520px; margin: 0 auto 16px; line-height: 1.6;">
             Hãy đăng nhập bằng Steam chính chủ hoặc nhập nhanh Steam ID 64 ở ô phía trên để hiển thị khủng long đang sống in-game của bạn!
@@ -326,7 +355,7 @@ const Garage = {
     if (!this.activeDino) {
       panel.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
-          <span style="font-size: 2.5rem; display: block; margin-bottom: 12px;">🦖</span>
+          <div style="display:flex;justify-content:center;margin-bottom:12px;">${getDinoImage("Tyrannosaurus", "80px")}</div>
           <h3 style="color: #fff; margin-bottom: 6px;">Bạn hiện không có khủng long nào đang chơi trong game</h3>
           <p style="color: #94a3b8; max-width: 500px; margin: 0 auto;">
             Hãy vào game spawn khủng long mới hoặc chọn một con từ Gara bên dưới bấm <strong>"Đưa Ra Đảo (Restore 30s)"</strong> để hồi phục vào server!
@@ -341,7 +370,7 @@ const Garage = {
     panel.className = `active-dino-panel glass-panel ${isPrime ? 'holo-prime' : ''}`;
     panel.innerHTML = `
       <div style="background: rgba(0,0,0,0.35); border-radius: 12px; padding: 22px; text-align: center; border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; justify-content: center; align-items: center;">
-        <span style="font-size: 3.5rem; display: block; margin-bottom: 6px; filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.4));">🦖</span>
+        ${getDinoImage(d.species, '90px')}
         <h3 style="color: #fff; margin-bottom: 6px; font-size: 1.45rem; font-weight: 800;">${d.species}</h3>
         <div style="display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap;">
           <span class="rule-badge badge-allow">${d.gender}</span>
@@ -433,14 +462,13 @@ const Garage = {
         ? s.mutations.map(m => `<span class="mutation-gem">🧬 ${m}</span>`).join(' ')
         : '<span style="font-size: 0.75rem; color: #64748b;">Thuần chủng (Không đột biến)</span>';
 
-      const icon = s.species === 'Deinosuchus' ? '🐊' : (s.species === 'Triceratops' ? '🦏' : (s.species === 'Pteranodon' ? '🦅' : '🦖'));
 
       return `
         <div class="slot-card dino-card-tcg ${isPrime ? 'holo-prime' : ''}">
           <span class="slot-badge-num">Ô #${s.slot}</span>
           <div style="position: relative; z-index: 1;">
             <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 10px;">
-              <div style="font-size: 2.4rem; line-height: 1;">${icon}</div>
+              <div style="width:70px;height:70px;flex-shrink:0;">${getDinoImage(s.species, '70px')}</div>
               <div>
                 <h4 style="color: #fff; margin: 0 0 4px; font-size: 1.25rem; font-weight: 800;">${s.species}</h4>
                 <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
@@ -520,6 +548,7 @@ const Garage = {
     const countEl = document.getElementById('park-countdown-big');
     const progressEl = document.getElementById('park-countdown-progress');
 
+    updateGarageDinoIcon('park-modal-dino-icon', this.activeDino.species);
     if (nameEl) nameEl.textContent = `${this.activeDino.species} (${this.activeDino.growth}% Growth)`;
     if (countEl) countEl.textContent = '30s';
     if (progressEl) progressEl.style.width = '100%';
@@ -624,6 +653,7 @@ const Garage = {
     const countEl = document.getElementById('restore-countdown-big');
     const progressEl = document.getElementById('restore-countdown-progress');
 
+    updateGarageDinoIcon('restore-modal-dino-icon', species);
     if (nameEl) nameEl.textContent = `${species} (${growth}% Growth)`;
     if (countEl) countEl.textContent = '30s';
     if (progressEl) progressEl.style.width = '100%';
