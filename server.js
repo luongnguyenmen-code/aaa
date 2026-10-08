@@ -4522,6 +4522,7 @@ app.get('/api/leaderboard', async (req, res) => {
 // =======================================================
 
 const CASINO_PLAYER_WIN_RATE = 0.30; // 30% Win rate for player, 70% for house
+const CASINO_BAO_WIN_RATE = 0.03;    // 3% Tỉ lệ nổ Bão (1 ăn 10, hạ tỉ lệ nổ bão tránh cày Lúa)
 
 function getCasinoData() {
   const data = getPortalData();
@@ -4596,8 +4597,13 @@ app.post('/api/casino/tai-xiu/play', async (req, res) => {
   // 1. Trừ Lúa ngay lập tức trên IslePilot Cloud
   await modifyLivePlayerBalance(steamId, -numBet, `tai_xiu_bet_${betType}_${numBet}`);
 
-  // 2. Thuật toán: Người chơi chỉ thắng 30%, Nhà cái thắng 70%
-  const playerWins = Math.random() < CASINO_PLAYER_WIN_RATE;
+  // 2. Thuật toán xác suất Sòng Bạc ST25:
+  // - Tài / Xỉu: Người chơi thắng 30%, Nhà cái thắng 70%
+  // - Bão (Bộ 3 đồng nhất): Hạ tỉ lệ trúng xuống cực thấp (chỉ 3%, 1 ăn 10) để chống cày Lúa
+  const isBaoBet = betType === 'bao';
+  const effectiveWinRate = isBaoBet ? CASINO_BAO_WIN_RATE : CASINO_PLAYER_WIN_RATE;
+  const playerWins = Math.random() < effectiveWinRate;
+
   const randDie = () => Math.floor(Math.random() * 6) + 1;
   const isTriple = d => d[0] === d[1] && d[1] === d[2];
   const diceSum = d => d[0] + d[1] + d[2];
@@ -4627,13 +4633,13 @@ app.post('/api/casino/tai-xiu/play', async (req, res) => {
       do {
         dice = [randDie(), randDie(), randDie()];
         attempts++;
-      } while (diceSum(dice) >= 11 && !isTriple(dice) && attempts < 100);
+      } while ((diceSum(dice) >= 11 || (isTriple(dice) && Math.random() > 0.01)) && attempts < 100);
       if (attempts >= 100) dice = [2, 3, 3];
     } else if (betType === 'xiu') {
       do {
         dice = [randDie(), randDie(), randDie()];
         attempts++;
-      } while (diceSum(dice) <= 10 && !isTriple(dice) && attempts < 100);
+      } while ((diceSum(dice) <= 10 || (isTriple(dice) && Math.random() > 0.01)) && attempts < 100);
       if (attempts >= 100) dice = [5, 5, 4];
     } else if (betType === 'bao') {
       do {
@@ -4652,7 +4658,7 @@ app.post('/api/casino/tai-xiu/play', async (req, res) => {
   let payout = 0;
   if (won) {
     if (betType === 'bao') {
-      payout = numBet * 25; // Bão ăn x25
+      payout = numBet * 10; // Bão giảm xuống còn 1 ăn 10
     } else {
       payout = Math.floor(numBet * 1.95); // Tài/Xỉu ăn 1.95 (trừ 5% phế nhà cái)
     }
