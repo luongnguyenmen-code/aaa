@@ -1091,6 +1091,46 @@ function isUserAdmin(steamId) {
   return dynamicRole.toLowerCase() === 'admin' || dynamicRole.toLowerCase() === '.';
 }
 
+const TRADE_TIMEOUT_MS = 30 * 1000; // 30 giây tối đa cho lời mời giao dịch P2P
+
+// Helper: Tự động kiểm tra và hoàn trả các giao dịch P2P quá 30 giây về Gara
+function cleanExpiredTrades(targetData = null) {
+  const data = targetData || getPortalData();
+  if (!data.trades || !Array.isArray(data.trades)) return false;
+
+  const now = Date.now();
+  let hasExpired = false;
+  const affectedSteamIds = new Set();
+
+  data.trades.forEach(t => {
+    if (t.status === 'pending') {
+      const createdTime = t.createdAtTimestamp || (t.createdAt ? new Date(t.createdAt).getTime() : 0);
+      if (!createdTime || (now - createdTime >= TRADE_TIMEOUT_MS)) {
+        t.status = 'expired';
+        t.updatedAt = new Date().toLocaleString('vi-VN');
+        t.updatedAtTimestamp = now;
+        t.expireReason = 'Hết thời gian chờ (30 giây) - Tự động hoàn trả về Gara';
+        hasExpired = true;
+        if (t.senderSteamId) affectedSteamIds.add(t.senderSteamId);
+        if (t.receiverSteamId) affectedSteamIds.add(t.receiverSteamId);
+      }
+    }
+  });
+
+  if (hasExpired) {
+    savePortalData(data);
+    affectedSteamIds.forEach(sid => clearPlayerCache(sid));
+  }
+  return hasExpired;
+}
+
+// Tự động quét và giải phóng các giao dịch hết hạn định kỳ mỗi 5 giây
+setInterval(() => {
+  try {
+    cleanExpiredTrades();
+  } catch (_) {}
+}, 5000);
+
 // Helper: Tra cứu quyền hạn và tính toán sức chứa Gara theo Role Discord & Steam ID
 async function getPlayerGarageStatus(steamId) {
   const cfg = getConfig();
@@ -1180,7 +1220,10 @@ async function getPlayerGarageStatus(steamId) {
       .map(l => String(l.dinoData.id))
   );
 
-  // Lọc bỏ triệt để các khủng long ĐANG TRONG LỜI MỜI GIAO DỊCH P2P CHỜ XỬ LÝ
+  // Tự động kiểm tra và hoàn trả các giao dịch P2P quá 30 giây về Gara
+  cleanExpiredTrades(portalData);
+
+  // Lọc bỏ triệt để các khủng long ĐANG TRONG LỜI MỜI GIAO DỊCH P2P CHỜ XỬ LÝ (chỉ tính các giao dịch còn trong 30 giây)
   const activeTradeDinoIds = new Set(
     (portalData.trades || [])
       .filter(t => t.status === 'pending' && t.senderSteamId === cleanSteamId && t.senderDino && t.senderDino.id)
@@ -2481,6 +2524,7 @@ app.get('/api/trade/data', async (req, res) => {
   const steamId = getRequestSteamId(req);
   const data = getPortalData();
   if (!data.trades) data.trades = [];
+  cleanExpiredTrades(data);
 
   let balance = 0;
   let personaName = "Khách (Chưa đăng nhập)";
@@ -2639,6 +2683,9 @@ app.post('/api/trade/create', async (req, res) => {
     note: String(note || "").trim().slice(0, 200),
     status: 'pending',
     createdAt: new Date().toLocaleString('vi-VN'),
+    createdAtTimestamp: Date.now(),
+    expiresAtTimestamp: Date.now() + TRADE_TIMEOUT_MS,
+    timeoutSeconds: 30,
     updatedAt: new Date().toLocaleString('vi-VN')
   };
 
@@ -2735,6 +2782,22 @@ app.post('/api/trade/accept', async (req, res) => {
 
   if (trade.receiverSteamId !== receiverSteamId) {
     return res.status(403).json({ error: "Bạn không phải là người nhận của giao dịch này!" });
+  }
+
+  // Kiểm tra thời hạn 30 giây của lời mời giao dịch
+  const now = Date.now();
+  const createdTime = trade.createdAtTimestamp || (trade.createdAt ? new Date(trade.createdAt).getTime() : 0);
+  if (trade.status === 'expired' || (createdTime && (now - createdTime >= TRADE_TIMEOUT_MS))) {
+    trade.status = 'expired';
+    trade.updatedAt = new Date().toLocaleString('vi-VN');
+    trade.updatedAtTimestamp = now;
+    trade.expireReason = 'Hết thời gian chờ (30 giây) - Tự động hoàn trả về Gara';
+    savePortalData(data);
+    clearPlayerCache(trade.senderSteamId);
+    clearPlayerCache(trade.receiverSteamId);
+    return res.status(400).json({
+      error: "⚠️ Lời mời giao dịch đã hết hạn (quá 30 giây) và khủng long đã được tự động hoàn trả về Gara của người gửi!"
+    });
   }
 
   if (trade.status !== 'pending') {

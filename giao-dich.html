@@ -182,6 +182,14 @@
       </div>
     </div>
 
+    <!-- Cảnh báo chống treo thú ảo / lạm dụng Gara -->
+    <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 12px 18px; margin-bottom: 25px; display: flex; align-items: center; gap: 14px;">
+      <span style="font-size: 1.6rem;">⏱️</span>
+      <div style="font-size: 0.88rem; color: #fca5a5; line-height: 1.5;">
+        <strong style="color: #f87171;">Quy định chống treo thú ảo:</strong> Mỗi lời mời giao dịch chỉ có hiệu lực trong vòng <strong style="color: #fff; text-decoration: underline;">30 giây</strong>. Nếu sau 30 giây người nhận chưa chấp nhận, hệ thống sẽ tự động hủy giao dịch và <strong style="color: #fff;">hoàn trả Khủng Long về lại Gara của bạn ngay lập tức</strong>.
+      </div>
+    </div>
+
     <!-- Main Grid: Create Trade (Left) | Incoming & Outgoing Offers (Right) -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 25px; margin-bottom: 35px;">
 
@@ -404,8 +412,35 @@
         this.switchAccount(sid);
       },
 
+      countdownInterval: null,
+
+      startCountdownTimer() {
+        if (this.countdownInterval) clearInterval(this.countdownInterval);
+        this.countdownInterval = setInterval(() => {
+          let hasAnyExpired = false;
+          const countdownEls = document.querySelectorAll('.trade-countdown');
+          countdownEls.forEach(el => {
+            const expAt = Number(el.getAttribute('data-expires-at'));
+            if (expAt) {
+              const diffSec = Math.max(0, Math.ceil((expAt - Date.now()) / 1000));
+              const secEl = el.querySelector('.countdown-sec');
+              if (secEl) {
+                secEl.textContent = `${diffSec}s`;
+              }
+              if (diffSec <= 0) {
+                hasAnyExpired = true;
+              }
+            }
+          });
+          if (hasAnyExpired && (this.incomingTrades.length > 0 || this.outgoingTrades.length > 0)) {
+            this.loadData();
+          }
+        }, 1000);
+      },
+
       async init() {
         this.currentSteamId = this.getActiveSteamId();
+        this.startCountdownTimer();
         await this.loadData();
       },
 
@@ -567,6 +602,9 @@
             </div>
           ` : '<span style="color: #94a3b8; font-style: italic;">Không có Dino kèm theo</span>';
 
+          const expTime = t.expiresAtTimestamp || (t.createdAtTimestamp ? t.createdAtTimestamp + 30000 : (new Date(t.createdAt).getTime() + 30000));
+          const leftSec = Math.max(0, Math.ceil((expTime - Date.now()) / 1000));
+
           return `
             <div class="offer-box">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
@@ -575,7 +613,7 @@
                   <strong style="color: #fff; font-size: 1.05rem;">${t.senderName}</strong>
                   <span style="font-family: monospace; font-size: 0.82rem; color: #fbbf24; margin-left: 6px;">[${t.senderSteamId}]</span>
                 </div>
-                <span class="offer-badge badge-pending">Chờ Bạn Xác Nhận ⏳</span>
+                <span class="offer-badge badge-pending trade-countdown" data-trade-id="${t.id}" data-expires-at="${expTime}">⏳ Chờ duyệt: <b class="countdown-sec" style="color: #ef4444; font-size: 0.95rem;">${leftSec}s</b></span>
               </div>
 
               <div style="margin-bottom: 12px;">
@@ -622,6 +660,9 @@
 
         container.innerHTML = this.outgoingTrades.map(t => {
           const d = t.senderDino;
+          const expTime = t.expiresAtTimestamp || (t.createdAtTimestamp ? t.createdAtTimestamp + 30000 : (new Date(t.createdAt).getTime() + 30000));
+          const leftSec = Math.max(0, Math.ceil((expTime - Date.now()) / 1000));
+
           return `
             <div class="offer-box">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -643,7 +684,7 @@
 
               <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #64748b;">
                 <span>Tạo lúc: ${t.createdAt}</span>
-                <span class="offer-badge badge-pending">Đang chờ đối phương ⏳</span>
+                <span class="offer-badge badge-pending trade-countdown" data-trade-id="${t.id}" data-expires-at="${expTime}">⏳ Còn <b class="countdown-sec" style="color: #ef4444; font-size: 0.95rem;">${leftSec}s</b> (Tự hoàn thú)</span>
               </div>
             </div>
           `;
@@ -671,6 +712,7 @@
           if (t.status === 'accepted') { badgeClass = 'badge-accepted'; statusText = 'Thành công ✅'; }
           else if (t.status === 'declined') { badgeClass = 'badge-declined'; statusText = 'Từ chối ❌'; }
           else if (t.status === 'cancelled') { badgeClass = 'badge-cancelled'; statusText = 'Đã hủy 🚫'; }
+          else if (t.status === 'expired') { badgeClass = 'badge-declined'; statusText = 'Hết hạn 30s (Đã hoàn thú) ⏱️'; }
 
           const d = t.senderDino;
           const itemText = d ? `${d.species} [${d.growth}%] (${d.gender})` : 'Chỉ trao đổi Lúa';
