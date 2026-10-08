@@ -974,21 +974,40 @@
 
       async fetchRolesAndSlots() {
         try {
+          let cachedList = [];
+          try {
+            const stored = localStorage.getItem('st25_master_assignments');
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              if (Array.isArray(parsed) && parsed.length > 0) cachedList = parsed;
+            }
+          } catch (_) {}
+
           const res = await fetch(`/api/admin/roles-slots?steamId=${encodeURIComponent(this.currentAdminSteamId)}&_t=${Date.now()}`, {
+            method: 'POST',
             headers: {
+              'Content-Type': 'application/json',
               'x-steam-id': this.currentAdminSteamId,
               'x-admin-steam-id': this.currentAdminSteamId,
               'Cache-Control': 'no-cache'
-            }
+            },
+            body: JSON.stringify({
+              cachedAssignments: cachedList
+            })
           });
+
           if (res.ok) {
             const data = await res.json();
             this.roles = data.roles || [];
             this.assignedUsers = data.assignedUsers || [];
             this.recentPlayers = data.recentPlayers || [];
 
-            // Dọn dẹp cache local cũ để dữ liệu lấy trực tiếp từ máy chủ đồng bộ 100%
-            try { localStorage.removeItem('st25_backup_assignments'); } catch (_) {}
+            // Lưu master snapshot để đồng bộ xuyên suốt mọi container Vercel
+            try {
+              if (Array.isArray(this.assignedUsers) && this.assignedUsers.length > 0) {
+                localStorage.setItem('st25_master_assignments', JSON.stringify(this.assignedUsers));
+              }
+            } catch (_) {}
           } else {
             App.showToast("Không thể tải danh sách cấu hình từ máy chủ!", "error");
           }
@@ -1215,6 +1234,10 @@
               ];
             }
 
+            try {
+              localStorage.setItem('st25_master_assignments', JSON.stringify(this.assignedUsers));
+            } catch (_) {}
+
             // Xóa ô tìm kiếm để dòng vừa cấp hiển thị ngay trên cùng
             const searchInp = document.getElementById('filter-keyword');
             if (searchInp) searchInp.value = '';
@@ -1276,6 +1299,9 @@
             } else {
               this.assignedUsers = this.assignedUsers.filter(u => u.steamId !== targetSteamId);
             }
+            try {
+              localStorage.setItem('st25_master_assignments', JSON.stringify(this.assignedUsers));
+            } catch (_) {}
             this.renderAssignedTable();
 
             const curInp = document.getElementById('target-steamid').value.trim();
@@ -1372,6 +1398,9 @@
             if (Array.isArray(data.assignedUsers)) {
               this.assignedUsers = data.assignedUsers;
             }
+            try {
+              localStorage.setItem('st25_master_assignments', JSON.stringify(this.assignedUsers));
+            } catch (_) {}
             this.renderAssignedTable();
             this.highlightUserRow(steamId);
 
@@ -1629,6 +1658,9 @@
             if (Array.isArray(data.assignedUsers)) {
               this.assignedUsers = data.assignedUsers;
             }
+            try {
+              localStorage.setItem('st25_master_assignments', JSON.stringify(this.assignedUsers));
+            } catch (_) {}
             this.renderAssignedTable();
             this.highlightUserRow(steamId);
           } else {

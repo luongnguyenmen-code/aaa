@@ -1716,13 +1716,61 @@ function getAllAssignedUsers() {
 }
 
 // Lấy danh sách Roles, danh sách thành viên đã phân quyền & người chơi gần đây
-app.get('/api/admin/roles-slots', async (req, res) => {
+app.all('/api/admin/roles-slots', async (req, res) => {
   const adminSteamId = getAdminSteamId(req);
   if (!isUserAdmin(adminSteamId)) {
     return res.status(403).json({ error: "Chỉ Quản Trị Viên (Admin) mới có quyền truy cập!" });
   }
 
   const cfg = getConfig();
+  if (!cfg.garage) cfg.garage = {};
+  if (!cfg.garage.user_roles) cfg.garage.user_roles = {};
+  if (!cfg.garage.player_custom_slots) cfg.garage.player_custom_slots = {};
+
+  const portalData = getPortalData();
+  if (!portalData.adminAssignments) portalData.adminAssignments = {};
+  if (!portalData.adminDeleted) portalData.adminDeleted = {};
+
+  // Đồng bộ tức thời từ snapshot client gửi lên (giải quyết triệt để tính chất ephemeral của Vercel Serverless)
+  const incomingAssignments = (req.body && Array.isArray(req.body.cachedAssignments)) ? req.body.cachedAssignments : null;
+  if (incomingAssignments && incomingAssignments.length > 0) {
+    let hasChanges = false;
+    incomingAssignments.forEach(item => {
+      if (item && item.steamId && /^\d{17}$/.test(String(item.steamId).trim())) {
+        const sid = String(item.steamId).trim();
+        const itemTs = item.updatedAtTimestamp || (item.updatedAt ? new Date(item.updatedAt).getTime() : 0);
+        const deletedTs = portalData.adminDeleted[sid] || 0;
+
+        // Nếu tài khoản đã bị Admin xóa sau mốc thời gian này thì không khôi phục lại
+        if (deletedTs && itemTs <= deletedTs) {
+          return;
+        }
+
+        const existing = portalData.adminAssignments[sid];
+        const existTs = (existing && existing.updatedAtTimestamp) || 0;
+
+        if (!existing || itemTs > existTs) {
+          portalData.adminAssignments[sid] = {
+            roleKey: item.roleKey || 'default',
+            slots: Number(item.slots) || 3,
+            updatedBy: item.updatedBy || adminSteamId,
+            updatedAt: item.updatedAt || new Date().toLocaleString('vi-VN'),
+            updatedAtTimestamp: itemTs || Date.now(),
+            notes: item.notes || ""
+          };
+          cfg.garage.user_roles[sid] = item.roleKey || 'default';
+          cfg.garage.player_custom_slots[sid] = Number(item.slots) || 3;
+          hasChanges = true;
+        }
+      }
+    });
+
+    if (hasChanges) {
+      saveConfig(cfg);
+      savePortalData(portalData);
+    }
+  }
+
   const garageCfg = cfg.garage || {};
   const roleLimits = garageCfg.role_limits || {};
 
@@ -1830,6 +1878,9 @@ app.post('/api/admin/assign-role-slots', async (req, res) => {
   const now = new Date();
   const data = getPortalData();
   if (!data.adminAssignments) data.adminAssignments = {};
+  if (data.adminDeleted && data.adminDeleted[cleanSteamId]) {
+    delete data.adminDeleted[cleanSteamId];
+  }
   data.adminAssignments[cleanSteamId] = {
     roleKey: cleanRole,
     slots: finalSlots,
@@ -1938,10 +1989,12 @@ app.post('/api/admin/remove-role-slots', async (req, res) => {
   saveConfig(cfg);
 
   const data = getPortalData();
+  if (!data.adminDeleted) data.adminDeleted = {};
+  data.adminDeleted[cleanSteamId] = Date.now();
   if (data.adminAssignments && data.adminAssignments[cleanSteamId]) {
     delete data.adminAssignments[cleanSteamId];
-    savePortalData(data);
   }
+  savePortalData(data);
 
   clearPlayerCache(cleanSteamId);
   clearPlayerCache(adminSteamId);
