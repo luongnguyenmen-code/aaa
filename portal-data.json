@@ -438,12 +438,12 @@
       "notes": "Test cap Long Ta Dien 12 slots"
     },
     "76561199031275693": {
-      "roleKey": "default",
-      "slots": 8,
+      "roleKey": "admin",
+      "slots": 20,
       "updatedBy": "76561198354289789",
-      "updatedAt": "17:32:49 7/10/2026",
-      "updatedAtTimestamp": 1791369169580,
-      "notes": ""
+      "updatedAt": "04:42:40 8/10/2026",
+      "updatedAtTimestamp": 1791409360000,
+      "notes": "76561199031275693"
     },
     "76561198000000888": {
       "roleKey": "default",
@@ -460,6 +460,70 @@
       "updatedAt": "22:43:22 7/10/2026",
       "updatedAtTimestamp": 1791387802322,
       "notes": "Test cap 8 slot vinh vien"
+    },
+    "76561198740116188": {
+      "roleKey": "streamer",
+      "slots": 5,
+      "updatedBy": "76561198354289789",
+      "updatedAt": "04:45:03 8/10/2026",
+      "updatedAtTimestamp": 1791409503000,
+      "notes": ""
+    },
+    "76561199830877379": {
+      "roleKey": "streamer",
+      "slots": 5,
+      "updatedBy": "76561198354289789",
+      "updatedAt": "03:30:56 8/10/2026",
+      "updatedAtTimestamp": 1791405056000,
+      "notes": ""
+    },
+    "76561198130578953": {
+      "roleKey": "admin",
+      "slots": 20,
+      "updatedBy": "76561198354289789",
+      "updatedAt": "01:11:21 8/10/2026",
+      "updatedAtTimestamp": 1791396681000,
+      "notes": ""
+    },
+    "76561199194553823": {
+      "roleKey": "mod",
+      "slots": 20,
+      "updatedBy": "76561198354289789",
+      "updatedAt": "04:45:27 8/10/2026",
+      "updatedAtTimestamp": 1791409527000,
+      "notes": ""
+    },
+    "76561198354289789": {
+      "roleKey": "admin",
+      "slots": 20,
+      "updatedBy": "76561198354289789",
+      "updatedAt": "04:45:27 8/10/2026",
+      "updatedAtTimestamp": 1791409527000,
+      "notes": "Super Admin vĩnh viễn"
+    },
+    "76561198682056372": {
+      "roleKey": "admin",
+      "slots": 20,
+      "updatedBy": "76561198354289789",
+      "updatedAt": "04:45:27 8/10/2026",
+      "updatedAtTimestamp": 1791409527000,
+      "notes": "Super Admin vĩnh viễn"
+    },
+    "76561198838095252": {
+      "roleKey": ".",
+      "slots": 20,
+      "updatedBy": "76561198354289789",
+      "updatedAt": "04:45:27 8/10/2026",
+      "updatedAtTimestamp": 1791409527000,
+      "notes": "Super Admin vĩnh viễn"
+    },
+    "76561199229687125": {
+      "roleKey": "admin",
+      "slots": 20,
+      "updatedBy": "76561198354289789",
+      "updatedAt": "04:45:27 8/10/2026",
+      "updatedAtTimestamp": 1791409527000,
+      "notes": "Super Admin vĩnh viễn"
     }
   },
   "trades": [

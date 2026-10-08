@@ -987,30 +987,8 @@
             this.assignedUsers = data.assignedUsers || [];
             this.recentPlayers = data.recentPlayers || [];
 
-            // Tự động kiểm tra bản sao lưu Client và đồng bộ lên máy chủ nếu máy chủ vừa khởi động lại
-            const localBackup = localStorage.getItem('st25_backup_assignments');
-            if (localBackup) {
-              try {
-                const parsed = JSON.parse(localBackup);
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                  // Gửi đồng bộ lên máy chủ trong nền
-                  fetch('/api/admin/sync-assignments', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'x-steam-id': this.currentAdminSteamId,
-                      'x-admin-steam-id': this.currentAdminSteamId
-                    },
-                    body: JSON.stringify({ backupAssignments: parsed })
-                  }).then(r => r.json()).then(syncData => {
-                    if (syncData && syncData.assignedUsers && Array.isArray(syncData.assignedUsers)) {
-                      this.assignedUsers = syncData.assignedUsers;
-                      this.renderAssignedTable();
-                    }
-                  }).catch(() => {});
-                }
-              } catch (_) {}
-            }
+            // Dọn dẹp cache local cũ để dữ liệu lấy trực tiếp từ máy chủ đồng bộ 100%
+            try { localStorage.removeItem('st25_backup_assignments'); } catch (_) {}
           } else {
             App.showToast("Không thể tải danh sách cấu hình từ máy chủ!", "error");
           }
@@ -1236,9 +1214,6 @@
                 ...this.assignedUsers.filter(u => u.steamId !== targetSteamId)
               ];
             }
-
-            // Lưu bản sao lưu vĩnh viễn vào localStorage để không bao giờ bị mất
-            localStorage.setItem('st25_backup_assignments', JSON.stringify(this.assignedUsers));
 
             // Xóa ô tìm kiếm để dòng vừa cấp hiển thị ngay trên cùng
             const searchInp = document.getElementById('filter-keyword');
@@ -1734,7 +1709,10 @@
           const timeB = b.updatedAtTimestamp || (b.updatedAt ? new Date(b.updatedAt).getTime() : 0);
 
           if (this.filterSort === 'newest') {
-            return timeB - timeA;
+            if (timeA !== timeB) return timeB - timeA;
+            if (a.isSuperAdmin && !b.isSuperAdmin) return -1;
+            if (!a.isSuperAdmin && b.isSuperAdmin) return 1;
+            return (a.steamId || '').localeCompare(b.steamId || '');
           } else if (this.filterSort === 'oldest') {
             return timeA - timeB;
           } else if (this.filterSort === 'expiring') {
