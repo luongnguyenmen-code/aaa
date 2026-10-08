@@ -441,6 +441,18 @@ app.get('/api/player/me', async (req, res) => {
       const isAdmin = isUserAdmin(reqSteamId);
       const isSuperAdmin = SUPER_ADMINS.includes(String(reqSteamId).trim());
       const garageStatus = await getPlayerGarageStatus(reqSteamId);
+      const portalData = getPortalData();
+      cleanExpiredTrades(portalData);
+      const incomingTrades = (portalData.trades || []).filter(t => t.receiverSteamId === reqSteamId && t.status === 'pending');
+      const notifications = incomingTrades.map(t => ({
+        type: 'trade_incoming',
+        title: `Lời mời giao dịch từ ${t.senderName}`,
+        desc: t.senderDino ? `${t.senderDino.species} [${t.senderDino.growth}%]` : `${t.senderLua} Lúa 🌾`,
+        time: t.createdAt,
+        expiresAtTimestamp: t.expiresAtTimestamp || (t.createdAtTimestamp ? t.createdAtTimestamp + 30000 : 0),
+        tradeId: t.id,
+        link: 'giao-dich.html'
+      }));
 
       return res.json({
         steam_id: reqSteamId,
@@ -449,6 +461,9 @@ app.get('/api/player/me', async (req, res) => {
         role: garageStatus.roleName || "Thành viên ST25",
         roleKey: garageStatus.roleKey || "default",
         maxSlots: garageStatus.maxSlots || 3,
+        totalParked: garageStatus.totalParked || 0,
+        notifications: notifications,
+        unreadCount: notifications.length,
         linked: true,
         isLoggedIn: true,
         isAdmin: isAdmin,

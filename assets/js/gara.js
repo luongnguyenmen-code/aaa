@@ -337,47 +337,55 @@ const Garage = {
     }
 
     const d = this.activeDino;
+    const isPrime = !!(d.isPrimeElder || d.growth >= 100);
+    panel.className = `active-dino-panel glass-panel ${isPrime ? 'holo-prime' : ''}`;
     panel.innerHTML = `
-      <div style="background: rgba(0,0,0,0.3); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.06);">
-        <span style="font-size: 3rem; display: block; margin-bottom: 8px;">🦖</span>
-        <h3 style="color: #fff; margin-bottom: 6px; font-size: 1.4rem;">${d.species}</h3>
-        <span class="rule-badge badge-allow">${d.gender}</span>
-        ${d.isPrimeElder ? '<span class="rule-badge badge-gold" style="margin-left: 6px;">👑 PRIME ELDER</span>' : ''}
-        <p style="font-size: 0.95rem; color: var(--text-muted); margin-top: 14px;">
-          Tăng trưởng: <b style="color: #10b981; font-size: 1.2rem;">${d.growth}%</b>
+      <div style="background: rgba(0,0,0,0.35); border-radius: 12px; padding: 22px; text-align: center; border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <span style="font-size: 3.5rem; display: block; margin-bottom: 6px; filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.4));">🦖</span>
+        <h3 style="color: #fff; margin-bottom: 6px; font-size: 1.45rem; font-weight: 800;">${d.species}</h3>
+        <div style="display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap;">
+          <span class="rule-badge badge-allow">${d.gender}</span>
+          ${d.isPrimeElder ? '<span class="rule-badge badge-gold">👑 PRIME ELDER</span>' : ''}
+        </div>
+        <p style="font-size: 0.95rem; color: var(--text-muted); margin-top: 12px;">
+          Trưởng thành: <b style="color: #34d399; font-size: 1.3rem;">${d.growth}%</b>
         </p>
-        <button onclick="Garage.parkActiveDino()" class="btn btn-secondary btn-sm" style="margin-top: 16px; width: 100%; font-weight: 700; border-color: #10b981; color: #10b981;">
-          📥 Cất Vào Gara (Park)
+        <button onclick="Garage.parkActiveDino()" class="btn btn-secondary btn-sm" style="margin-top: 14px; width: 100%; font-weight: 800; border-color: #10b981; color: #10b981; background: rgba(16, 185, 129, 0.1);">
+          📥 Cất Vào Gara (Park 30s)
         </button>
       </div>
 
       <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h4 style="color: #fff; margin: 0;">Chỉ số sinh tồn in-game</h4>
-          <span style="font-size: 0.85rem; color: #fbbf24; font-weight: 600;">Dinh dưỡng: ${d.diet ? d.diet.join(' • ') : 'Đầy đủ'}</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <h4 style="color: #fff; margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 6px;">
+            <span>⚡ Chỉ Số Sinh Tồn In-Game</span>
+          </h4>
+          <span style="font-size: 0.85rem; color: #fbbf24; font-weight: 700; background: rgba(245, 158, 11, 0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(245, 158, 11, 0.3);">
+            🥗 Dinh Dưỡng: ${d.diet ? d.diet.join(' • ') : '100% S-S-D'}
+          </span>
         </div>
 
-        <div class="stat-bars">
-          <div class="stat-item">
-            <div class="stat-label-wrap"><span>Máu (Health)</span><b>${d.health}%</b></div>
-            <div class="stat-bar-track"><div class="stat-bar-fill fill-health" style="width: ${d.health}%"></div></div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+          <div class="vital-meter">
+            <div class="vital-label"><span>❤️ Máu (Health)</span><b style="color: #34d399;">${d.health}%</b></div>
+            <div class="vital-track"><div class="vital-bar bar-hp" style="width: ${d.health}%"></div></div>
           </div>
-          <div class="stat-item">
-            <div class="stat-label-wrap"><span>Đói (Hunger)</span><b>${d.hunger}%</b></div>
-            <div class="stat-bar-track"><div class="stat-bar-fill fill-hunger" style="width: ${d.hunger}%"></div></div>
+          <div class="vital-meter">
+            <div class="vital-label"><span>🍗 Đói (Hunger)</span><b style="color: #fbbf24;">${d.hunger}%</b></div>
+            <div class="vital-track"><div class="vital-bar bar-hunger" style="width: ${d.hunger}%"></div></div>
           </div>
-          <div class="stat-item">
-            <div class="stat-label-wrap"><span>Khát (Thirst)</span><b>${d.thirst}%</b></div>
-            <div class="stat-bar-track"><div class="stat-bar-fill fill-thirst" style="width: ${d.thirst}%"></div></div>
+          <div class="vital-meter">
+            <div class="vital-label"><span>💧 Khát (Thirst)</span><b style="color: #38bdf8;">${d.thirst}%</b></div>
+            <div class="vital-track"><div class="vital-bar bar-thirst" style="width: ${d.thirst}%"></div></div>
           </div>
-          <div class="stat-item">
-            <div class="stat-label-wrap"><span>Thể Lực (Stamina)</span><b>${d.stamina}%</b></div>
-            <div class="stat-bar-track"><div class="stat-bar-fill fill-stamina" style="width: ${d.stamina}%"></div></div>
+          <div class="vital-meter">
+            <div class="vital-label"><span>⚡ Thể Lực (Stamina)</span><b style="color: #c084fc;">${d.stamina}%</b></div>
+            <div class="vital-track"><div class="vital-bar bar-growth" style="width: ${d.stamina}%"></div></div>
           </div>
         </div>
 
-        <div style="margin-top: 18px; font-size: 0.8rem; color: #94a3b8; line-height: 1.6;">
-          ⚠️ <strong>Lưu ý luật server:</strong> Cấm combat log (không cất khi đang bị săn đuổi). Khi cất vào Gara, con khủng long sẽ được lưu giữ an toàn tuyệt đối trên Cloud IslePilot.
+        <div style="margin-top: 14px; font-size: 0.8rem; color: #94a3b8; line-height: 1.6; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 6px;">
+          ⚠️ <strong>Luật bảo vệ Gara ST25:</strong> Không combat log (phải đứng yên 30s an toàn không nhận sát thương để niêm phong lên Cloud).
         </div>
       </div>
     `;
@@ -389,11 +397,11 @@ const Garage = {
 
     if (!this.playerInfo || !this.playerInfo.steamId) {
       grid.innerHTML = [1, 2, 3].map(slotNum => `
-        <div class="slot-card empty-slot">
+        <div class="slot-card empty-slot glass-panel">
           <span class="slot-badge-num">Ô #${slotNum}</span>
-          <div style="font-size: 2rem; margin-bottom: 8px; opacity: 0.4;">📦</div>
-          <h4 style="color: #64748b; margin-bottom: 4px; font-size: 1.05rem;">Ô Trống #${slotNum}</h4>
-          <p style="font-size: 0.8rem; margin: 0; color: #475569;">Đăng nhập Steam để nạp khủng long trong Gara Cloud</p>
+          <div style="font-size: 2.2rem; margin-bottom: 8px; opacity: 0.4;">📦</div>
+          <h4 style="color: #94a3b8; margin-bottom: 4px; font-size: 1.05rem;">Ô Trống #${slotNum}</h4>
+          <p style="font-size: 0.8rem; margin: 0; color: #64748b;">Đăng nhập Steam để nạp khủng long trong Gara Cloud</p>
         </div>
       `).join('');
       return;
@@ -401,7 +409,7 @@ const Garage = {
 
     if (this.slots.length === 0) {
       grid.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);" class="glass-panel">
           Gara của bạn hiện chưa có ô lưu trữ nào.
         </div>
       `;
@@ -411,46 +419,62 @@ const Garage = {
     grid.innerHTML = this.slots.map(s => {
       if (s.empty) {
         return `
-          <div class="slot-card empty-slot">
+          <div class="slot-card empty-slot glass-panel">
             <span class="slot-badge-num">Ô #${s.slot}</span>
-            <div style="font-size: 2rem; margin-bottom: 8px; opacity: 0.4;">📦</div>
-            <h4 style="color: #64748b; margin-bottom: 4px; font-size: 1.05rem;">Ô Trống #${s.slot}</h4>
-            <p style="font-size: 0.8rem; margin: 0; color: #475569;">Sẵn sàng cất khủng long mới</p>
+            <div style="font-size: 2.2rem; margin-bottom: 8px; opacity: 0.4;">📦</div>
+            <h4 style="color: #94a3b8; margin-bottom: 4px; font-size: 1.05rem;">Ô Trống #${s.slot}</h4>
+            <p style="font-size: 0.8rem; margin: 0; color: #64748b;">Sẵn sàng cất khủng long mới</p>
           </div>
         `;
       }
 
+      const isPrime = Boolean(s.isPrimeElder || s.growth >= 100);
       const mutHtml = (s.mutations && s.mutations.length > 0)
-        ? s.mutations.map(m => `<span class="mutation-tag">🧬 ${m}</span>`).join('')
-        : '<span style="font-size: 0.75rem; color: #64748b;">Chưa có đột biến</span>';
+        ? s.mutations.map(m => `<span class="mutation-gem">🧬 ${m}</span>`).join(' ')
+        : '<span style="font-size: 0.75rem; color: #64748b;">Thuần chủng (Không đột biến)</span>';
+
+      const icon = s.species === 'Deinosuchus' ? '🐊' : (s.species === 'Triceratops' ? '🦏' : (s.species === 'Pteranodon' ? '🦅' : '🦖'));
 
       return `
-        <div class="slot-card">
+        <div class="slot-card dino-card-tcg ${isPrime ? 'holo-prime' : ''}">
           <span class="slot-badge-num">Ô #${s.slot}</span>
           <div>
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 10px;">
+              <div style="font-size: 2.4rem; line-height: 1; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.4));">${icon}</div>
               <div>
-                <h4 style="color: #fff; margin: 0 0 4px; font-size: 1.2rem;">${s.species}</h4>
+                <h4 style="color: #fff; margin: 0 0 4px; font-size: 1.25rem; font-weight: 800;">${s.species}</h4>
                 <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                  <span class="rule-badge badge-allow" style="font-size: 0.75rem; padding: 2px 6px;">${s.gender}</span>
-                  ${s.isPrimeElder ? '<span class="rule-badge badge-gold" style="font-size: 0.75rem; padding: 2px 6px;">👑 PRIME</span>' : ''}
-                  <span style="font-size: 0.8rem; color: #10b981; font-weight: 700;">${s.growth}% Growth</span>
+                  <span class="rule-badge badge-allow" style="font-size: 0.72rem; padding: 2px 7px;">${s.gender}</span>
+                  ${s.isPrimeElder ? '<span class="rule-badge badge-gold" style="font-size: 0.72rem; padding: 2px 7px;">👑 PRIME</span>' : ''}
+                  <span style="font-size: 0.82rem; color: #38bdf8; font-weight: 800;">${s.growth}% Growth</span>
                 </div>
               </div>
             </div>
 
-            <div style="background: rgba(0,0,0,0.2); border-radius: 6px; padding: 10px; margin: 12px 0;">
-              <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px;">Đột biến gen:</div>
-              <div>${mutHtml}</div>
+            <!-- Vital mini track -->
+            <div class="vital-meter" style="padding: 6px 8px; margin-bottom: 10px;">
+              <div class="vital-label" style="font-size: 0.75rem;">
+                <span>Tiến trình trưởng thành</span>
+                <span style="color: #a855f7;">${s.growth}%</span>
+              </div>
+              <div class="vital-track" style="height: 6px;">
+                <div class="vital-bar bar-growth" style="width: ${s.growth}%"></div>
+              </div>
             </div>
 
-            <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 14px;">
-              <span>🕒 Lưu lúc: ${s.stored_at}</span>
+            <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.05);">
+              <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px; font-weight: 700;">Đột biến gen (Mutations):</div>
+              <div style="display: flex; gap: 4px; flex-wrap: wrap;">${mutHtml}</div>
+            </div>
+
+            <div style="font-size: 0.74rem; color: #94a3b8; margin-bottom: 14px; display: flex; justify-content: space-between;">
+              <span>🕒 Lưu: ${s.stored_at || 'Mới lưu'}</span>
+              <span style="color: #10b981;">Cloud IslePilot</span>
             </div>
           </div>
 
           <div style="display: flex; flex-direction: column; gap: 8px;">
-            <button onclick="Garage.startRestoreChanneling('${s.id}', '${s.species}', ${s.growth})" class="btn btn-primary btn-sm" style="width: 100%; font-weight: 800; padding: 10px 14px; font-size: 0.92rem; background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);">
+            <button onclick="Garage.startRestoreChanneling('${s.id}', '${s.species}', ${s.growth})" class="btn btn-primary btn-sm" style="width: 100%; font-weight: 800; padding: 11px 14px; font-size: 0.92rem; background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);">
               ⚔️ Đưa Ra Đảo (Restore 30s)
             </button>
           </div>
