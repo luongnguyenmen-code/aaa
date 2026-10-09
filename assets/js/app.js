@@ -6,6 +6,20 @@ const App = {
   pollingTimer: null,
   nextWeatherUpdate: 0,
   readRequests: new Map(),
+  userListeners: new Set(),
+
+  subscribeUser(listener) {
+    this.userListeners.add(listener);
+    if (this.authResolved) listener(this.user, this.authError);
+    return () => this.userListeners.delete(listener);
+  },
+
+  publishUser(error = null) {
+    this.authError = error;
+    for (const listener of this.userListeners) {
+      try { listener(this.user, error); } catch (err) { console.error('Player widget update failed:', err); }
+    }
+  },
 
   // Coalesce identical reads and bound their lifetime; mutations are never retried here.
   readJSON(url, options = {}) {
@@ -41,7 +55,14 @@ const App = {
     this.renderEnhancedNav();
     this.renderPlayerHUD();
     this.renderMobileNavigation();
-    await Promise.allSettled([this.loadConfig(), this.loadEnvironment(), this.checkAuth()]);
+    this.renderWeatherWidget({ displayBadge: 'Đang cập nhật thời tiết…', weatherIcon: '🌤️' });
+    // Publish account data as soon as it arrives; unrelated APIs must not hold the HUD.
+    const authReady = this.checkAuth().then(() => {
+      this.renderEnhancedNav();
+      this.renderPlayerHUD();
+      this.updateUI();
+    });
+    await Promise.allSettled([this.loadConfig(), this.loadEnvironment(), authReady]);
     this.renderEnhancedNav();
     this.renderPlayerHUD();
     this.updateUI();
@@ -64,6 +85,7 @@ const App = {
       if (Date.now() >= this.nextWeatherUpdate) {
         this.nextWeatherUpdate = Date.now() + 30000;
         tasks.push(this.loadEnvironment());
+        tasks.push(this.loadConfig());
       }
       await Promise.allSettled(tasks);
       this.schedulePolling();
@@ -82,7 +104,6 @@ const App = {
     if (!env) return;
     const signature = JSON.stringify([env.phase, env.weatherIcon, env.displayBadge, env.phaseDesc, env.weatherDesc, env.temperature]);
     if (signature === this.weatherSignature) return;
-    this.weatherSignature = signature;
 
     let headerPill = document.getElementById('live-weather-header-pill');
     if (!headerPill) {
@@ -90,6 +111,7 @@ const App = {
       if (headerContainer) {
         headerPill = document.createElement('div');
         headerPill.id = 'live-weather-header-pill';
+        headerPill.className = 'header-weather';
         headerPill.style.display = 'inline-flex';
         headerPill.style.alignItems = 'center';
         headerPill.style.gap = '8px';
@@ -114,12 +136,20 @@ const App = {
     }
 
     if (headerPill) {
-      const isNight = env.phase === 'NIGHT';
+      this.weatherSignature = signature;
+      const isNight = env.isDay === false || env.phase === 'NIGHT';
       headerPill.style.borderColor = isNight ? 'rgba(168, 85, 247, 0.4)' : 'rgba(251, 191, 36, 0.4)';
-      headerPill.innerHTML = `
-        <span style="font-size: 1rem;">${env.weatherIcon || '☀️'}</span>
-        <span>${env.displayBadge}</span>
-      `;
+      headerPill.title = env.displayBadge || 'Đang cập nhật thời tiết';
+      if (!headerPill.firstElementChild) {
+        headerPill.innerHTML = '<span class="header-weather-icon" aria-hidden="true"></span><span class="header-weather-label"></span>';
+      }
+      const icon = headerPill.querySelector('.header-weather-icon');
+      const label = headerPill.querySelector('.header-weather-label');
+      const iconText = env.weatherIcon || '☀️';
+      // The API badge already includes its icon.
+      const labelText = String(env.displayBadge || '').replace(/^\s*\S+\s+(?=Ban )/, '');
+      if (icon.textContent !== iconText) icon.textContent = iconText;
+      if (label.textContent !== labelText) label.textContent = labelText;
     }
   },
 
@@ -133,6 +163,7 @@ const App = {
   },
 
   async checkAuth() {
+    let error = null;
     try {
       const u = await this.readJSON('/api/player/me');
         if (u && u.linked && u.steam_id) {
@@ -154,7 +185,10 @@ const App = {
         }
     } catch (e) {
       this.user = null;
+      error = e;
     }
+    this.authResolved = true;
+    this.publishUser(error);
   },
 
   async checkAuthSilently() {
@@ -162,7 +196,9 @@ const App = {
       const u = await this.readJSON('/api/player/me');
       const wasAdmin = !!this.user?.isAdmin;
       this.user = u && u.linked && u.steam_id ? u : null;
+      this.authResolved = true;
       this.notifications = Array.isArray(this.user?.notifications) ? this.user.notifications : [];
+      this.publishUser();
       this.renderPlayerHUD();
       if (wasAdmin !== !!this.user?.isAdmin) {
         this.renderEnhancedNav();
@@ -174,7 +210,8 @@ const App = {
   updateServerStatusBadge() {
     const el = document.getElementById('server-player-count');
     if (el && this.config) {
-      el.textContent = `${this.config.online_players ?? 0} / ${this.config.max_players ?? 100} người chơi`;
+      const text = `${this.config.online_players ?? 0} / ${this.config.max_players ?? 100} người chơi`;
+      if (el.textContent !== text) el.textContent = text;
     }
   },
 
@@ -284,6 +321,12 @@ const App = {
     if (!Array.isArray(this.notifications)) this.notifications = [];
 
     if (!isLoggedIn) {
+      if (!this.authResolved) {
+        if (this.hudIdentity === 'pending') return;
+        this.hudIdentity = 'pending';
+        navActions.innerHTML = '<div class="header-account-pending" role="status">Đang tải tài khoản…</div>';
+        return;
+      }
       if (this.hudIdentity === 'anonymous') return;
       this.hudIdentity = 'anonymous';
       navActions.innerHTML = `
@@ -322,7 +365,10 @@ const App = {
       const capacityText = `${totalParked}/${maxSlots}`;
       if (balanceEl && balanceEl.textContent !== balanceText) balanceEl.textContent = balanceText;
       if (capacityEl && capacityEl.textContent !== capacityText) capacityEl.textContent = capacityText;
-      if (badge) { badge.textContent = unreadCount; badge.hidden = unreadCount === 0; }
+      if (badge) {
+        if (badge.textContent !== String(unreadCount)) badge.textContent = unreadCount;
+        if (badge.hidden !== (unreadCount === 0)) badge.hidden = unreadCount === 0;
+      }
       if (this.notificationsSignature !== notificationsSignature) {
         const popover = document.getElementById('hud-notification-popover');
         if (popover) popover.innerHTML = notificationMarkup;

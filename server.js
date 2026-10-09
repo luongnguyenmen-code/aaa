@@ -451,7 +451,7 @@ app.get('/api/player/me', async (req, res) => {
       const loc = posToLatLng(pilotPlayer.position);
       const isAdmin = isUserAdmin(reqSteamId);
       const isSuperAdmin = SUPER_ADMINS.includes(String(reqSteamId).trim());
-      const garageStatus = await getPlayerGarageStatus(reqSteamId);
+      const garageStatus = await getPlayerGarageStatus(reqSteamId, { player: pilotPlayer, fresh: false });
       const portalData = getPortalData();
       cleanExpiredTrades(portalData);
       const incomingTrades = (portalData.trades || []).filter(t => t.receiverSteamId === reqSteamId && t.status === 'pending');
@@ -488,9 +488,9 @@ app.get('/api/player/me', async (req, res) => {
           species: pilotPlayer.species,
           gender: pilotPlayer.female ? "Cái (Female)" : "Đực (Male)",
           growth: Math.round((pilotPlayer.growth || 0) * 100),
-          health: Math.round(((pilotPlayer.health || 0) / (pilotPlayer.maxHealth || 1)) * 100) || 100,
-          hunger: Math.round(((pilotPlayer.hunger || 0) / (pilotPlayer.maxHunger || 1)) * 100) || 100,
-          thirst: Math.round(((pilotPlayer.thirst || 0) / (pilotPlayer.maxThirst || 1)) * 100) || 100,
+          health: normalizeStatPct(pilotPlayer.health, pilotPlayer.maxHealth),
+          hunger: normalizeStatPct(pilotPlayer.hunger, pilotPlayer.maxHunger),
+          thirst: normalizeStatPct(pilotPlayer.thirst, pilotPlayer.maxThirst),
           stamina: 100,
           isPrimeElder: pilotPlayer.isPrimeElder || false,
           position: pilotPlayer.position,
@@ -1158,7 +1158,7 @@ setInterval(() => {
 }, 5000);
 
 // Helper: Tra cứu quyền hạn và tính toán sức chứa Gara theo Role Discord & Steam ID
-async function getPlayerGarageStatus(steamId) {
+async function getPlayerGarageStatus(steamId, { player = null, fresh = true } = {}) {
   const cfg = getConfig();
   const garageCfg = cfg.garage || {};
   const roleLimits = garageCfg.role_limits || {
@@ -1176,7 +1176,7 @@ async function getPlayerGarageStatus(steamId) {
   let discordRoleKey = "default";
 
   try {
-    const pilotPlayer = await callIslePilot(`/players/${cleanSteamId}`);
+    const pilotPlayer = player || await callIslePilot(`/players/${cleanSteamId}`);
     if (pilotPlayer && pilotPlayer.discord) {
       discordInfo = pilotPlayer.discord;
     }
@@ -1236,7 +1236,7 @@ async function getPlayerGarageStatus(steamId) {
   }
 
   // Gọi trực tiếp IslePilot API: GET /players/{cleanSteamId}/garage
-  const pilotGarage = await callIslePilot(`/players/${cleanSteamId}/garage`, 'GET', null, true);
+  const pilotGarage = await callIslePilot(`/players/${cleanSteamId}/garage`, 'GET', null, fresh);
   const cloudDinos = (pilotGarage && pilotGarage.garage && Array.isArray(pilotGarage.garage)) ? pilotGarage.garage : [];
   
   // Lọc bỏ triệt để các khủng long ĐANG ĐĂNG BÁN trên Chợ (ký gửi Chợ của người chơi này)

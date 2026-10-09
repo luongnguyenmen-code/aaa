@@ -4,9 +4,12 @@ Run with Node.js:
 
 ```sh
 node tests/frontend-regression.cjs
+node tests/home-player-regression.cjs
 ```
 
 These tests use a fake clock, fake fetch responses and minimal DOM fixtures. They never contact IslePilot or execute live transactions. They cover stuck/overlapping reads, startup ordering, listener accumulation, hidden-page polling, blocked storage, map updates, garage card preservation, concurrent/cancelled garage actions, delayed countdown ticks, repeated trade expiry and double-click crate purchases.
+
+The homepage checks verify shared account subscriptions, retained card nodes during stat/species updates, zero values, accessible progress values, temporary connection failures, logout transitions and the backend percentage helper without starting the server.
 
 `frontend-audit-results.json` records the local audit. Chrome headless tested all 16 ST25 pages at desktop width, plus the homepage, garage, map and trade pages at 375 and 820 pixels. Checks include runtime errors, broken images, horizontal overflow, stable HUD nodes/geometry, retained popovers, mobile navigation, zero balances/health, zero-coordinate markers, 144 clean grid labels and matching garage/restore borders.
 

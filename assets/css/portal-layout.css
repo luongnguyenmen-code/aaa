@@ -1,4 +1,37 @@
 /* ST25 portal layout: compact banners, clear type hierarchy and quiet surfaces. */
+.site-header .nav-actions { flex-shrink: 0; }
+.header-account-pending { width: 320px; min-height: 38px; display: flex; align-items: center; justify-content: flex-end; color: #9da4b3; font-size: 12px; }
+.site-header .header-weather { flex: 1 1 220px; min-width: 0; max-width: 365px; height: 38px; box-sizing: border-box; }
+.header-weather-icon { flex: 0 0 auto; font-size: 1rem; }
+.header-weather-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site-header :is(.lua-val, .garage-val) { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.site-header .hud-pill-lua { min-width: 98px; justify-content: center; }
+.site-header .hud-pill-garage { min-width: 80px; justify-content: center; }
+.site-header .hud-username { width: 84px; }
+.site-header .hud-popover { animation: none; display: flex; visibility: hidden; opacity: 0; pointer-events: none; transform: translateY(-4px); transition: opacity 120ms ease, transform 120ms ease, visibility 0s linear 120ms; }
+.site-header .hud-popover.open { visibility: visible; opacity: 1; pointer-events: auto; transform: none; transition-delay: 0s; }
+@media (min-width: 901px) {
+  body.st25-portal .site-header .nav-wrap { flex-wrap: nowrap; }
+  body.st25-portal .site-header .nav-links { flex-shrink: 0; gap: 2px; }
+}
+@media (min-width: 901px) and (max-width: 1200px) {
+  .site-header .header-weather { display: none !important; }
+  body.st25-portal .site-header .nav-link { padding-inline: 6px; }
+}
+@media (min-width: 901px) and (max-width: 1100px) {
+  body.st25-portal .site-header .brand-tag { display: none; }
+  body.st25-portal .site-header .nav-link { font-size: 12px; }
+  .site-header .hud-username { width: 48px; }
+  body.st25-portal .player-hud-bar { gap: 6px; }
+}
+@media (max-width: 900px) {
+  .header-account-pending { width: 180px; }
+  .site-header .header-weather { flex-basis: 100%; max-width: none; }
+  .site-header .hud-username { width: auto; max-width: 84px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-header .hud-popover { transition: none; transform: none; }
+}
 body.st25-portal {
   --bg-primary: #101115;
   --bg-secondary: #17191f;
@@ -153,6 +186,29 @@ body.portal-home .portal-section-heading h2 { font-size: 18px !important; margin
 .portal-feature p { color: #aeb5c1; font-size: 12px; line-height: 1.5; }
 .portal-feature-tag { position: absolute; top: 10px; left: 10px; padding: 3px 7px; border-radius: 4px; background: #101419c9; color: #b8d4c3; font-size: 9px; font-weight: 600; letter-spacing: .04em; }
 .portal-aside { display: grid; gap: 16px; }
+.portal-aside { align-content: start; align-items: start; }
+#player-active-dino-body { min-height: 238px; }
+.home-dino-summary { display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 14px; border-radius: 6px; background: #0004; border: 1px solid #ffffff0f; }
+.home-dino-icon { flex: 0 0 32px; font-size: 28px; line-height: 1; }
+.home-dino-description { flex: 1; min-width: 0; color: var(--text-muted); font-size: 11px; line-height: 1.6; }
+.home-dino-description h4 { font-size: 16px; line-height: 1.3; color: #fff; overflow-wrap: anywhere; margin: 0 0 3px; }
+.home-dino-growth { flex: 0 0 58px; text-align: right; font-size: 10px; color: var(--text-muted); }
+.home-dino-growth strong { display: block; font-size: 21px; color: #34d399; }
+.home-dino-vitals { display: grid; gap: 10px; margin-bottom: 16px; }
+.home-vital-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px; color: var(--text-secondary); }
+.home-vital strong, .home-dino-growth strong, .portal-status strong { font-variant-numeric: tabular-nums; }
+.home-vital .stat-bar-track { height: 6px; background: #ffffff14; overflow: hidden; }
+.home-vital .stat-bar-fill { width: 100%; transform-origin: left center; transition: transform 180ms ease-out; background: currentColor; }
+.home-vital-health { color: #f43f5e; }
+.home-vital-hunger { color: #f59e0b; }
+.home-vital-thirst { color: #38bdf8; }
+.home-dino-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.home-dino-actions .btn { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 11px; padding: 7px 8px; box-shadow: none; }
+.home-player-empty { min-height: 238px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 12px; font-size: 12px; color: var(--text-secondary); }
+.home-player-empty > span { font-size: 30px; }
+.home-player-empty h4 { font-size: 16px; color: #fff; }
+.portal-panel-heading .badge-allow { box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .home-vital .stat-bar-fill { transition: none; } }
 .portal-player-panel, .portal-info-panel { background: #191c23; padding: 18px; border-radius: 10px; border: 1px solid #ffffff0d; }
 .portal-panel-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
 .portal-panel-heading h3 { color: #f4f5f7; font-size: 15px; font-weight: 600; margin: 0; }

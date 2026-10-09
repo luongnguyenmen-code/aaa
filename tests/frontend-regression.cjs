@@ -72,6 +72,20 @@ module.exports = async function run(root = path.resolve(__dirname, '..')) {
     const e=environment(); const app=script(e,'assets/js/app.js','App');
     e.context.document.hidden=true; app.schedulePolling(); assert.equal(e.timers.size,0);
   });
+  await test('Account HUD becomes ready while unrelated startup APIs are still pending', async () => {
+    const e=environment(); const app=script(e,'assets/js/app.js','App');
+    const slow=deferred(); const account=deferred(); const states=[];
+    app.renderEnhancedNav=()=>{}; app.renderMobileNavigation=()=>{};
+    app.renderWeatherWidget=()=>{}; app.updateUI=()=>{};
+    app.renderPlayerHUD=()=>states.push(app.user?.steam_id || null);
+    app.loadConfig=()=>slow.promise; app.loadEnvironment=()=>slow.promise;
+    app.checkAuth=async()=>{app.user=await account.promise;};
+    const startup=app.init();
+    account.resolve({linked:true,steam_id:'76561198000000001'});
+    await account.promise; await Promise.resolve(); await Promise.resolve();
+    assert.equal(states.at(-1),'76561198000000001');
+    slow.resolve(); await startup;
+  });
   await test('Blocked local storage cannot discard a valid cookie login', async () => {
     const e=environment(); const app=script(e,'assets/js/app.js','App');
     e.context.fetch=async()=>({ok:true,json:async()=>({linked:true,steam_id:'76561198000000001'})});
