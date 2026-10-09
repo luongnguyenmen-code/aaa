@@ -174,6 +174,7 @@ const App = {
             steam_id: u.steam_id,
             persona_name: u.persona_name,
             avatar: u.avatar,
+            linked: true,
             isAdmin: !!u.isAdmin
           })); } catch (_) { /* Cookie authentication remains valid without local storage. */ }
         } else {
