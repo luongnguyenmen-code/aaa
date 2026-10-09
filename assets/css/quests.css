@@ -39,7 +39,7 @@ body.quests-page .quest-section-plaque h2 { font-size: 14px !important; letter-s
 .quest-board-actions .quest-claim { max-width: none; padding-inline: 16px; }
 .quest-board-actions:has(button[hidden]) { display: none; }
 body.quests-page .quest-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 0; }
-.quest-card { --quest-color: #9199a5; display: flex; flex-direction: column; background: #0e0f10; border: 1px solid color-mix(in srgb, var(--quest-color) 40%, #121717); border-radius: 2px; padding: 20px; min-width: 0; min-height: 242px; position: relative; }
+.quest-card { --quest-color: #f6ab45; display: flex; flex-direction: column; background: #18191c; border: 1px solid color-mix(in srgb, var(--quest-color) 55%, #24262a); border-radius: 2px; padding: 20px; min-width: 0; min-height: 242px; position: relative; box-shadow: inset 0 1px 0 #ffffff06; }
 .quest-card::before, .quest-card::after { content: ''; position: absolute; width: 14px; height: 14px; border-color: var(--quest-color); opacity: .65; pointer-events: none; }
 .quest-card::before { top: -1px; left: -1px; border-top: 1px solid var(--quest-color); border-left: 1px solid var(--quest-color); }
 .quest-card::after { bottom: -1px; right: -1px; border-bottom: 1px solid var(--quest-color); border-right: 1px solid var(--quest-color); }
@@ -52,25 +52,33 @@ body.quests-page .quest-grid { display: grid; grid-template-columns: repeat(3, m
 .quest-icon svg { width: 23px; height: 23px; }
 .quest-card-copy { min-width: 0; flex: 1; }
 .quest-card h3 { color: #e6e8e9; font-size: 16px; line-height: 1.3; margin: 0 0 5px; overflow-wrap: anywhere; }
-.quest-card-copy p { font-size: 11px; color: #888f99; line-height: 1.5; }
+.quest-card-copy p { font-size: 11px; color: #b3bbc7; line-height: 1.5; }
 .quest-meta { display: flex; flex-direction: column; align-items: end; gap: 5px; }
 .quest-rarity { color: var(--quest-color); border: 1px solid color-mix(in srgb, var(--quest-color) 40%, transparent); padding: 3px 6px; font-size: 8px; letter-spacing: .06em; white-space: nowrap; }
-.quest-meta small, .quest-card-copy > small { font-size: 8px; color: #68717a; letter-spacing: .06em; }
-.quest-objective-heading { display: flex; justify-content: space-between; color: #5f6973; font-size: 9px; letter-spacing: .06em; border-bottom: 3px solid #1c1e20; padding-bottom: 8px; }
+.quest-meta small, .quest-card-copy > small { font-size: 8px; color: #9ca6b4; letter-spacing: .06em; }
+.quest-objective-heading { display: flex; justify-content: space-between; color: #a1aab7; font-size: 9px; letter-spacing: .06em; border-bottom: 3px solid #30343b; padding-bottom: 8px; }
 .quest-objective-heading strong { color: #a3abb6; font-size: 11px; }
 .quest-objective { display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: 12px; color: #d0d3d5; padding: 16px 0 5px; }
 .quest-objective > span:last-child { text-align: right; }
-.quest-checkbox { width: 15px; height: 15px; border: 1px solid #393e43; flex: 0 0 15px; font-size: 11px; text-align: center; }
+.quest-checkbox { width: 15px; height: 15px; border: 1px solid #697380; flex: 0 0 15px; font-size: 11px; text-align: center; }
 .quest-checkbox.is-complete { color: #5be3b6; border-color: #227457; }
 .quest-progress { display: flex; align-items: center; gap: 12px; font-size: 11px; color: #d5dadd; margin-bottom: 18px; font-variant-numeric: tabular-nums; }
-.quest-progress-track { height: 3px; background: #1c1e20; flex: 1; overflow: hidden; }
+.quest-progress-track { height: 4px; background: #343942; flex: 1; overflow: hidden; }
 .quest-progress-track span { display: block; width: 100%; height: 100%; background: var(--quest-color); transform-origin: left; }
-.quest-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #202326; padding-top: 12px; margin-top: auto; }
+.quest-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #343942; padding-top: 12px; margin-top: auto; }
 .quest-rewards { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 12px; }
-.quest-rewards small { font-size: 8px; color: #68717a; }
+.quest-rewards small { font-size: 8px; color: #a6afbb; }
 .quest-extra-reward { color: #e18af3; }
 .quest-claim { background: #1c2022; border: 1px solid transparent; color: #818a97; border-radius: 2px; padding: 8px 10px; font-size: 9px; font-weight: 600; max-width: 112px; line-height: 1.4; }
 .quest-claim.is-ready { background: #0c3025; color: #6aebbb; border-color: #198764; cursor: pointer; }
+/* Shared button styles dim all disabled buttons; task statuses must stay legible. */
+body.quests-page .quest-page .quest-claim:disabled { opacity: 1; color: #d7dce4 !important; background: #2b3037 !important; border-color: #4e5662 !important; box-shadow: none !important; text-shadow: none; cursor: default; }
+body.quests-page .quest-page .quest-claim.is-ready { color: #fff1da !important; background: #814819 !important; border-color: #ffb44c !important; box-shadow: 0 0 12px #f59e0b20 !important; }
+body.quests-page .quest-page .quest-claim::before { display: none; }
+body.quests-page .quest-page .quest-tabs button { border-radius: 2px; background: #101215 !important; border-color: #3d444e !important; color: #b3bbc7 !important; box-shadow: none !important; text-shadow: none; }
+body.quests-page .quest-page .quest-tabs button[aria-selected="true"] { background: #302010 !important; border-color: #eea23c !important; color: #ffc16b !important; box-shadow: inset 0 0 0 1px #eea23c18 !important; }
+body.quests-page .quest-page .quest-tabs button::before, body.quests-page .quest-page .quest-tabs button::after { display: none; }
+body.quests-page .quest-page .quest-tabs button[data-live="true"]::after { display: block; transform: none; inset: -4px -4px auto auto; }
 .quest-locked { border-color: #26282b; }
 .quest-empty { grid-column: 1 / -1; padding: 48px 24px; border: 1px solid #252a2b; text-align: center; color: #909a9f; font-size: 13px; }
 .quest-footnote { color: #69727b; font-size: 11px; margin-top: 28px; }
