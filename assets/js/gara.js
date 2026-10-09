@@ -414,23 +414,27 @@ const Garage = {
     const isPrime = Boolean(d.isPrimeElder);
     panel.className = `active-dino-panel glass-panel ${isPrime ? 'holo-prime' : ''}`;
     panel.innerHTML = `
-      <div style="background: rgba(0,0,0,0.35); border-radius: 12px; padding: 22px; text-align: center; border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; justify-content: center; align-items: center;">
+      <div class="garage-active-summary">
+        <div class="garage-active-art">
         ${getDinoImage(d.species, '90px')}
+        </div>
+        <div class="garage-active-identity">
         <h3 style="color: #fff; margin-bottom: 6px; font-size: 1.45rem; font-weight: 800;">${d.species}</h3>
         <div style="display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap;">
           <span class="rule-badge badge-allow">${d.gender}</span>
           ${d.isPrimeElder ? '<span class="rule-badge badge-gold">👑 PRIME ELDER</span>' : ''}
         </div>
-        <p style="font-size: 0.95rem; color: var(--text-muted); margin-top: 12px;">
+        </div>
+        <p class="garage-active-growth">
           Trưởng thành: <b style="color: #34d399; font-size: 1.3rem;">${d.growth}%</b>
         </p>
-        <button onclick="Garage.parkActiveDino()" class="btn btn-secondary btn-sm" style="margin-top: 14px; width: 100%; font-weight: 800; border-color: #10b981; color: #10b981; background: rgba(16, 185, 129, 0.1);">
+        <button onclick="Garage.parkActiveDino()" class="btn btn-secondary btn-sm garage-active-park">
           📥 Cất Vào Gara (Park 30s)
         </button>
       </div>
 
-      <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+      <div class="garage-active-stats">
+        <div class="garage-active-stats-heading">
           <h4 style="color: #fff; margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 6px;">
             <span>⚡ Chỉ Số Sinh Tồn In-Game</span>
           </h4>
@@ -439,7 +443,7 @@ const Garage = {
           </span>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+        <div class="garage-active-vitals">
           <div class="vital-meter">
             <div class="vital-label"><span>❤️ Máu (Health)</span><b style="color: #34d399;">${d.health}%</b></div>
             <div class="vital-track"><div class="vital-bar bar-hp" style="width: ${d.health}%"></div></div>
@@ -458,7 +462,7 @@ const Garage = {
           </div>
         </div>
 
-        <div style="margin-top: 14px; font-size: 0.8rem; color: #94a3b8; line-height: 1.6; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 6px;">
+        <div class="garage-active-rule">
           ⚠️ <strong>Luật bảo vệ Gara ST25:</strong> Không combat log (phải đứng yên 30s an toàn không nhận sát thương để niêm phong lên Cloud).
         </div>
       </div>
