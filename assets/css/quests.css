@@ -19,11 +19,15 @@ body.quests-page .wallet-title { font-size: 10px; }
 body.quests-page .wallet-amount { font-size: 20px; text-shadow: none !important; }
 body.quests-page .personal-profile-banner .btn { padding: 5px 10px; font-size: 10px; min-height: 0; box-shadow: none; }
 .quest-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
-.quest-tabs button { display: inline-flex; align-items: center; gap: 10px; background: #0b0d0d; border: 1px solid #272a2d; color: #8e96a0; padding: 12px 16px; font-size: 13px; font-weight: 600; border-radius: 2px; cursor: pointer; }
-.quest-tabs button span { min-width: 20px; padding: 2px 5px; background: #202427; font-size: 11px; text-align: center; }
-.quest-tabs button[aria-selected="true"] { color: #62e4b9; background: #0b1d18; border-color: #168c6c; }
-.quest-tabs button[aria-selected="true"] span { background: #123e31; }
-.quest-tabs button:focus-visible, .quest-claim:focus-visible { outline: 2px solid #5be3b6; outline-offset: 4px; }
+.quest-tabs button { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 42px; background: #0b0c0d; border: 1px solid #272a2d; color: #949ba6; padding: 9px 14px; font-size: 13px; font-weight: 600; border-radius: 2px; cursor: pointer; transition: color 140ms ease, border-color 140ms ease, background-color 140ms ease; }
+.quest-tabs button svg { width: 15px; height: 15px; flex: 0 0 15px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.quest-tabs button span { display: inline-grid; place-items: center; min-width: 20px; height: 22px; padding: 0 5px; background: #222326; border-radius: 1px; font-size: 11px; line-height: 1; text-align: center; }
+.quest-tabs button:hover { color: #f6bb64; border-color: #755025; }
+.quest-tabs button[aria-selected="true"] { color: #ffb347; background: #21170d; border-color: #b97622; }
+.quest-tabs button[aria-selected="true"] span { color: #ffc271; background: #4b3013; }
+.quest-tabs button[data-live="true"]::after { content: ''; position: absolute; top: -4px; right: -4px; width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; }
+.quest-tabs button:focus-visible, .quest-claim:focus-visible { outline: 2px solid #f59e0b; outline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) { .quest-tabs button { transition: none; } }
 .quest-section-heading { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
 .quest-section-heading::before, .quest-section-heading::after { content: ''; height: 1px; background: linear-gradient(90deg, transparent, #164637); flex: 1; }
 .quest-section-heading::after { transform: scaleX(-1); }

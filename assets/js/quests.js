@@ -56,6 +56,7 @@ const QuestBoard = {
       button.querySelector('span').textContent = counts[key] || 0;
       button.hidden = key === 'monthly' && !counts.monthly;
       button.setAttribute('aria-selected', String(key === this.tab));
+      button.setAttribute('data-live', String(key === 'events' && counts.events > 0));
       button.tabIndex = key === this.tab ? 0 : -1;
     });
     const prime = this.tab === 'achievements';
