@@ -20,6 +20,7 @@ const fallback={success:true,items:[],data:[],players:[],quests:[],trades:[],inc
 const server=http.createServer((req,res)=>{
   const url=new URL(req.url,'http://localhost');
   if(url.pathname.startsWith('/api/')){res.setHeader('Content-Type','application/json');if(req.method!=='GET'){res.writeHead(403);return res.end(JSON.stringify({error:'Offline fixture blocks live actions'}));}return res.end(JSON.stringify(fixtures[url.pathname]||fallback));}
+  if(url.pathname === '/' || /^\/[\w-]+\.html$/.test(url.pathname)) return require('../src/controllers/pages').renderPage({params:{page:url.pathname==='/'?'index.html':url.pathname.slice(1)}}, {type(){res.setHeader('Content-Type','text/html');return this;},send(html){res.end(html);}}, ()=>{res.writeHead(404);res.end();});
   const requested=path.resolve(root,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));
   if(!requested.startsWith(root+path.sep)||!/(?:\.html|\.css|\.js|\.mjs|\.png|\.jpg|\.webp|\.ico|\.ttf|\.json)$/.test(requested)){res.writeHead(404);return res.end();}
   const types={'.html':'text/html','.css':'text/css','.js':'text/javascript','.mjs':'text/javascript','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.ttf':'font/ttf','.json':'application/json'};

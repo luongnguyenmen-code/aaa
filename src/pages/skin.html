@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <script src="/src/core/web-config.js"></script>
+  <script src="/src/api/endpoints.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chỉnh Sửa & Đổi Skin Khủng Long — ST25 VIETNAM</title>
+  <meta name="description" content="Trình thiết kế và phối màu Skin khủng long Evrima trực quan của server ST25. Áp dụng skin bằng Lúa 🌾 trực tiếp vào game khi đang chơi.">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261009-stable1">
+  <style>
+    .editor-layout {
+      display: grid;
+      grid-template-columns: 1fr 430px;
+      gap: 25px;
+      align-items: start;
+    }
+    @media (max-width: 960px) {
+      .editor-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    .preview-box {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 580px;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s ease;
+    }
+    .scene-dark { background: radial-gradient(circle at center, #1e293b 0%, #090d16 100%); }
+    .scene-none { background: #030712; }
+    .scene-jungle { background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%); }
+    .scene-sunset { background: radial-gradient(circle at center, #7c2d12 0%, #1c1917 100%); }
+    .scene-night { background: radial-gradient(circle at center, #1e1b4b 0%, #030712 100%); }
+
+    .control-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .btn-segment-group {
+      display: flex;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .btn-segment {
+      flex: 1;
+      padding: 8px 12px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+    .btn-segment:hover {
+      color: #fff;
+    }
+    .btn-segment.active {
+      background: #2563eb;
+      color: #fff;
+      border-color: #3b82f6;
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .color-channel-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 7px 10px;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      margin-bottom: 7px;
+      transition: all 0.2s ease;
+    }
+    .color-channel-row:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      background: rgba(15, 23, 42, 0.85);
+    }
+    .color-swatch-box {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.5);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .color-swatch-box:hover {
+      transform: scale(1.06);
+      border-color: #3b82f6;
+    }
+    .color-swatch-box input[type="color"] {
+      position: absolute;
+      opacity: 0;
+      width: 200%;
+      height: 200%;
+      top: -50%;
+      left: -50%;
+      cursor: pointer;
+    }
+    .color-channel-label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      flex: 1;
+      white-space: nowrap;
+    }
+    .color-hex-input {
+      width: 90px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 5px 8px;
+      color: #f8fafc;
+      font-family: monospace;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      text-align: center;
+      transition: border-color 0.15s;
+    }
+    .color-hex-input:focus {
+      border-color: #3b82f6;
+      outline: none;
+      box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+    }
+    .btn-icon-sm {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.05);
+      color: #94a3b8;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.88rem;
+      transition: all 0.15s ease;
+    }
+    .btn-icon-sm:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+    .btn-icon-sm.locked {
+      color: #f59e0b;
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.18);
+    }
+
+    .dino-stage-container {
+      width: 100%;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 0;
+      position: relative;
+    }
+    .dino-avatar-svg {
+      width: 100%;
+      max-width: 480px;
+      height: auto;
+      max-height: 380px;
+      filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.6));
+      transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .preset-pill {
+      display: inline-block;
+      padding: 6px 12px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin: 3px;
+    }
+    .preset-pill:hover, .preset-pill.active {
+      border-color: #3b82f6;
+      color: #38bdf8;
+      background: rgba(59, 130, 246, 0.12);
+    }
+    .skin-shop-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .skin-shop-card:hover {
+      border-color: #fbbf24;
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.15);
+    }
+    .owned-skin-card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+  </style>
+  <link rel="stylesheet" href="assets/css/buttons.css?v=20261009-stable1">
+  <link rel="stylesheet" href="assets/css/fonts.css?v=20261009-audit">
+  <link rel="stylesheet" href="assets/css/motion.css?v=20261009-stable1">
+  <script src="/src/features/shared/motion.js?v=20261009-stable1" defer></script>
+  <link rel="stylesheet" href="assets/css/portal-layout.css?v=20261009-spacing1">
+  <link rel="stylesheet" href="assets/css/logo.css?v=20261009-stable1">
+  <link rel="icon" type="image/png" href="assets/imges/st25-favicon.png?v=20261009-stable1">
+  <link rel="stylesheet" href="assets/css/redesign.css?v=20261009-ui1">
+  <script src="/src/features/shared/ui.js?v=20261009-ui1" defer></script>
+  <link rel="stylesheet" href="assets/css/skin-editor.css?v=20261009-editor2">
+  <script src="/src/features/skin/skin-editor-ui.js?v=20261009-editor2" defer></script>
+  <link rel="stylesheet" href="assets/css/skin-3d.css?v=20261009-3d1">
+</head>
+<body class="st25-portal st25-skin">
+
+  <!-- Site Header -->
+  <!-- include:header -->
+
+  <!-- Main Content -->
+  <main class="container" style="padding-top: 30px; padding-bottom: 60px;">
+
+    <!-- Quick Switcher Bar (CHỈ DÀNH CHO ADMIN) -->
+    <div id="skin-admin-quick-bar" style="display: none; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: var(--radius-md); padding: 12px 18px; margin-bottom: 20px; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.2rem;">🔍</span>
+        <span style="color: #facc15; font-weight: 700; font-size: 0.9rem;">Admin Soi Skin Tài Khoản:</span>
+        <input type="text" id="skin-switcher-steamid" placeholder="Nhập Steam ID cần xem..." style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; padding: 6px 12px; color: #fff; font-size: 0.85rem; width: 220px;" onkeydown="if(event.key==='Enter') switchSkinSteamUser(this.value)">
+        <button onclick="switchSkinSteamUser(document.getElementById('skin-switcher-steamid').value)" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; padding: 5px 10px;">
+          Xem
+        </button>
+      </div>
+    </div>
+
+    <!-- Màn hình yêu cầu Đăng Nhập Steam khi chưa login -->
+    <div id="skin-login-required-panel" style="display: none; background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-lg); padding: 50px 30px; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
+      <span style="font-size: 3.5rem; display: block; margin-bottom: 14px;">🎨</span>
+      <h2 style="color: #fff; font-size: 1.8rem; font-weight: 800; margin-bottom: 10px;">Đăng nhập để áp dụng skin vào game</h2>
+      <p style="color: #94a3b8; max-width: 600px; margin: 0 auto 24px; line-height: 1.6; font-size: 0.95rem;">
+        Hệ thống Skin ST25 liên kết trực tiếp với ví Lúa 🌾 và nhân vật khủng long in-game của từng cá nhân. Vui lòng đăng nhập Steam để xem số dư ví Lúa, kho skin và đổi màu trực tiếp cho khủng long của bạn!
+      </p>
+      <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-bottom: 24px;">
+        <a href="/api/player/steam/login?redirect=/skin.html" class="btn btn-primary" style="font-weight: 800; padding: 14px 28px; font-size: 1.05rem; background: linear-gradient(135deg, #10b981, #059669); border: none;">
+          🎮 Đăng Nhập Bằng Steam Chính Chủ
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Khung Nội Dung Chỉnh Skin Cá Nhân (Chỉ hiển thị khi đã đăng nhập) -->
+    <div id="skin-authenticated-content" style="display: block;">
+    
+    <!-- Account & Balance Status Banner (Live IslePilot Wallet Synced) -->
+    <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-md); padding: 20px 24px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <span class="rule-badge badge-allow" style="font-size: 0.8rem;">🟢 ĐỒNG BỘ ISLEPILOT WALLET & GAME</span>
+          <span style="color: #cbd5e1; font-size: 0.85rem;" id="player-status-tag">Đang nạp tài khoản...</span>
+        </div>
+        <h1 style="color: #fff; font-size: 1.8rem; margin: 0 0 4px; font-weight: 800;">CHỈNH SỬA & ĐỔI SKIN KHỦNG LONG 🦖</h1>
+        <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;" id="player-dino-status-text">
+          Khủng long đang chơi: <strong style="color: #38bdf8;" id="my-dino-species">Đang tải...</strong> (<span id="my-dino-growth">--</span> Growth).
+        </p>
+      </div>
+
+      <div style="text-align: right; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-sm); padding: 12px 22px;">
+        <span style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Số Dư Lúa Trong Ví Game</span>
+        <div style="font-size: 1.8rem; font-weight: 900; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
+          <span id="skin-balance-val">---</span>
+          <span>Lúa 🌾</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Presets Quick Bar -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 20px; margin-bottom: 25px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+      <strong style="color: #fbbf24; font-size: 0.9rem; margin-right: 8px;">🌾 Mẫu Phối Màu Gợi Ý:</strong>
+      <span class="preset-pill active" onclick="applyPreset('golden_rice')">🌾 Hoàng Kim ST25 (Vàng Lúa)</span>
+      <span class="preset-pill" onclick="applyPreset('shadow')">🌑 Hắc Long Bóng Đêm</span>
+      <span class="preset-pill" onclick="applyPreset('jungle')">🌿 Rừng Dừa Xanh Mướt</span>
+      <span class="preset-pill" onclick="applyPreset('volcano')">🌋 Nham Thạch Núi Lửa</span>
+      <span class="preset-pill" onclick="applyPreset('albino')">❄️ Bạch Tạng Albino Hiếm</span>
+    </div>
+
+    <!-- 2 Column: Preview & Controls -->
+    <div class="editor-layout">
+      
+      <!-- Left Column: Visual Preview Box -->
+      <div style="display: flex; flex-direction: column;">
+        <div style="margin-bottom: 14px;">
+          <h2 style="color: #fff; font-size: 1.6rem; font-weight: 800; margin: 0 0 4px;">Chỉnh sửa skin</h2>
+          <p style="color: #94a3b8; font-size: 0.9rem; margin: 0;">Thiết kế skin dino và áp dụng trong game trên ST25 VIETNAM.</p>
+        </div>
+
+        <div class="preview-box scene-dark" id="skin-preview-box">
+          <!-- Top Bar inside Preview -->
+          <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+            <span class="rule-badge badge-allow" id="selected-species-badge" style="font-size: 0.85rem; font-weight: 700;">
+              Tyrannosaurus
+            </span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 0.8rem; color: #94a3b8;">Nền:</span>
+              <select id="preview-bg-select" class="form-input" style="width: auto; padding: 4px 10px; font-size: 0.82rem; background: rgba(0,0,0,0.6);" onchange="changePreviewBg(this.value)">
+                <option value="none">Nền: tắt</option>
+                <option value="dark" selected>Nền: tối</option>
+                <option value="jungle">Nền: rừng</option>
+                <option value="sunset">Nền: hoàng hôn</option>
+                <option value="night">Nền: đêm</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Dinosaur Interactive Graphic Stage -->
+          <div class="dino-stage-container" id="dino-stage">
+            <div id="dino-svg-wrapper" style="width: 100%; display: flex; justify-content: center; transform-origin: bottom center; transition: transform 0.25s ease;">
+              <svg class="dino-avatar-svg" viewBox="0 0 600 420" id="dino-svg">
+                <!-- Drop shadow base -->
+                <ellipse cx="300" cy="385" rx="200" ry="22" fill="#000000" opacity="0.4" />
+
+                <!-- 1. BODY (Thân) -->
+                <path id="svg-body" d="M120,290 C70,270 40,240 25,200 C30,190 70,220 120,240 C170,190 220,130 290,110 C350,90 400,70 440,65 C480,60 520,70 540,95 C550,110 540,135 520,145 C480,150 460,165 440,170 C420,175 400,165 370,180 C360,200 350,225 340,240 C330,220 300,205 270,220 C240,235 220,260 210,290 C180,310 145,305 120,290 Z" fill="#897559" />
+
+                <!-- Left Thigh & Leg -->
+                <path id="svg-body-leg" d="M290,190 C340,200 360,250 350,300 C340,340 330,360 335,380 C335,385 300,385 295,380 C290,360 295,340 290,320 C280,300 270,280 270,250 C270,220 280,200 290,190 Z" fill="#897559" />
+
+                <!-- Front Small Arm -->
+                <path id="svg-body-arm" d="M375,205 C390,215 395,230 390,240 C385,245 375,240 372,230 C370,220 370,210 375,205 Z" fill="#897559" />
+
+                <!-- 2. FLANK (Hông) -->
+                <path id="svg-flank" d="M160,250 C210,210 260,170 320,160 C370,150 410,130 435,120 C420,150 380,180 340,200 C310,215 260,230 210,260 C185,275 170,265 160,250 Z" fill="#594a35" opacity="0.85" />
+
+                <!-- 3. UNDERBELLY (Bụng dưới) -->
+                <path id="svg-belly" d="M480,140 C450,155 430,175 400,185 C380,190 365,220 350,235 C320,235 290,240 260,255 C220,280 180,295 130,280 C150,270 200,260 240,240 C280,220 320,210 350,190 C380,175 410,165 440,150 C460,140 470,138 480,140 Z" fill="#d3b48b" />
+
+                <!-- 4. PATTERN (Hoa văn) -->
+                <path id="svg-pattern" d="M220,140 Q210,180 230,210 M260,120 Q250,165 270,195 M305,108 Q300,150 320,180 M350,95 Q350,135 365,160 M400,80 Q405,115 415,135 M450,70 Q455,95 465,115 M170,175 Q160,210 180,235 M130,220 Q125,245 140,265" stroke="#352f2a" stroke-width="12" stroke-linecap="round" fill="none" opacity="0.9" />
+
+                <!-- 5. DETAIL (Chi tiết / Gờ sọ & Gai lưng) -->
+                <path id="svg-detail" d="M430,68 C460,65 490,68 520,80 C500,85 470,80 440,78 Z M450,110 C465,112 475,118 470,122 C460,120 450,118 450,110 Z M280,310 C290,320 288,335 285,345 C282,335 280,320 280,310 Z" fill="#000000" opacity="0.8" />
+
+                <!-- 6. DISPLAY (Mào sừng đực / Lacrimal Crest) -->
+                <path id="svg-display" d="M465,60 C475,50 490,52 495,65 C485,68 475,68 465,60 Z M440,63 C448,55 458,58 460,67 C452,68 445,67 440,63 Z" fill="#6c3729" />
+
+                <!-- 7. MOUTH & GUMS (Miệng) -->
+                <path id="svg-mouth" d="M470,138 C495,135 525,130 535,132 C525,142 495,146 470,140 Z" fill="#7a3b3b" />
+
+                <!-- 8. TEETH (Răng) -->
+                <path id="svg-teeth" d="M475,136 L478,142 L481,136 L485,143 L489,136 L493,144 L498,136 L503,143 L508,136 L514,142 L519,135 L525,140 L530,134" stroke="#e8e2d0" stroke-width="3" fill="#e8e2d0" />
+
+                <!-- 9. EYES (Mắt) -->
+                <g id="svg-eyes-group">
+                  <circle id="svg-eye" cx="478" cy="85" r="7" fill="#ffdfcb" />
+                  <ellipse cx="478" cy="85" rx="2" ry="5.5" fill="#000000" />
+                  <circle cx="479.5" cy="83" r="1.8" fill="#ffffff" />
+                </g>
+
+                <!-- 10. CLAWS (Móng vuốt) -->
+                <path id="svg-claws" d="M388,242 L395,248 L391,240 Z M393,238 L400,242 L395,236 Z M330,383 L342,390 L335,381 Z M315,384 L325,392 L320,382 Z M298,382 L308,391 L304,380 Z" fill="#3a3a3a" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- Bottom Growth Slider Bar -->
+          <div style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 15px;">
+            <span style="font-size: 0.85rem; color: #94a3b8; font-weight: 600; white-space: nowrap;">Độ trưởng thành:</span>
+            <input type="range" id="growth-slider" min="10" max="100" value="100" style="flex: 1; accent-color: #3b82f6; cursor: pointer;" oninput="updateGrowth(this.value)">
+            <span id="growth-val" style="font-size: 0.9rem; font-weight: 800; color: #38bdf8; min-width: 45px; text-align: right;">100%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Controls Panel -->
+      <div>
+        
+        <!-- Top Config Card -->
+        <div class="control-card">
+          <!-- Loài -->
+          <div style="margin-bottom: 14px;">
+            <label class="form-label" style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 4px; display: block;">Loài khủng long</label>
+            <select id="dino-species-select" class="form-input" onchange="changeSpecies(this.value)">
+              <option value="Tyrannosaurus">Tyrannosaurus (T-Rex)</option>
+              <option value="Carnotaurus">Carnotaurus (Bò tót tốc độ)</option>
+              <option value="Ceratosaurus">Ceratosaurus (Bạo chúa đầm lầy)</option>
+              <option value="Deinosuchus">Deinosuchus (Cá sấu khổng lồ)</option>
+              <option value="Omniraptor">Omniraptor (Raptor săn mồi)</option>
+              <option value="Dilophosaurus">Dilophosaurus (Thằn lằn ảo giác)</option>
+              <option value="Triceratops">Triceratops (Khủng long ba sừng)</option>
+              <option value="Stegosaurus">Stegosaurus (Khủng long gai đuôi)</option>
+              <option value="Gallimimus">Gallimimus (Đà điểu nhanh nhẹn)</option>
+              <option value="Pteranodon">Pteranodon (Dực long bay lượn)</option>
+              <option value="Herrerasaurus">Herrerasaurus (Thằn lằn leo cây)</option>
+              <option value="Diabloceratops">Diabloceratops (Quỷ sừng)</option>
+              <option value="Tenontosaurus">Tenontosaurus (Khủng long chân thằn lằn)</option>
+              <option value="Pachycephalosaurus">Pachycephalosaurus (Khủng long đầu búa)</option>
+              <option value="Hypsilophodon">Hypsilophodon (Khủng long nhỏ nhanh nhẹn)</option>
+              <option value="Troodon">Troodon (Kẻ săn đêm độc dược)</option>
+              <option value="Beipiaosaurus">Beipiaosaurus (Khủng long lông vũ)</option>
+            </select>
+          </div>
+
+          <!-- Giới tính & Chế độ -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+            <div>
+              <label class="form-label" style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 4px; display: block;">Giới tính</label>
+              <div class="btn-segment-group">
+                <button type="button" class="btn-segment active" id="btn-gender-female" onclick="setGender('female')">Cái</button>
+                <button type="button" class="btn-segment" id="btn-gender-male" onclick="setGender('male')">Đực</button>
+              </div>
+            </div>
+            <div>
+              <label class="form-label" style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 4px; display: block;">Chế độ</label>
+              <div class="btn-segment-group">
+                <button type="button" class="btn-segment active" id="btn-mode-std" onclick="setSkinMode('std')">Tiêu Chuẩn</button>
+                <button type="button" class="btn-segment" id="btn-mode-glitch" onclick="setSkinMode('glitch')">Glitch</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Biến thể & Họa tiết -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+            <div>
+              <label class="form-label" style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 4px; display: block;">Biến thể</label>
+              <input type="number" id="skin-variation" class="form-input" value="0" min="0" max="10" style="padding: 6px 10px; font-size: 0.88rem;">
+            </div>
+            <div>
+              <label class="form-label" style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 4px; display: block;">Họa tiết (0-4)</label>
+              <input type="number" id="skin-pattern-idx" class="form-input" value="0" min="0" max="4" style="padding: 6px 10px; font-size: 0.88rem;">
+            </div>
+          </div>
+
+          <!-- Nhập mã & Chủ đề -->
+          <div style="display: grid; grid-template-columns: 1.6fr 0.8fr; gap: 10px;">
+            <div>
+              <label class="form-label" style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 4px; display: block;">Nhập mã skin trong game</label>
+              <div style="display: flex; gap: 6px;">
+                <button type="button" onclick="pasteSkinCodeFromClipboard()" class="btn btn-secondary btn-sm" style="flex: 1; font-size: 0.78rem; padding: 6px 8px; white-space: nowrap;">
+                  📋 Dán mã skin
+                </button>
+                <button type="button" onclick="promptImportCustomCode()" class="btn btn-secondary btn-sm" style="font-size: 0.78rem; padding: 6px 10px;">
+                  Nhập
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="form-label" style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 4px; display: block;">Chủ đề</label>
+              <input type="number" id="skin-theme" class="form-input" value="0" min="0" max="10" style="padding: 6px 10px; font-size: 0.88rem;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Color Channels Card (Màu sắc) -->
+        <div class="control-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <h3 style="color: #fff; font-size: 1.15rem; margin: 0; font-weight: 700;">Màu sắc</h3>
+            <div style="display: flex; gap: 6px;">
+              <button type="button" class="btn-icon-sm" onclick="randomizeColors()" title="Xáo trộn màu ngẫu nhiên (bỏ qua kênh khóa)">🔀</button>
+              <button type="button" class="btn-icon-sm" onclick="copySkinJson()" title="Sao chép JSON bảng màu">📋</button>
+              <button type="button" class="btn-icon-sm" onclick="importSkinJson()" title="Dán mã JSON bảng màu">📥</button>
+              <button type="button" class="btn-icon-sm" onclick="resetAllColors()" title="Khôi phục toàn bộ 10 màu về mặc định">🔄</button>
+            </div>
+          </div>
+
+          <!-- Injected 10 Color Channels Rows Container -->
+          <div id="color-channels-list">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Main Action Buttons -->
+        <div style="margin-bottom: 20px;">
+          <button onclick="handleApplySkinWithLua()" class="btn btn-primary" style="width: 100%; padding: 14px; font-weight: 800; font-size: 1.05rem; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; border-radius: 8px; box-shadow: 0 4px 18px rgba(59, 130, 246, 0.45); margin-bottom: 10px;">
+            ⚡ Áp dụng trong game (10 Lúa 🌾)
+          </button>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+            <button onclick="copySkinJson()" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; padding: 8px 6px;">
+              📋 Sao chép JSON
+            </button>
+            <button onclick="downloadSkinJson()" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; padding: 8px 6px;">
+              💾 Tải xuống
+            </button>
+            <button onclick="exportSkinCode()" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; padding: 8px 6px;">
+              📜 Xuất Evrima
+            </button>
+          </div>
+        </div>
+
+        <!-- Saved Presets Card -->
+        <div class="control-card">
+          <h4 style="color: #fff; font-size: 0.95rem; margin: 0 0 10px; font-weight: 700;">Preset đã lưu</h4>
+          <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <input type="text" id="preset-save-name" placeholder="Tên preset mới..." class="form-input" style="padding: 6px 10px; font-size: 0.85rem;">
+            <button onclick="saveCurrentPreset()" class="btn btn-secondary btn-sm" style="white-space: nowrap; font-weight: 700;">
+              Lưu
+            </button>
+          </div>
+          <div id="saved-presets-list" style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <!-- Dynamically injected -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Export Code Section Modal/Collapsible -->
+    <div id="export-box" style="display: none; margin-top: 25px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+        <h3 style="color: #fff; font-size: 1.1rem; margin: 0;">📜 Mã Skin Code The Isle: Evrima Đã Tạo</h3>
+        <button onclick="copySkinCode()" class="btn btn-secondary btn-sm" id="btn-copy-skin">
+          📑 Sao Chép 1-Click
+        </button>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px;">
+        Mở game The Isle &gt; vào Character Customization &gt; bấm nút <strong>Paste Skin Code</strong> để nạp bộ màu này vào nhân vật của bạn!
+      </p>
+      <textarea id="skin-code-output" style="width: 100%; height: 80px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 6px; color: #fbbf24; font-family: monospace; font-size: 0.85rem; padding: 10px; resize: none;" readonly></textarea>
+    </div>
+
+    <!-- Kho Skin Đã Sở Hữu -->
+    <section style="margin-top: 45px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h2 style="color: #fff; font-size: 1.4rem; margin: 0 0 4px;">🎒 Kho Skin Đã Sở Hữu Của Bạn</h2>
+          <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem;">Các mẫu skin bạn đã mở khóa từ Shop hoặc trúng từ Hòm May Mắn. Có thể áp dụng ngay vào nhân vật.</p>
+        </div>
+        <span class="rule-badge badge-allow" id="owned-skin-count">0 Mẫu Skin</span>
+      </div>
+
+      <div id="owned-skin-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px;">
+        <div style="grid-column: 1 / -1; text-align: center; padding: 30px; background: rgba(0,0,0,0.25); border-radius: 8px; color: #94a3b8;">
+          Đang nạp kho skin của bạn...
+        </div>
+      </div>
+    </section>
+
+    <!-- Skin Shop Section (Linked Directly to IslePilot API) -->
+    <section style="margin-top: 45px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h2 style="color: #fff; font-size: 1.4rem; margin: 0 0 4px;">✨ Cửa Hàng Skin Độc Quyền ST25 (Dùng Lúa 🌾)</h2>
+          <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem;">Các mẫu skin dạ quang và sự kiện đặc biệt mua trực tiếp bằng Lúa trong ví tài khoản IslePilot.</p>
+        </div>
+        <span class="rule-badge badge-warn" id="shop-skin-count">Đang tải...</span>
+      </div>
+
+      <div id="skin-shop-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px;">
+        <!-- Injected by JS -->
+      </div>
+    </section>
+
+    </div> <!-- End skin-authenticated-content -->
+
+  </main>
+
+  <!-- Footer -->
+  <!-- include:footer -->
+
+  <script src="/src/features/shared/app.js?v=20261009-ui1"></script>
+  <script src="/src/features/skin/skin.js?v=20261009-skin4"></script>
+  <script src="/src/features/skin/skin-3d.js?v=20261009-3d1"></script>
+</body>
+</html>

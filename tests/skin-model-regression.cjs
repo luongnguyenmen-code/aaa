@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict');
 (async()=>{
   const THREE=await import('../assets/vendor/three/three.module.min.mjs');
-  const {SPECIES,createIllustration,disposeIllustration}=await import('../assets/js/skin-models.mjs');
+  const {SPECIES,createIllustration,disposeIllustration}=await import('../src/features/skin/skin-models.mjs');
   const materials={};for(const channel of ['skin','underbelly','mouth','eyes','pupil','shine','claws','detail1','male_display','teeth','flank'])materials[channel]=new THREE.MeshStandardMaterial();
   let meshes=0,maxTriangles=0;
   for(const species of Object.keys(SPECIES)){

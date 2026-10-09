@@ -17,7 +17,8 @@ const badge = {textContent:'',className:''};
 const timers = new Map(); let timerId = 0;
 const context = { setTimeout(fn,delay) { timers.set(++timerId,{fn,delay}); return timerId; }, clearTimeout(id) { timers.delete(id); }, window: {addEventListener() {}}, App: { subscribeUser(fn) { listener = fn; return () => {}; } }, document: { hidden:false, getElementById: id => id === 'dino-status-badge' ? badge : body, addEventListener() {} } };
 vm.createContext(context);
-vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets/js/home.js'),'utf8') + '\nglobalThis.widget = HomePlayer;', context);
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../src/core/web-config.js'),'utf8') + '\n' + fs.readFileSync(path.join(__dirname,'../src/api/endpoints.js'),'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../src/features/home/home.js'),'utf8') + '\nglobalThis.widget = HomePlayer;', context);
 context.widget.init(); context.widget.init();
 const user = {linked:true,steam_id:'test',dino:{species:'Troodon',growth:39,health:0,hunger:100,thirst:66,grid:'D10'}};
 listener(user);
@@ -37,7 +38,7 @@ listener(user); assert.equal(badge.textContent,'● ONLINE');
 listener({linked:false}); assert.equal(builds,2);
 listener({linked:false}); assert.equal(builds,2);
 // Validate the real backend helper without starting Express or contacting IslePilot.
-const server = fs.readFileSync(path.join(__dirname,'../server.js'),'utf8');
+const server = fs.readFileSync(path.join(__dirname,'../src/controllers/portal.js'),'utf8') + fs.readFileSync(path.join(__dirname,'../src/api/islepilot.js'),'utf8');
 const helper = server.match(/function normalizeStatPct\(val, maxVal\) \{[\s\S]*?\n\}/)[0];
 vm.runInContext(helper,context);
 assert.equal(context.normalizeStatPct(0,100),0);

@@ -35,3 +35,7 @@ The browser audit uses mock API data. It does not establish frame rate on a user
 ## 3D skin checks
 
 `node tests/skin-model-regression.cjs` validates all 17 procedural illustrations, geometry attributes, bounds, indices and triangle budgets. `ST25_3D_AUDIT=1 node tests/redesign-browser-audit.cjs` checks WebGL at five sizes, live palette changes, growth, patterns, keyboard controls, nonempty PNG output, idle/offscreen rendering, species resource disposal and context recovery on desktop. Set `ST25_3D_GUEST=1` for anonymous access; add `ST25_3D_FALLBACK=1` to explicitly disable WebGL and check the 2D fallback. See `SKIN_3D.md` for PowerShell commands. These use offline API fixtures and never execute real transactions.
+
+## Kiểm tra cấu trúc nguồn
+
+`node tests/structure-regression.cjs` kiểm tra các trang được ghép header/footer, menu hiện tại, đường dẫn script, registry API, URL script cũ và việc chặn truy cập cấu hình/mã nguồn máy chủ. JavaScript hiện nằm trong `src/features`, HTML nằm trong `src/pages`. Browser audit dùng controller ghép trang giống Express và API giả lập.

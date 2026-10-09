@@ -9,7 +9,7 @@ for (const id of ['prime-section','quest-board-panel','quest-section-title','que
 const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const context={App:{escapeHTML:escape},document:{addEventListener(){},querySelectorAll(){return tabs;},getElementById(id){return elements[id];}}};
 vm.createContext(context);
-vm.runInContext(fs.readFileSync(path.join(root,'assets/js/quests.js'),'utf8')+'\nglobalThis.board=QuestBoard;',context);
+vm.runInContext(fs.readFileSync(path.join(root,'src/features/nhiem-vu/quests.js'),'utf8')+'\nglobalThis.board=QuestBoard;',context);
 const board=context.board;
 const data={serverQuests:[{id:'1',period:'daily',name:'Kill Beginner',description:'Kill 3 dinosaurs',progress:0,config:{count:3},rewardAmount:0},{id:'2',period:'weekly',name:'Apex Predator',description:'Kill 50 dinosaurs',progress:10,config:{count:50},rarity:'epic',rewardAmount:500,canClaim:true},{id:'3',period:'weekly',name:'Locked',locked:true,canClaim:true,config:{minutes:360}}],primeQuests:[{done:false}],events:[]};
 board.render(data);
@@ -27,7 +27,7 @@ assert.equal(elements['quest-claim-all'].textContent,'Nhận tất cả · 500 L
 board.tab='events';board.render(data);assert.match(elements['server-quests-grid'].innerHTML,/Chưa có dữ liệu sự kiện/);
 board.tab='achievements';board.render(data);assert.equal(elements['prime-section'].hidden,false);assert.equal(elements['quest-board-panel'].hidden,true);
 assert.match(board.card({...data.serverQuests[0],name:'<script>alert(1)</script>'}),/&lt;script&gt;/);
-const html=fs.readFileSync(path.join(root,'nhiem-vu.html'),'utf8');
+const html=fs.readFileSync(path.join(root,'src/pages/nhiem-vu.html'),'utf8');
 for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) if(!/src=/.test(m[1])) new vm.Script(m[2]);
 for(const [,reference] of html.matchAll(/(?:src|href)="(assets\/[^"?]+)(?:\?[^" ]*)?"/g)) assert.ok(fs.existsSync(path.join(root,reference)),reference);
 console.log('PASS quests: tabs, correct counts, rarity, zero progress/reward, locked state, claim-all, Prime Elder, empty events, escaped text, inline syntax and asset references');

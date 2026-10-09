@@ -14,11 +14,11 @@ function walk(dir) {
         if (/\bsrc\s*=|\btype\s*=\s*["'](?:application\/[^"']+|module)/i.test(match[1])) continue;
         new vm.Script(match[2], { filename: file }); scripts++;
       }
-      if (path.dirname(file) === root && !entry.name.startsWith('islepilot_')) {
+      if (path.dirname(file) === path.join(root, 'src/pages') && !entry.name.startsWith('islepilot_')) {
         for (const [, ref] of html.replace(/<script\b[\s\S]*?<\/script>/gi, '').matchAll(/(?:src|href)\s*=\s*["']([^"']+)["']/gi)) {
           const clean = ref.split(/[?#]/)[0];
           if (!clean || /^(?:[a-z]+:|\/\/|\/api\/)/i.test(clean)) continue;
-          const local = path.resolve(root, clean.replace(/^\//, ''));
+          const local = path.resolve(root, clean.endsWith('.html') ? 'src/pages/' + clean.replace(/^\//, '') : clean.replace(/^\//, ''));
           assert.ok(fs.existsSync(local), `${entry.name}: missing ${ref}`);
         }
       }

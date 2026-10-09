@@ -32,7 +32,7 @@ Hệ thống Website Cổng Thông Tin toàn diện cho cộng đồng game **Th
 * Hướng dẫn 3 bước cài đặt và khắc phục lỗi Windows SmartScreen.
 
 ### 5. ⚙️ Tích Hợp IslePilot API (`https://islepilot.eu/dashboard`)
-* Do `https://islepilot.eu/dashboard` là trang quản trị bảo mật riêng (yêu cầu đăng nhập Steam/Admin của bạn), website cung cấp trang **Cấu hình API (`cai-dat.html`)** và file `server-config.json`.
+* Do `https://islepilot.eu/dashboard` là trang quản trị bảo mật riêng (yêu cầu đăng nhập Steam/Admin của bạn), website cung cấp trang **Cấu hình API (`cai-dat.html`)** và file `src/core/server-config.json`.
 * Bạn chỉ cần dán **IslePilot API Token** từ Dashboard vào để website tự động đồng bộ dữ liệu thời gian thực.
 * Có sẵn **Mock Data thông minh** để toàn bộ tính năng hoạt động mượt mà ngay cả khi chạy offline hoặc thử nghiệm!
 

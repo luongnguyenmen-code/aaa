@@ -1,15 +1,15 @@
 {
-    "name":  "the-isle-vietnam-portal",
-    "version":  "1.0.0",
-    "description":  "Cổng thông tin The Isle Evrima - Nội quy, Bản đồ trực tiếp, Gara khủng long \u0026 IslePilot API Integration",
-    "main":  "server.js",
-    "scripts":  {
-                    "start":  "node server.js",
-                    "dev":  "node server.js",
-                    "test":  "node tests/skin-model-regression.cjs \u0026\u0026 node tests/project-audit.cjs \u0026\u0026 node tests/backend-regression.cjs \u0026\u0026 node tests/frontend-regression.cjs \u0026\u0026 node tests/home-player-regression.cjs \u0026\u0026 node tests/quests-layout-regression.cjs \u0026\u0026 node tests/redesign-static-check.cjs"
-                },
-    "dependencies":  {
-                         "cors":  "^2.8.6",
-                         "express":  "^4.22.3"
-                     }
+  "name": "the-isle-vietnam-portal",
+  "version": "1.0.0",
+  "description": "Cổng thông tin The Isle Evrima - Nội quy, Bản đồ trực tiếp, Gara khủng long & IslePilot API Integration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node tests/skin-model-regression.cjs && node tests/project-audit.cjs && node tests/backend-regression.cjs && node tests/frontend-regression.cjs && node tests/home-player-regression.cjs && node tests/quests-layout-regression.cjs && node tests/redesign-static-check.cjs && node tests/structure-regression.cjs"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.22.3"
+  }
 }
