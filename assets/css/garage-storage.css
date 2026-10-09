@@ -1,8 +1,18 @@
 /* Storage cards: large dinosaur artwork, compact information and matched CTA. */
 #garage-slots-grid {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
-  align-items: start;
+  grid-auto-rows: 1fr;
+  align-items: stretch;
   gap: 18px;
+}
+/* Every slot follows the tallest dinosaur card, including empty-only rows. */
+body.st25-garage #garage-slots-grid > .slot-card {
+  min-height: 420px;
+  min-width: 0;
+}
+body.st25-garage #garage-slots-grid > .empty-slot {
+  justify-content: center !important;
+  gap: 14px;
 }
 body.st25-garage #garage-slots-grid .garage-storage-card {
   --storage-border: rgba(255,177,111,.6);
