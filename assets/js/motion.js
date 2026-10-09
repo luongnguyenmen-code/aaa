@@ -7,6 +7,7 @@
     : { matches: true };
   const active = new Set();
   const revealed = new WeakSet();
+  const observed = new WeakSet();
   let observer;
 
   // One-shot reveals: content stays readable if JS or observer support is absent.
@@ -15,8 +16,8 @@
     revealed.add(element);
     if (preference.matches || typeof element.animate !== 'function') return;
     const animation = element.animate(
-      [{ opacity: 0, transform: 'translateY(18px)' }, { opacity: 1, transform: 'translateY(0)' }],
-      { duration: 520, easing: 'cubic-bezier(.16,1,.3,1)' }
+      [{ opacity: .5, transform: 'translateY(8px)' }, { opacity: 1, transform: 'translateY(0)' }],
+      { duration: 300, easing: 'cubic-bezier(.16,1,.3,1)' }
     );
     active.add(animation);
     const cleanup = () => active.delete(animation);
@@ -47,7 +48,8 @@
       }
     }, { threshold: .12, rootMargin: '0px 0px -24px 0px' });
     for (const element of root.querySelectorAll('main .hero-title, main .hero-desc, main h1, main h2, main .cards-grid > .card, main .portal-feature, [data-st25-reveal]')) {
-      if (revealed.has(element) || element.closest('.leaflet-container, [hidden], .modal, .tab-content') || element.getClientRects().length === 0) continue;
+      if (observed.has(element) || revealed.has(element) || element.closest('.leaflet-container, [hidden], .modal, .tab-content')) continue;
+      observed.add(element);
       observer.observe(element);
     }
   }
@@ -77,7 +79,6 @@
 
   preference.addEventListener?.('change', () => {
     if (preference.matches) {
-      observer?.disconnect();
       for (const animation of active) animation.cancel();
     } else refresh();
   });

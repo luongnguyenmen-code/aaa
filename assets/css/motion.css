@@ -1,5 +1,6 @@
 /* Native navigation keeps URLs, browser history and link behavior intact. */
-@view-transition { navigation: auto; }
+/* Use one entrance system instead of snapshotting and animating the whole page too. */
+@view-transition { navigation: none; }
 body > main.container { view-transition-name: st25-content; }
 body > header.site-header { view-transition-name: st25-header; }
 ::view-transition { pointer-events: none; }

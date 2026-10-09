@@ -33,7 +33,15 @@ body.st25-portal .nav-link:is(:hover, .active) { box-shadow: none; text-shadow: 
 body.st25-portal .nav-dropdown-menu { background: #20232b; border-color: #ffffff14; }
 body.st25-portal .nav-dropdown-item { font-size: 13px; line-height: 1.5; }
 body.st25-portal .player-hud-bar { gap: 8px; }
-body.st25-portal :is(.hud-pill, .hud-profile-pill, .hud-bell-btn) { box-shadow: none; }
+body.st25-portal :is(.hud-pill, .hud-profile-pill, .hud-bell-btn, .hud-popover, .mobile-bottom-nav, .mobile-drawer-overlay) { backdrop-filter: none; }
+body.st25-portal :is(.hud-pill, .hud-profile-pill, .hud-bell-btn) {
+  box-shadow: none;
+  transition: color 140ms ease, background-color 140ms ease, border-color 140ms ease;
+}
+body.st25-portal :is(.hud-pill, .hud-bell-btn):hover { transform: none; }
+.hud-bell-badge[hidden] { display: none; }
+body.st25-portal .hud-bell-badge { animation: none; }
+body.st25-portal .hud-popover { max-width: calc(100vw - 24px); }
 body.st25-portal .ticker-bar { background: #14161b; padding-block: 6px; font-size: 12px; }
 body.st25-portal main { min-width: 0; }
 body.st25-portal main h1 {
@@ -176,8 +184,28 @@ body.portal-home .portal-section-heading h2 { font-size: 18px !important; margin
   .portal-aside { grid-template-columns: 1fr 1fr; }
   .portal-banner-copy { max-width: 85%; }
 }
+/* The map must follow the actual header height, including font/data changes. */
+body.st25-map { height: 100vh; height: 100dvh; padding-bottom: 0; }
+body.st25-map .site-header { flex: 0 0 auto; }
+body.st25-map .map-page-wrap { flex: 1; height: auto; min-height: 0; }
+body.st25-map .map-sidebar { min-height: 0; }
+@media (max-width: 900px) {
+  body.st25-portal .nav-actions { min-width: 0; max-width: 100%; flex-wrap: wrap; gap: 8px; }
+  body.st25-portal .player-hud-bar { flex-wrap: wrap; }
+  body.st25-map { overflow: auto !important; height: auto; min-height: 100dvh; padding-bottom: 70px; }
+  body.st25-map .map-page-wrap { flex: none; }
+  body.st25-map #map-viewport { height: clamp(320px, 60vh, 550px); }
+}
 @media (max-width: 600px) {
   body.st25-portal .container { padding-inline: 16px; }
+  body.st25-portal .nav-actions { width: 100%; }
+  body.st25-portal .player-hud-bar { flex-wrap: nowrap; max-width: 100%; }
+  body.st25-portal .hud-pill { min-width: 0; padding: 6px 8px; font-size: 12px; }
+  body.st25-portal .lua-val { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  body.st25-portal .hud-profile-pill { padding-inline: 4px 8px; }
+  body.st25-portal .hud-username { display: none; }
+  body.st25-portal #live-weather-header-pill { max-width: 128px; }
+  body.st25-portal #live-weather-header-pill span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   body.portal-home .portal-dashboard { padding-block: 18px 28px; }
   .portal-banners, .portal-aside { grid-template-columns: 1fr; }
   .portal-banners { gap: 12px; margin-bottom: 22px; }
@@ -194,4 +222,10 @@ body.portal-home .portal-section-heading h2 { font-size: 18px !important; margin
 }
 @media (prefers-reduced-motion: reduce) {
   .portal-feature, .portal-feature-art :is(img, svg) { transition: none; transform: none !important; }
+  body.st25-portal *, body.st25-portal *::before, body.st25-portal *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+  body.st25-portal .mobile-drawer-content { transition: none; }
 }

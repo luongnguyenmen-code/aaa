@@ -19,6 +19,7 @@ const IsleMap = {
   gridLayerGroup: null,
 
   init() {
+    if (this.map) return;
     this.initSelectedPlayer();
     this.initMap();
     this.createGrid();
@@ -53,6 +54,7 @@ const IsleMap = {
 
   initMap() {
     this.map = L.map('map-viewport', {
+      preferCanvas: true,
       crs: L.CRS.Simple,
       minZoom: -1,
       maxZoom: 3,
@@ -63,6 +65,13 @@ const IsleMap = {
     const imageOverlay = L.imageOverlay('assets/map/gateway.webp', this.mapBounds);
     imageOverlay.addTo(this.map);
     this.map.fitBounds(this.mapBounds);
+    if (typeof ResizeObserver === 'function') {
+      this.resizeObserver = new ResizeObserver(() => {
+        cancelAnimationFrame(this.resizeFrame);
+        this.resizeFrame = requestAnimationFrame(() => this.map.invalidateSize({ pan: false }));
+      });
+      this.resizeObserver.observe(document.getElementById('map-viewport'));
+    }
 
     // Initialize layer groups and add active ones to map
     this.gridLayerGroup = L.layerGroup().addTo(this.map);
@@ -277,24 +286,29 @@ const IsleMap = {
   startTracking() {
     this.fetchData();
     if (this.timerId) clearInterval(this.timerId);
-    this.timerId = setInterval(() => this.fetchData(), 4000);
+    this.timerId = setInterval(() => { if (!document.hidden) this.fetchData(); }, 4000);
   },
 
   async fetchData() {
+    if (this.fetching) return;
+    this.fetching = true;
     try {
       let url = '/api/player/map';
       if (this.selectedSteamId) {
         url += `?steamId=${encodeURIComponent(this.selectedSteamId)}`;
       }
 
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
+        const data = await App.readJSON(url);
         this.currentData = data;
-        this.renderPlayerData(data);
-      }
+        const signature = JSON.stringify(data);
+        if (this.dataSignature !== signature) {
+          this.dataSignature = signature;
+          this.renderPlayerData(data);
+        }
     } catch (err) {
       console.warn('Map tracking fetch error:', err);
+    } finally {
+      this.fetching = false;
     }
   },
 
@@ -325,8 +339,8 @@ const IsleMap = {
 
     if (speciesEl) speciesEl.textContent = `${data.species || 'Chưa chọn'} (${data.gender || 'Đực'})`;
     if (growthEl) growthEl.textContent = data.growth || "0%";
-    if (healthTxtEl) healthTxtEl.textContent = `${data.health || 100}%`;
-    if (healthBarEl) healthBarEl.style.width = `${data.health || 100}%`;
+    if (healthTxtEl) healthTxtEl.textContent = `${data.health ?? 100}%`;
+    if (healthBarEl) healthBarEl.style.width = `${data.health ?? 100}%`;
 
     if (coordsEl) {
       coordsEl.textContent = `X: ${(data.x || 0).toLocaleString()} | Y: ${(data.y || 0).toLocaleString()}`;
@@ -334,11 +348,11 @@ const IsleMap = {
     if (gridEl) gridEl.textContent = data.grid || "F6";
 
     if (focusBtn) {
-      focusBtn.disabled = !data.lat || !data.lng;
+      focusBtn.disabled = !Number.isFinite(data.lat) || !Number.isFinite(data.lng);
     }
 
     // Render ONLY the active member's own marker. All other players are hidden!
-    if (data.lat && data.lng) {
+    if (Number.isFinite(data.lat) && Number.isFinite(data.lng)) {
       const playerIcon = L.divIcon({
         className: 'player-live-pin',
         html: `
@@ -375,11 +389,14 @@ const IsleMap = {
         this.playerMarker.setLatLng([data.lat, data.lng]);
         this.playerMarker.setPopupContent(popupContent);
       }
+    } else if (this.playerMarker) {
+      this.map.removeLayer(this.playerMarker);
+      this.playerMarker = null;
     }
   },
 
   focusPlayer() {
-    if (this.currentData && this.currentData.lat && this.currentData.lng) {
+    if (this.currentData && Number.isFinite(this.currentData.lat) && Number.isFinite(this.currentData.lng)) {
       this.map.setView([this.currentData.lat, this.currentData.lng], 1.75, { animate: true });
       if (this.playerMarker) {
         this.playerMarker.openPopup();
@@ -524,7 +541,7 @@ const IsleMap = {
 
         if (tpRes.ok) {
           if (typeof App !== 'undefined') App.showToast(tpData.message || 'Dịch chuyển thành công!', 'success');
-          setTimeout(() => this.updatePlayerData(), 1500);
+          setTimeout(() => this.fetchData(), 1500);
         } else {
           if (typeof App !== 'undefined') App.showToast(tpData.error || 'Dịch chuyển thất bại!', 'error');
         }

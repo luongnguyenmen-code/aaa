@@ -56,6 +56,25 @@ const Garage = {
   playerInfo: null,
   cooldownSeconds: 0,
   cooldownTimer: null,
+  actionBusy: false,
+  actionToken: 0,
+
+  async prepareAction(url, body, sid) {
+    const controller = new AbortController();
+    this.prepareController = controller;
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    try {
+      return await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(sid ? { 'x-steam-id': sid } : {}) },
+        body: JSON.stringify(body),
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeout);
+      if (this.prepareController === controller) this.prepareController = null;
+    }
+  },
 
   async init() {
     this.checkCooldown();
@@ -73,7 +92,7 @@ const Garage = {
   checkCooldown() {
     const expireTime = localStorage.getItem('the_isle_garage_cooldown');
     if (expireTime) {
-      const remaining = Math.floor((parseInt(expireTime) - Date.now()) / 1000);
+      const remaining = Math.ceil((parseInt(expireTime) - Date.now()) / 1000);
       if (remaining > 0) {
         this.cooldownSeconds = remaining;
         this.startCooldownTimer();
@@ -87,8 +106,9 @@ const Garage = {
     if (this.cooldownTimer) clearInterval(this.cooldownTimer);
     this.updateCooldownUI();
 
+    const deadline = Number(localStorage.getItem('the_isle_garage_cooldown')) || Date.now() + this.cooldownSeconds * 1000;
     this.cooldownTimer = setInterval(async () => {
-      this.cooldownSeconds--;
+      this.cooldownSeconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
       if (this.cooldownSeconds <= 0) {
         clearInterval(this.cooldownTimer);
         this.cooldownTimer = null;
@@ -211,9 +231,7 @@ const Garage = {
       }
 
       const url = effectiveSid ? `/api/player/garage?steamId=${encodeURIComponent(effectiveSid)}` : '/api/player/garage';
-      const res = await fetch(url, { headers: hdrs });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await App.readJSON(url, { headers: hdrs });
         
         // NẾU CHƯA ĐĂNG NHẬP (Chưa liên kết tài khoản Steam)
         if (!data.isLoggedIn || !data.steamId) {
@@ -249,7 +267,6 @@ const Garage = {
           // Ẩn tất cả công cụ và liên kết Admin
           this.setAdminVisibility(false);
           this.updateHeaderUI();
-          this.render();
           return;
         }
 
@@ -293,9 +310,7 @@ const Garage = {
         this.setAdminVisibility(!!data.isAdmin);
 
         this.updateHeaderUI();
-        this.render();
         return;
-      }
     } catch (e) {
       console.error('Lỗi nạp dữ liệu garage:', e);
       App.showToast('Không thể kết nối máy chủ để lấy dữ liệu Gara!', 'error');
@@ -349,8 +364,16 @@ const Garage = {
   },
 
   render() {
-    this.renderActiveDino();
-    this.renderSlots();
+    const activeSignature = JSON.stringify([this.activeDino, this.playerInfo]);
+    const slotsSignature = JSON.stringify([this.slots, this.playerInfo]);
+    if (activeSignature !== this.activeSignature) {
+      this.activeSignature = activeSignature;
+      this.renderActiveDino();
+    }
+    if (slotsSignature !== this.slotsSignature) {
+      this.slotsSignature = slotsSignature;
+      this.renderSlots();
+    }
     this.updateCooldownUI();
   },
 
@@ -523,6 +546,8 @@ const Garage = {
   parkRemainingSeconds: 30,
 
   async parkActiveDino() {
+    if (this.actionBusy) return;
+    this.checkCooldown();
     if (this.cooldownSeconds > 0) {
       this.showActionAlert('⏳ Đang Trong Thời Gian Giãn Cách 30 Giây', `Vui lòng chờ thêm ${this.cooldownSeconds}s trước khi cất hoặc đổi khủng long!`, 'warning');
       App.showToast(`Vui lòng chờ hết thời gian đệm (${this.cooldownSeconds}s)!`, 'warn');
@@ -539,16 +564,19 @@ const Garage = {
     }
 
     const sid = this.getActiveSteamId();
+    this.actionBusy = true;
+    const token = ++this.actionToken;
     this.hideActionAlert();
 
     // 1. Gửi tín hiệu chuẩn bị cất lên server
     try {
-      await fetch('/api/player/garage/park-prepare', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(sid ? { 'x-steam-id': sid } : {}) },
-        body: JSON.stringify({ species: this.activeDino.species, steamId: sid })
-      });
-    } catch (_) {}
+      const response = await this.prepareAction('/api/player/garage/park-prepare', { species: this.activeDino.species, steamId: sid }, sid);
+      if (!response.ok) throw new Error('Không thể chuẩn bị cất khủng long. Vui lòng thử lại.');
+    } catch (error) {
+      if (token === this.actionToken) { this.actionBusy = false; App.showToast(error.message, 'error'); }
+      return;
+    }
+    if (token !== this.actionToken) return;
 
     // 2. Mở Modal Đếm Ngược 30 Giây
     const modal = document.getElementById('park-channeling-modal');
@@ -565,8 +593,9 @@ const Garage = {
     this.parkRemainingSeconds = 30;
     if (this.parkChannelingTimer) clearInterval(this.parkChannelingTimer);
 
+    const deadline = Date.now() + 30000;
     this.parkChannelingTimer = setInterval(async () => {
-      this.parkRemainingSeconds--;
+      this.parkRemainingSeconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
       if (countEl) countEl.textContent = `${this.parkRemainingSeconds}s`;
       if (progressEl) {
         const pct = Math.max(0, (this.parkRemainingSeconds / 30) * 100);
@@ -583,6 +612,10 @@ const Garage = {
   },
 
   cancelParkChanneling() {
+    if (this.parkSubmitting) return;
+    this.actionToken++;
+    this.prepareController?.abort();
+    this.actionBusy = false;
     if (this.parkChannelingTimer) {
       clearInterval(this.parkChannelingTimer);
       this.parkChannelingTimer = null;
@@ -593,6 +626,8 @@ const Garage = {
   },
 
   async executeFinalPark() {
+    if (this.parkSubmitting) return;
+    this.parkSubmitting = true;
     const modal = document.getElementById('park-channeling-modal');
     const sid = this.getActiveSteamId();
 
@@ -623,6 +658,9 @@ const Garage = {
       if (modal) modal.style.display = 'none';
       App.showToast('Lỗi mạng khi cất khủng long!', 'error');
       this.showActionAlert('Lỗi Kết Nối', 'Không thể kết nối máy chủ ST25. Vui lòng kiểm tra lại đường truyền!', 'error');
+    } finally {
+      this.parkSubmitting = false;
+      this.actionBusy = false;
     }
   },
 
@@ -631,6 +669,8 @@ const Garage = {
   pendingRestoreDino: null,
 
   async startRestoreChanneling(garageDinoId, species, growth) {
+    if (this.actionBusy) return;
+    this.checkCooldown();
     if (this.cooldownSeconds > 0) {
       this.showActionAlert('⏳ Đang Trong Thời Gian Giãn Cách 30 Giây', `Vui lòng chờ thêm ${this.cooldownSeconds}s để bảo vệ an toàn dữ liệu nhân vật!`, 'warning');
       App.showToast(`Vui lòng chờ hết thời gian đệm (${this.cooldownSeconds}s) để bảo vệ dữ liệu!`, 'warn');
@@ -642,18 +682,21 @@ const Garage = {
     }
 
     const sid = this.getActiveSteamId();
+    this.actionBusy = true;
+    const token = ++this.actionToken;
     this.pendingRestoreDino = { garageDinoId, species, growth, steamId: sid };
     this.hideActionAlert();
 
     // 1. Gửi tín hiệu chuẩn bị lên Server để phát cảnh báo 500m
     try {
       App.showToast(`Đang phát tín hiệu cảnh báo 500m cho [${species}]...`, 'info');
-      await fetch('/api/player/garage/restore-prepare', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(sid ? { 'x-steam-id': sid } : {}) },
-        body: JSON.stringify({ garageDinoId, species, growth, steamId: sid })
-      });
-    } catch (_) {}
+      const response = await this.prepareAction('/api/player/garage/restore-prepare', { garageDinoId, species, growth, steamId: sid }, sid);
+      if (!response.ok) throw new Error('Không thể chuẩn bị đưa khủng long ra đảo. Vui lòng thử lại.');
+    } catch (error) {
+      if (token === this.actionToken) { this.actionBusy = false; this.pendingRestoreDino = null; App.showToast(error.message, 'error'); }
+      return;
+    }
+    if (token !== this.actionToken) return;
 
     // 2. Mở Modal Đếm Ngược 30 Giây
     const modal = document.getElementById('restore-channeling-modal');
@@ -670,8 +713,9 @@ const Garage = {
     this.restoreRemainingSeconds = 30;
     if (this.restoreChannelingTimer) clearInterval(this.restoreChannelingTimer);
 
+    const deadline = Date.now() + 30000;
     this.restoreChannelingTimer = setInterval(async () => {
-      this.restoreRemainingSeconds--;
+      this.restoreRemainingSeconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
       if (countEl) countEl.textContent = `${this.restoreRemainingSeconds}s`;
       if (progressEl) {
         const pct = Math.max(0, (this.restoreRemainingSeconds / 30) * 100);
@@ -688,6 +732,10 @@ const Garage = {
   },
 
   cancelRestoreChanneling() {
+    if (this.restoreSubmitting) return;
+    this.actionToken++;
+    this.prepareController?.abort();
+    this.actionBusy = false;
     if (this.restoreChannelingTimer) {
       clearInterval(this.restoreChannelingTimer);
       this.restoreChannelingTimer = null;
@@ -699,11 +747,13 @@ const Garage = {
   },
 
   async executeFinalRestore() {
+    if (this.restoreSubmitting) return;
     const d = this.pendingRestoreDino;
     const modal = document.getElementById('restore-channeling-modal');
     if (modal) modal.style.display = 'none';
 
     if (!d) return;
+    this.restoreSubmitting = true;
 
     const sid = d.steamId || this.getActiveSteamId();
     App.showToast(`⏳ Hết 30 giây! Đang chính thức hồi phục [${d.species}] vào game server...`, 'info');
@@ -733,6 +783,8 @@ const Garage = {
       this.showActionAlert('Lỗi Kết Nối', 'Không thể kết nối máy chủ game sau 30s. Vui lòng kiểm tra lại!', 'error');
     } finally {
       this.pendingRestoreDino = null;
+      this.restoreSubmitting = false;
+      this.actionBusy = false;
     }
   },
 

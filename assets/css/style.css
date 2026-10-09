@@ -24,7 +24,7 @@
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 18px;
-  --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
 }
 
 * {
@@ -806,8 +806,7 @@ a:hover {
 }
 
 /* The invisible panel does not block clicks; reverse transitions from their current state. */
-.nav-dropdown.open .nav-dropdown-menu,
-.nav-dropdown:focus-within .nav-dropdown-menu {
+.nav-dropdown.open .nav-dropdown-menu {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
@@ -1029,7 +1028,7 @@ a:hover {
   display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .mobile-bottom-nav {
     display: flex;
     position: fixed;
@@ -1091,14 +1090,18 @@ a:hover {
 .mobile-drawer-content {
   position: fixed;
   top: 0;
-  right: -320px;
+  right: 0;
+  transform: translateX(110%);
+  visibility: hidden;
+  pointer-events: none;
   width: 300px;
+  max-width: calc(100vw - 24px);
   height: 100%;
   background: #0b130e;
   border-left: 1px solid rgba(245, 158, 11, 0.3);
   box-shadow: -10px 0 40px rgba(0,0,0,0.8);
   z-index: 10001;
-  transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 220ms;
   padding: 20px;
   overflow-y: auto;
   display: flex;
@@ -1106,7 +1109,10 @@ a:hover {
   gap: 16px;
 }
 .mobile-drawer-content.open {
-  right: 0;
+  transform: translateX(0);
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s;
 }
 
 /* =========================================================

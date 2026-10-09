@@ -3,30 +3,76 @@ const App = {
   user: null,
   config: null,
   notifications: [],
+  pollingTimer: null,
+  nextWeatherUpdate: 0,
+  readRequests: new Map(),
+
+  // Coalesce identical reads and bound their lifetime; mutations are never retried here.
+  readJSON(url, options = {}) {
+    const key = url + JSON.stringify(options);
+    if (this.readRequests.has(key)) return this.readRequests.get(key);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    const request = fetch(url, { ...options, signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) {
+          const error = new Error(`HTTP ${response.status}`);
+          error.status = response.status;
+          throw error;
+        }
+        return response.json();
+      }).finally(() => {
+        clearTimeout(timeout);
+        this.readRequests.delete(key);
+      });
+    this.readRequests.set(key, request);
+    return request;
+  },
+
+  escapeHTML(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+  },
 
   async init() {
+    if (this.initialized) return;
+    this.initialized = true;
     this.bindEvents();
-    await this.loadConfig();
-    await this.loadEnvironment();
-    await this.checkAuth();
+    // Navigation must not wait for three sequential network round trips.
     this.renderEnhancedNav();
     this.renderPlayerHUD();
     this.renderMobileNavigation();
+    await Promise.allSettled([this.loadConfig(), this.loadEnvironment(), this.checkAuth()]);
+    this.renderEnhancedNav();
+    this.renderPlayerHUD();
     this.updateUI();
+    this.nextWeatherUpdate = Date.now() + 30000;
+    this.schedulePolling();
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) clearTimeout(this.pollingTimer);
+      else this.schedulePolling(0);
+    });
+    window.addEventListener('pagehide', () => clearTimeout(this.pollingTimer));
+    window.addEventListener('pageshow', e => { if (e.persisted) this.schedulePolling(0); });
+  },
 
-    // Tự động làm mới thời tiết & ngày/đêm mỗi 30s
-    setInterval(() => this.loadEnvironment(), 30000);
-    // Tự động làm mới thông báo & số dư Lúa mỗi 15s
-    setInterval(() => this.checkAuthSilently(), 15000);
+  schedulePolling(delay = 15000) {
+    clearTimeout(this.pollingTimer);
+    if (document.hidden) return;
+    this.pollingTimer = setTimeout(async () => {
+      if (document.hidden) return;
+      const tasks = [this.checkAuthSilently()];
+      if (Date.now() >= this.nextWeatherUpdate) {
+        this.nextWeatherUpdate = Date.now() + 30000;
+        tasks.push(this.loadEnvironment());
+      }
+      await Promise.allSettled(tasks);
+      this.schedulePolling();
+    }, delay);
   },
 
   async loadEnvironment() {
     try {
-      const res = await fetch('/api/server/environment');
-      if (res.ok) {
-        const env = await res.json();
-        this.renderWeatherWidget(env);
-      }
+      this.renderWeatherWidget(await this.readJSON('/api/server/environment'));
     } catch (e) {
       // offline fallback
     }
@@ -34,6 +80,9 @@ const App = {
 
   renderWeatherWidget(env) {
     if (!env) return;
+    const signature = JSON.stringify([env.phase, env.weatherIcon, env.displayBadge, env.phaseDesc, env.weatherDesc, env.temperature]);
+    if (signature === this.weatherSignature) return;
+    this.weatherSignature = signature;
 
     let headerPill = document.getElementById('live-weather-header-pill');
     if (!headerPill) {
@@ -51,7 +100,6 @@ const App = {
         headerPill.style.background = 'rgba(15, 23, 42, 0.85)';
         headerPill.style.border = '1px solid rgba(251, 191, 36, 0.35)';
         headerPill.style.color = '#e2e8f0';
-        headerPill.style.backdropFilter = 'blur(6px)';
         headerPill.style.cursor = 'default';
         headerPill.style.whiteSpace = 'nowrap';
         headerPill.title = `Chu kỳ game: ${env.phaseDesc}. Thời tiết: ${env.weatherDesc} (${env.temperature}°C)`;
@@ -77,11 +125,8 @@ const App = {
 
   async loadConfig() {
     try {
-      const res = await fetch('/api/server/status');
-      if (res.ok) {
-        this.config = await res.json();
-        this.updateServerStatusBadge();
-      }
+      this.config = await this.readJSON('/api/server/status');
+      this.updateServerStatusBadge();
     } catch (e) {
       console.warn('API offline, running in standalone mode');
     }
@@ -89,27 +134,24 @@ const App = {
 
   async checkAuth() {
     try {
-      const res = await fetch('/api/player/me');
-      if (res.ok) {
-        const u = await res.json();
+      const u = await this.readJSON('/api/player/me');
         if (u && u.linked && u.steam_id) {
           this.user = u;
-          this.notifications = u.notifications || [];
-          localStorage.setItem('st25_steam_user', JSON.stringify({
+          this.notifications = Array.isArray(u.notifications) ? u.notifications : [];
+          try { localStorage.setItem('st25_steam_user', JSON.stringify({
             steam_id: u.steam_id,
             persona_name: u.persona_name,
             avatar: u.avatar,
             isAdmin: !!u.isAdmin
-          }));
+          })); } catch (_) { /* Cookie authentication remains valid without local storage. */ }
         } else {
           this.user = null;
           this.notifications = [];
-          localStorage.removeItem('st25_steam_user');
-          localStorage.removeItem('the_isle_demo_user');
+          try {
+            localStorage.removeItem('st25_steam_user');
+            localStorage.removeItem('the_isle_demo_user');
+          } catch (_) {}
         }
-      } else {
-        this.user = null;
-      }
     } catch (e) {
       this.user = null;
     }
@@ -117,14 +159,14 @@ const App = {
 
   async checkAuthSilently() {
     try {
-      const res = await fetch('/api/player/me');
-      if (res.ok) {
-        const u = await res.json();
-        if (u && u.linked && u.steam_id) {
-          this.user = u;
-          this.notifications = u.notifications || [];
-          this.renderPlayerHUD();
-        }
+      const u = await this.readJSON('/api/player/me');
+      const wasAdmin = !!this.user?.isAdmin;
+      this.user = u && u.linked && u.steam_id ? u : null;
+      this.notifications = Array.isArray(this.user?.notifications) ? this.user.notifications : [];
+      this.renderPlayerHUD();
+      if (wasAdmin !== !!this.user?.isAdmin) {
+        this.renderEnhancedNav();
+        this.updateUI();
       }
     } catch (_) {}
   },
@@ -132,7 +174,7 @@ const App = {
   updateServerStatusBadge() {
     const el = document.getElementById('server-player-count');
     if (el && this.config) {
-      el.textContent = `${this.config.online_players || 42} / ${this.config.max_players || 100} người chơi`;
+      el.textContent = `${this.config.online_players ?? 0} / ${this.config.max_players ?? 100} người chơi`;
     }
   },
 
@@ -145,6 +187,9 @@ const App = {
 
     const currentFile = (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
     const isAdmin = !!(this.user && this.user.isAdmin);
+    const navSignature = currentFile + ':' + isAdmin;
+    if (this.navSignature === navSignature) return;
+    this.navSignature = navSignature;
 
     const isSurvivalActive = ['bando.html', 'gara.html', 'tha-xac.html', 'skin.html'].includes(currentFile);
     const isEconomyActive = ['nhiem-vu.html', 'giao-dich.html', 'hom-qua.html'].includes(currentFile);
@@ -225,6 +270,7 @@ const App = {
         </div>
       </li>
     `;
+    window.ST25Motion?.refresh(navUl);
   },
 
   // ==========================================
@@ -235,8 +281,11 @@ const App = {
     if (!navActions) return;
 
     const isLoggedIn = !!(this.user && this.user.linked && this.user.steam_id);
+    if (!Array.isArray(this.notifications)) this.notifications = [];
 
     if (!isLoggedIn) {
+      if (this.hudIdentity === 'anonymous') return;
+      this.hudIdentity = 'anonymous';
       navActions.innerHTML = `
         <a href="lien-ket-steam.html" class="btn btn-secondary btn-sm" id="btn-steam-auth">
           🎮 Đăng Nhập Steam
@@ -248,13 +297,41 @@ const App = {
     }
 
     const u = this.user;
-    const balance = u.balance || u.lua || u.coins || 0;
-    const totalParked = u.totalParked || 0;
-    const maxSlots = u.maxSlots || 3;
+    const balance = Number(u.balance ?? u.lua ?? u.coins ?? 0) || 0;
+    const totalParked = u.totalParked ?? 0;
+    const maxSlots = u.maxSlots ?? 3;
     const unreadCount = (this.notifications || []).length;
     const isAdmin = !!u.isAdmin;
     const avatar = u.avatar || 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg';
-    const roleClass = isAdmin ? 'role-admin' : (u.roleKey && u.roleKey.includes('vip') ? 'role-vip' : '');
+    const roleClass = isAdmin ? 'role-admin' : (String(u.roleKey || '').includes('vip') ? 'role-vip' : '');
+    const identity = JSON.stringify([u.steam_id, u.persona_name, avatar, u.role, roleClass, isAdmin]);
+    const notificationsSignature = JSON.stringify(this.notifications);
+    const notificationMarkup = `
+      <div style="display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #ffffff19;padding-bottom:8px">
+        <strong style="color:#fbbf24;font-size:.9rem">🔔 Thông Báo (${unreadCount})</strong>
+        <a href="giao-dich.html" style="font-size:.78rem">Xem phòng Trade</a>
+      </div>
+      <div style="max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:8px">
+        ${this.notifications.length ? this.notifications.map(n => `<a href="${this.escapeHTML(n.link || 'giao-dich.html')}" style="padding:10px;background:#0004;border-radius:8px"><strong>${this.escapeHTML(n.title)}</strong><div>${this.escapeHTML(n.desc)}</div><small>${this.escapeHTML(n.time)}</small></a>`).join('') : '<div style="padding:20px;color:#94a3b8;text-align:center">Không có thông báo mới nào.</div>'}
+      </div>`;
+    if (this.hudIdentity === identity && navActions.querySelector('.player-hud-bar')) {
+      const balanceEl = navActions.querySelector('.lua-val');
+      const capacityEl = navActions.querySelector('.garage-val');
+      const badge = navActions.querySelector('.hud-bell-badge');
+      const balanceText = balance.toLocaleString() + ' Lúa';
+      const capacityText = `${totalParked}/${maxSlots}`;
+      if (balanceEl && balanceEl.textContent !== balanceText) balanceEl.textContent = balanceText;
+      if (capacityEl && capacityEl.textContent !== capacityText) capacityEl.textContent = capacityText;
+      if (badge) { badge.textContent = unreadCount; badge.hidden = unreadCount === 0; }
+      if (this.notificationsSignature !== notificationsSignature) {
+        const popover = document.getElementById('hud-notification-popover');
+        if (popover) popover.innerHTML = notificationMarkup;
+      }
+      this.notificationsSignature = notificationsSignature;
+      return;
+    }
+    this.hudIdentity = identity;
+    this.notificationsSignature = notificationsSignature;
 
     navActions.innerHTML = `
       <div class="player-hud-bar">
@@ -274,28 +351,12 @@ const App = {
         <div style="position: relative;">
           <button type="button" class="hud-bell-btn" onclick="App.toggleNotificationPopover(event)" title="Thông báo hệ thống">
             <span>🔔</span>
-            ${unreadCount > 0 ? `<span class="hud-bell-badge">${unreadCount}</span>` : ''}
+            <span class="hud-bell-badge" ${unreadCount ? '' : 'hidden'}>${unreadCount}</span>
           </button>
 
           <!-- Notification Popover -->
           <div id="hud-notification-popover" class="hud-popover">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
-              <strong style="color: #fbbf24; font-size: 0.9rem;">🔔 Thông Báo (${unreadCount})</strong>
-              <a href="giao-dich.html" style="font-size: 0.78rem; color: #38bdf8;">Xem phòng Trade</a>
-            </div>
-            <div style="max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
-              ${this.notifications.length === 0 ? `
-                <div style="text-align: center; padding: 20px; color: #64748b; font-size: 0.85rem;">
-                  Không có thông báo mới nào.
-                </div>
-              ` : this.notifications.map(n => `
-                <a href="${n.link || 'giao-dich.html'}" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 10px; display: block; text-decoration: none;">
-                  <div style="font-size: 0.82rem; font-weight: 700; color: #fff;">${n.title}</div>
-                  <div style="font-size: 0.78rem; color: #34d399; margin: 3px 0;">${n.desc}</div>
-                  <div style="font-size: 0.72rem; color: #94a3b8;">${n.time}</div>
-                </a>
-              `).join('')}
-            </div>
+            ${notificationMarkup}
           </div>
         </div>
 
@@ -325,19 +386,7 @@ const App = {
       </div>
     `;
 
-    window.ST25Motion?.refresh();
-
-    // Click outside to close popovers
-    document.addEventListener('click', (e) => {
-      const notifPopover = document.getElementById('hud-notification-popover');
-      const profilePopover = document.getElementById('hud-profile-popover');
-      if (notifPopover && !e.target.closest('.hud-bell-btn') && !e.target.closest('#hud-notification-popover')) {
-        notifPopover.classList.remove('open');
-      }
-      if (profilePopover && !e.target.closest('.hud-profile-pill') && !e.target.closest('#hud-profile-popover')) {
-        profilePopover.classList.remove('open');
-      }
-    });
+    window.ST25Motion?.refresh(navActions);
   },
 
   toggleNotificationPopover(e) {
@@ -517,6 +566,32 @@ const App = {
   },
 
   bindEvents() {
+    if (this.eventsBound) return;
+    this.eventsBound = true;
+    document.addEventListener('click', e => {
+      const target = e.target instanceof Element ? e.target : e.target.parentElement;
+      if (!target) return;
+      for (const [id, trigger] of [['hud-notification-popover', '.hud-bell-btn'], ['hud-profile-popover', '.hud-profile-pill']]) {
+        if (!target.closest(trigger) && !target.closest('#' + id)) document.getElementById(id)?.classList.remove('open');
+      }
+      const toggle = target.closest('.nav-dropdown-toggle');
+      const dropdown = toggle?.closest('.nav-dropdown');
+      document.querySelectorAll('.nav-dropdown.open').forEach(el => { if (el !== dropdown) el.classList.remove('open'); });
+      if (dropdown) {
+        e.preventDefault();
+        dropdown.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', String(dropdown.classList.contains('open')));
+      }
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.nav-dropdown.open').forEach(el => {
+          el.classList.remove('open');
+          el.querySelector('.nav-dropdown-toggle')?.setAttribute('aria-expanded', 'false');
+        });
+        document.querySelectorAll('.hud-popover.open').forEach(el => el.classList.remove('open'));
+      }
+    });
     const logoutBtn = document.getElementById('btn-logout');
     if (logoutBtn) {
       logoutBtn.addEventListener('click', (e) => {

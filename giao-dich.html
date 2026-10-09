@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hệ Thống Giao Dịch P2P (Trade ST25) — ST25 VIETNAM</title>
   <meta name="description" content="Hệ thống giao dịch trao đổi Khủng Long và Lúa P2P chính thức máy chủ ST25 The Isle: Evrima, đồng bộ chuẩn IslePilot EU.">
-  <link rel="stylesheet" href="assets/css/style.css?v=20261009-audit2">
-  <link rel="icon" href="assets/map/gateway.webp">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261009-stable1">
+  <link rel="icon" type="image/png" href="assets/imges/st25-favicon.png?v=20261009-stable1">
   <style>
     .trade-banner {
       background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.98));
@@ -120,12 +120,12 @@
       margin-top: 8px;
     }
   </style>
-  <link rel="stylesheet" href="assets/css/buttons.css?v=20261009-audit2">
+  <link rel="stylesheet" href="assets/css/buttons.css?v=20261009-stable1">
   <link rel="stylesheet" href="assets/css/fonts.css?v=20261009-audit">
-  <link rel="stylesheet" href="assets/css/motion.css?v=20261009-kodilion">
-  <script src="assets/js/motion.js?v=20261009-kodilion" defer></script>
-  <link rel="stylesheet" href="assets/css/portal-layout.css?v=20261009-layout1">
-  <link rel="stylesheet" href="assets/css/logo.css?v=20261009-logo1">
+  <link rel="stylesheet" href="assets/css/motion.css?v=20261009-stable1">
+  <script src="assets/js/motion.js?v=20261009-stable1" defer></script>
+  <link rel="stylesheet" href="assets/css/portal-layout.css?v=20261009-stable1">
+  <link rel="stylesheet" href="assets/css/logo.css?v=20261009-stable1">
 </head>
 <body class="st25-portal">
 
@@ -351,7 +351,7 @@
     </div>
   </footer>
 
-  <script src="assets/js/app.js?v=20261009-kodilion"></script>
+  <script src="assets/js/app.js?v=20261009-stable1"></script>
   <script>
     // Controller Hệ Thống Trade P2P ST25
     const TradeApp = {
@@ -436,7 +436,8 @@
               }
             }
           });
-          if (hasAnyExpired && (this.incomingTrades.length > 0 || this.outgoingTrades.length > 0)) {
+          if (!document.hidden && hasAnyExpired && Date.now() >= (this.nextExpiryRefresh || 0) && (this.incomingTrades.length > 0 || this.outgoingTrades.length > 0)) {
+            this.nextExpiryRefresh = Date.now() + 10000;
             this.loadData();
           }
         }, 1000);
@@ -449,14 +450,14 @@
       },
 
       async loadData() {
+        if (this.loading) return;
+        this.loading = true;
         try {
           const sid = this.getActiveSteamId();
           const url = sid ? `/api/trade/data?steamId=${encodeURIComponent(sid)}&_t=${Date.now()}` : `/api/trade/data?_t=${Date.now()}`;
           const hdrs = sid ? { 'x-steam-id': sid } : {};
 
-          const res = await fetch(url, { headers: hdrs });
-          if (!res.ok) throw new Error("Không thể nạp dữ liệu Trade");
-          const data = await res.json();
+          const data = await App.readJSON(url, { headers: hdrs });
 
           this.currentSteamId = data.steamId;
           this.balance = data.balance || 0;
@@ -471,6 +472,8 @@
         } catch (e) {
           console.error("Lỗi nạp dữ liệu trade:", e);
           App.showToast("Lỗi khi đồng bộ dữ liệu giao dịch!", "error");
+        } finally {
+          this.loading = false;
         }
       },
 

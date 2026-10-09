@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hòm May Mắn — ST25 VIETNAM</title>
   <meta name="description" content="Mở Hòm May Mắn bằng Lúa 🌾 nhận skin thần thoại, slot Gara và Lúa nổ hũ jackpot trên máy chủ ST25 The Isle: Evrima.">
-  <link rel="stylesheet" href="assets/css/style.css?v=20261009-audit2">
-  <link rel="icon" href="assets/map/gateway.webp">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261009-stable1">
+  <link rel="icon" type="image/png" href="assets/imges/st25-favicon.png?v=20261009-stable1">
   <style>
     .crate-card {
       background: var(--bg-card);
@@ -199,12 +199,12 @@
       border-bottom: 2px solid;
     }
   </style>
-  <link rel="stylesheet" href="assets/css/buttons.css?v=20261009-audit2">
+  <link rel="stylesheet" href="assets/css/buttons.css?v=20261009-stable1">
   <link rel="stylesheet" href="assets/css/fonts.css?v=20261009-audit">
-  <link rel="stylesheet" href="assets/css/motion.css?v=20261009-kodilion">
-  <script src="assets/js/motion.js?v=20261009-kodilion" defer></script>
-  <link rel="stylesheet" href="assets/css/portal-layout.css?v=20261009-layout1">
-  <link rel="stylesheet" href="assets/css/logo.css?v=20261009-logo1">
+  <link rel="stylesheet" href="assets/css/motion.css?v=20261009-stable1">
+  <script src="assets/js/motion.js?v=20261009-stable1" defer></script>
+  <link rel="stylesheet" href="assets/css/portal-layout.css?v=20261009-stable1">
+  <link rel="stylesheet" href="assets/css/logo.css?v=20261009-stable1">
 </head>
 <body class="st25-portal">
 
@@ -399,7 +399,7 @@
     </div>
   </footer>
 
-  <script src="assets/js/app.js?v=20261009-kodilion"></script>
+  <script src="assets/js/app.js?v=20261009-stable1"></script>
   <script>
     let myBalance = 0;
     let currentSteamId = null;
@@ -545,8 +545,11 @@
     let activeLoadedCrate = null;
     let gachaTimeout = null;
     let currentGachaResult = null;
+    let gachaBusy = false;
+    let gachaStartTimeout = null;
 
     async function openHalloweenGacha(price) {
+      if (gachaBusy || currentGachaResult) return;
       const sid = getActiveSteamId();
       if (!sid) {
         App.showToast('Vui lòng đăng nhập Steam trước khi quay thưởng!', 'error');
@@ -558,6 +561,7 @@
         return;
       }
 
+      gachaBusy = true;
       try {
         App.showToast('Đang kết nối IslePilot Cloud để quay thưởng... 🎃', 'info');
         const crateIdToOpen = (activeLoadedCrate && activeLoadedCrate.id) || 'cmuvclx96082iml01bson72ak';
@@ -641,7 +645,7 @@
         const randomJitter = Math.floor(Math.random() * 40) - 20;
         const targetOffset = (targetIndex * 120 + 55) - (wrapperWidth / 2) + randomJitter;
 
-        setTimeout(() => {
+        gachaStartTimeout = setTimeout(() => {
           strip.style.transition = 'transform 4.5s cubic-bezier(0.12, 0.8, 0.32, 1)';
           strip.style.transform = `translateX(-${targetOffset}px)`;
         }, 60);
@@ -654,6 +658,8 @@
       } catch (e) {
         console.error(e);
         App.showToast('Lỗi mạng khi quay hòm!', 'error');
+      } finally {
+        gachaBusy = false;
       }
     }
 
@@ -666,6 +672,10 @@
     }
 
     function finishGachaRoll() {
+      clearTimeout(gachaStartTimeout);
+      clearTimeout(gachaTimeout);
+      gachaStartTimeout = null;
+      gachaTimeout = null;
       const modal = document.getElementById('gacha-modal');
       modal.classList.remove('active');
 

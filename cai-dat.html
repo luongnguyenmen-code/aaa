@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bảng Quản Trị Cấp Role & Slot Gara — ST25 VIETNAM</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=20261009-audit2">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261009-stable1">
   <style>
     .admin-card {
       background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85));
@@ -348,12 +348,13 @@
       50% { opacity: 0.7; }
     }
   </style>
-  <link rel="stylesheet" href="assets/css/buttons.css?v=20261009-audit2">
+  <link rel="stylesheet" href="assets/css/buttons.css?v=20261009-stable1">
   <link rel="stylesheet" href="assets/css/fonts.css?v=20261009-audit">
-  <link rel="stylesheet" href="assets/css/motion.css?v=20261009-kodilion">
-  <script src="assets/js/motion.js?v=20261009-kodilion" defer></script>
-  <link rel="stylesheet" href="assets/css/portal-layout.css?v=20261009-layout1">
-  <link rel="stylesheet" href="assets/css/logo.css?v=20261009-logo1">
+  <link rel="stylesheet" href="assets/css/motion.css?v=20261009-stable1">
+  <script src="assets/js/motion.js?v=20261009-stable1" defer></script>
+  <link rel="stylesheet" href="assets/css/portal-layout.css?v=20261009-stable1">
+  <link rel="stylesheet" href="assets/css/logo.css?v=20261009-stable1">
+  <link rel="icon" type="image/png" href="assets/imges/st25-favicon.png?v=20261009-stable1">
 </head>
 <body class="st25-portal">
 
@@ -497,7 +498,7 @@
 
           <!-- Player Preview Card (Hidden until checked) -->
           <div id="player-preview" class="player-preview-card" style="display: none;">
-            <img id="preview-avatar" src="" alt="Avatar">
+            <img id="preview-avatar" src="assets/imges/st25-logo-web.png" alt="Avatar">
             <div style="flex: 1;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h4 style="color: #fff; margin: 0; font-size: 1.05rem;" id="preview-name">Player Name</h4>
@@ -872,7 +873,7 @@
     </div>
   </footer>
 
-  <script src="assets/js/app.js?v=20261009-kodilion"></script>
+  <script src="assets/js/app.js?v=20261009-stable1"></script>
   <script>
     // Admin Panel Client Controller
     const AdminPanel = {
@@ -1846,7 +1847,7 @@
         this.isLive = true;
         this.updateLiveUI();
         this.liveTimer = setInterval(() => {
-          this.loadLogs(true);
+          if (!document.hidden) this.loadLogs(true);
         }, 3000);
       },
 
@@ -1898,6 +1899,7 @@
       },
 
       async loadLogs(isSilent = false) {
+        if (this.loading) return;
         const tbody = document.getElementById('combat-logs-tbody');
         if (!isSilent && tbody) {
           tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;">Đang nạp dữ liệu đòn đánh...</td></tr>`;
@@ -1905,6 +1907,7 @@
 
         const effectiveAdmin = this.adminSteamId || AdminPanel.currentAdminSteamId || AdminPanel.getActiveSteamId();
         if (!effectiveAdmin) return;
+        this.loading = true;
 
         try {
           const hdrs = {
@@ -1912,17 +1915,11 @@
             'x-steam-id': effectiveAdmin,
             'x-admin-steam-id': effectiveAdmin
           };
-          const res = await fetch(`/api/admin/combat-logs?adminSteamId=${encodeURIComponent(effectiveAdmin)}`, {
-            headers: hdrs
-          });
-
-          if (res.status === 403) {
-            if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #ef4444; padding: 30px;">⛔ Bạn không có quyền Admin để truy cập nhật ký chiến đấu!</td></tr>`;
-            return;
-          }
-
-          const data = await res.json();
+          const data = await App.readJSON(`/api/admin/combat-logs?adminSteamId=${encodeURIComponent(effectiveAdmin)}`, { headers: hdrs });
           const logsList = Array.isArray(data.logs) ? data.logs : (Array.isArray(data) ? data : []);
+          const signature = JSON.stringify(logsList);
+          if (isSilent && signature === this.logsSignature) return;
+          this.logsSignature = signature;
 
           // Cập nhật nhãn thời gian thực
           const timeClockEl = document.getElementById('live-combat-time-text');
@@ -1969,9 +1966,16 @@
           this.applyFilterAndRender();
         } catch (e) {
           console.error(e);
+          if (e.status === 403) {
+            this.stopLive();
+            if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="padding:30px;text-align:center;color:#ef4444">Bạn không có quyền truy cập nhật ký chiến đấu.</td></tr>`;
+            return;
+          }
           if (!isSilent && tbody) {
             tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #ef4444; padding: 30px;">Lỗi kết nối máy chủ khi nạp nhật ký chiến đấu!</td></tr>`;
           }
+        } finally {
+          this.loading = false;
         }
       },
 
