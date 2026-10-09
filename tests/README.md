@@ -14,6 +14,8 @@ The homepage checks verify shared account subscriptions, retained card nodes dur
 
 Quest layout checks cover category tabs/counts, real reward/progress values, locked states, claim-all, Prime Elder, empty events, escaped names and local assets. `node tests/render-quests-preview.cjs --browser` renders an offline fixture in Chrome at 1440px and 390px, checks horizontal overflow/runtime errors and writes screenshots. Its sample missions/rewards are preview-only, never added to production data.
 
+`node tests/redesign-browser-audit.cjs` serves an offline copy with mock API responses and blocks non-GET API calls. It checks 15 enabled pages at 1440px and five key pages at 390px, reporting horizontal overflow, runtime exceptions, header icons/HUD and broken images. Casino remains disabled and is excluded. Screenshots and results are saved in tests. Real API transactions, login and live upstream latency are outside this audit. The admin page initially had a broken external default avatar; its static fallback was changed to the existing local ST25 favicon after the browser run.
+
 `frontend-audit-results.json` records the local audit. Chrome headless tested all 16 ST25 pages at desktop width, plus the homepage, garage, map and trade pages at 375 and 820 pixels. Checks include runtime errors, broken images, horizontal overflow, stable HUD nodes/geometry, retained popovers, mobile navigation, zero balances/health, zero-coordinate markers, 144 clean grid labels and matching garage/restore borders.
 
 Root causes addressed:

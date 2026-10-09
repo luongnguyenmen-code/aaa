@@ -55,6 +55,7 @@ const App = {
     this.renderEnhancedNav();
     this.renderPlayerHUD();
     this.renderMobileNavigation();
+    window.ST25UI?.refresh();
     this.renderWeatherWidget({ displayBadge: 'Đang cập nhật thời tiết…', weatherIcon: '🌤️' });
     // Publish account data as soon as it arrives; unrelated APIs must not hold the HUD.
     const authReady = this.checkAuth().then(() => {
@@ -208,6 +209,7 @@ const App = {
   },
 
   updateServerStatusBadge() {
+    if (this.config) window.ST25UI?.setServerStatus(this.config);
     const el = document.getElementById('server-player-count');
     if (el && this.config) {
       const text = `${this.config.online_players ?? 0} / ${this.config.max_players ?? 100} người chơi`;
@@ -307,6 +309,7 @@ const App = {
         </div>
       </li>
     `;
+    window.ST25UI?.refresh(navUl);
     window.ST25Motion?.refresh(navUl);
   },
 
@@ -331,11 +334,12 @@ const App = {
       this.hudIdentity = 'anonymous';
       navActions.innerHTML = `
         <a href="lien-ket-steam.html" class="btn btn-secondary btn-sm" id="btn-steam-auth">
-          🎮 Đăng Nhập Steam
+          ${window.ST25UI?.icon('login') || '🎮'} Đăng Nhập Steam
         </a>
         <a href="tai-hud.html" class="btn btn-hud btn-sm" style="display: none;">Tải IsleLiveMap</a>
         <a href="https://discord.gg/3xCrA6VyY" target="_blank" class="btn btn-primary btn-sm">Discord ST25</a>
       `;
+      window.ST25UI?.refresh(navActions);
       return;
     }
 
@@ -432,6 +436,7 @@ const App = {
       </div>
     `;
 
+    window.ST25UI?.refresh(navActions);
     window.ST25Motion?.refresh(navActions);
   },
 

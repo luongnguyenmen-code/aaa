@@ -33,6 +33,8 @@
   <script src="assets/js/motion.js?v=20261009-stable1" defer></script>
   <link rel="stylesheet" href="assets/css/portal-layout.css?v=20261009-spacing1">
   <link rel="stylesheet" href="assets/css/logo.css?v=20261009-stable1">
+  <link rel="stylesheet" href="assets/css/redesign.css?v=20261009-ui1">
+  <script src="assets/js/ui.js?v=20261009-ui1" defer></script>
 </head>
 <body class="st25-portal">
 
@@ -42,18 +44,80 @@
       <a href="index.html" class="brand-logo"><img class="st25-site-logo" src="assets/imges/st25-logo-web.png?v=20261009-logo1" alt="ST25" width="300" height="200" decoding="async"></a>
 
       <ul class="nav-links">
-        <li><a href="index.html" class="nav-link">🌾 Trang chủ</a></li>
-        <li><a href="bando.html" class="nav-link">🗺️ Bản đồ</a></li>
-        <li><a href="nhiem-vu.html" class="nav-link">🌾 Kho Lúa & Quests</a></li>
-        <li><a href="giao-dich.html" class="nav-link">⚖️ Giao Dịch</a></li>
-        <li><a href="hom-qua.html" class="nav-link">🎁 Hòm May Mắn</a></li>
-        <li><a href="gara.html" class="nav-link">🦖 Gara</a></li>
-        <li><a href="skin.html" class="nav-link">🎨 Skin</a></li>
-        <li><a href="tha-xac.html" class="nav-link">🥩 Thả Xác</a></li>
-        <li><a href="moi-ban.html" class="nav-link">👥 Mời Bạn</a></li>
-        <li><a href="ho-tro.html" class="nav-link active">🆘 Hỗ Trợ</a></li>
-        <li><a href="noi-quy.html" class="nav-link">📜 Nội quy</a></li>
-      </ul>
+      <li>
+        <a href="index.html" class="nav-link ">
+          🌾 Trang chủ
+        </a>
+      </li>
+
+      <!-- NHÓM 1: SINH TỒN -->
+      <li class="nav-dropdown">
+        <a href="javascript:void(0)" class="nav-link nav-dropdown-toggle ">
+          🏕️ Sinh Tồn
+        </a>
+        <div class="nav-dropdown-menu">
+          <a href="bando.html" class="nav-dropdown-item ">
+            🗺️ Bản Đồ Gateway
+          </a>
+          <a href="gara.html" class="nav-dropdown-item ">
+            🦖 Gara Khủng Long
+          </a>
+          <a href="tha-xac.html" class="nav-dropdown-item ">
+            🥩 Thả Xác Cứu Đói
+          </a>
+          <a href="skin.html" class="nav-dropdown-item ">
+            🎨 Chỉnh Sửa Skin
+          </a>
+        </div>
+      </li>
+
+      <!-- NHÓM 2: KINH TẾ & CHỢ -->
+      <li class="nav-dropdown">
+        <a href="javascript:void(0)" class="nav-link nav-dropdown-toggle ">
+          🌾 Kinh Tế & Chợ
+        </a>
+        <div class="nav-dropdown-menu">
+          <a href="nhiem-vu.html" class="nav-dropdown-item ">
+            🌾 Kho Lúa & Nhiệm Vụ
+          </a>
+          <a href="giao-dich.html" class="nav-dropdown-item ">
+            ⚖️ Chợ Giao Dịch P2P
+          </a>
+          <a href="hom-qua.html" class="nav-dropdown-item ">
+            🎁 Mở Hòm May Mắn
+          </a>
+          <!-- [TẮT TẠM THỜI] Bỏ comment dòng dưới khi muốn bật lại Sòng Bạc:
+          <a href="song-bac.html" class="nav-dropdown-item ">
+            🎲 Sòng Bạc ST25
+          </a>
+          -->
+        </div>
+      </li>
+
+      <!-- NHÓM 3: CỘNG ĐỒNG & HỖ TRỢ -->
+      <li class="nav-dropdown">
+        <a href="javascript:void(0)" class="nav-link nav-dropdown-toggle active">
+          🛡️ Cộng Đồng
+        </a>
+        <div class="nav-dropdown-menu">
+          <a href="bxh.html" class="nav-dropdown-item ">
+            🏆 Bảng Xếp Hạng
+          </a>
+          <a href="moi-ban.html" class="nav-dropdown-item ">
+            👥 Mời Bạn Nhận Lúa
+          </a>
+          <a href="ho-tro.html" class="nav-dropdown-item active">
+            🆘 Hỗ Trợ & Ticket
+          </a>
+          <a href="noi-quy.html" class="nav-dropdown-item ">
+            📜 13 Điều Nội Quy
+          </a>
+          <a href="cai-dat.html" class="nav-dropdown-item admin-only " style="display: none;">
+            👑 Cấp Role & Slot (Admin)
+          </a>
+        </div>
+      </li>
+    </ul>
 
       <div class="nav-actions">
         <a href="lien-ket-steam.html" class="btn btn-secondary btn-sm">🎮 Steam Profile</a>
@@ -176,7 +240,7 @@
     </div>
   </footer>
 
-  <script src="assets/js/app.js?v=20261009-spacing1"></script>
+  <script src="assets/js/app.js?v=20261009-ui1"></script>
   <script>
     async function loadMyTickets() {
       try {

@@ -13,6 +13,8 @@
   <script src="assets/js/motion.js?v=20261009-stable1" defer></script>
   <link rel="stylesheet" href="assets/css/portal-layout.css?v=20261009-spacing1">
   <link rel="stylesheet" href="assets/css/logo.css?v=20261009-stable1">
+  <link rel="stylesheet" href="assets/css/redesign.css?v=20261009-ui1">
+  <script src="assets/js/ui.js?v=20261009-ui1" defer></script>
 </head>
 <body class="st25-portal portal-home">
 
@@ -35,20 +37,80 @@
       <a href="index.html" class="brand"><img class="st25-site-logo" src="assets/imges/st25-logo-web.png?v=20261009-logo1" alt="ST25" width="300" height="200" decoding="async"><span class="brand-tag">🦖 THE ISLE</span></a>
 
       <ul class="nav-links">
-        <li><a href="index.html" class="nav-link active">🌾 Trang chủ</a></li>
-        <li><a href="bxh.html" class="nav-link" style="color: #fbbf24; font-weight: 700;">🏆 BXH</a></li>
-        <li><a href="bando.html" class="nav-link">🗺️ Bản đồ</a></li>
-        <li><a href="nhiem-vu.html" class="nav-link">🌾 Kho Lúa</a></li>
-        <li><a href="giao-dich.html" class="nav-link">⚖️ Giao Dịch</a></li>
-        <li><a href="hom-qua.html" class="nav-link">🎁 Mở Hòm</a></li>
-        <li><a href="gara.html" class="nav-link">🦖 Gara</a></li>
-        <li><a href="skin.html" class="nav-link">🎨 Skin</a></li>
-        <li><a href="cai-dat.html" class="nav-link" style="color: #fbbf24; font-weight: 700;">👑 Phân Quyền</a></li>
-        <li><a href="tha-xac.html" class="nav-link">🥩 Thả Xác</a></li>
-        <li><a href="moi-ban.html" class="nav-link">👥 Mời Bạn</a></li>
-        <li><a href="ho-tro.html" class="nav-link">🆘 Hỗ Trợ</a></li>
-        <li><a href="noi-quy.html" class="nav-link">📜 Nội quy</a></li>
-      </ul>
+      <li>
+        <a href="index.html" class="nav-link active">
+          🌾 Trang chủ
+        </a>
+      </li>
+
+      <!-- NHÓM 1: SINH TỒN -->
+      <li class="nav-dropdown">
+        <a href="javascript:void(0)" class="nav-link nav-dropdown-toggle ">
+          🏕️ Sinh Tồn
+        </a>
+        <div class="nav-dropdown-menu">
+          <a href="bando.html" class="nav-dropdown-item ">
+            🗺️ Bản Đồ Gateway
+          </a>
+          <a href="gara.html" class="nav-dropdown-item ">
+            🦖 Gara Khủng Long
+          </a>
+          <a href="tha-xac.html" class="nav-dropdown-item ">
+            🥩 Thả Xác Cứu Đói
+          </a>
+          <a href="skin.html" class="nav-dropdown-item ">
+            🎨 Chỉnh Sửa Skin
+          </a>
+        </div>
+      </li>
+
+      <!-- NHÓM 2: KINH TẾ & CHỢ -->
+      <li class="nav-dropdown">
+        <a href="javascript:void(0)" class="nav-link nav-dropdown-toggle ">
+          🌾 Kinh Tế & Chợ
+        </a>
+        <div class="nav-dropdown-menu">
+          <a href="nhiem-vu.html" class="nav-dropdown-item ">
+            🌾 Kho Lúa & Nhiệm Vụ
+          </a>
+          <a href="giao-dich.html" class="nav-dropdown-item ">
+            ⚖️ Chợ Giao Dịch P2P
+          </a>
+          <a href="hom-qua.html" class="nav-dropdown-item ">
+            🎁 Mở Hòm May Mắn
+          </a>
+          <!-- [TẮT TẠM THỜI] Bỏ comment dòng dưới khi muốn bật lại Sòng Bạc:
+          <a href="song-bac.html" class="nav-dropdown-item ">
+            🎲 Sòng Bạc ST25
+          </a>
+          -->
+        </div>
+      </li>
+
+      <!-- NHÓM 3: CỘNG ĐỒNG & HỖ TRỢ -->
+      <li class="nav-dropdown">
+        <a href="javascript:void(0)" class="nav-link nav-dropdown-toggle ">
+          🛡️ Cộng Đồng
+        </a>
+        <div class="nav-dropdown-menu">
+          <a href="bxh.html" class="nav-dropdown-item ">
+            🏆 Bảng Xếp Hạng
+          </a>
+          <a href="moi-ban.html" class="nav-dropdown-item ">
+            👥 Mời Bạn Nhận Lúa
+          </a>
+          <a href="ho-tro.html" class="nav-dropdown-item ">
+            🆘 Hỗ Trợ & Ticket
+          </a>
+          <a href="noi-quy.html" class="nav-dropdown-item ">
+            📜 13 Điều Nội Quy
+          </a>
+          <a href="cai-dat.html" class="nav-dropdown-item admin-only " style="display: none;">
+            👑 Cấp Role & Slot (Admin)
+          </a>
+        </div>
+      </li>
+    </ul>
 
       <div class="nav-actions">
         <a href="lien-ket-steam.html" class="btn btn-secondary btn-sm">🎮 Liên Kết Steam</a>
@@ -59,7 +121,7 @@
   </header>
 
   <!-- Hero Section -->
-  <main class="portal-dashboard container"><div class="portal-dashboard-grid"><div class="portal-primary"><section class="portal-banners" aria-label="Chào mừng và truy cập nhanh"><article class="portal-banner"><img class="portal-banner-art" src="assets/imges/thumbs/Triceratops.png" alt="" width="224" height="224" decoding="async"><div class="portal-banner-copy"><span class="portal-eyebrow">THE ISLE: EVRIMA · VIETNAM</span><h1>Chào mừng<br>đến ST25</h1><p>Sinh tồn cùng cộng đồng. Quản lý khủng long và tích lũy Lúa tại một nơi.</p><a class="btn btn-primary" href="lien-ket-steam.html">Liên kết Steam →</a></div></article><article class="portal-banner portal-banner--garage"><img class="portal-banner-art" src="assets/imges/thumbs/Tyrannosaurus.png" alt="" width="224" height="224" decoding="async"><div class="portal-banner-copy"><span class="portal-eyebrow">GARA KHỦNG LONG</span><h2>Sẵn sàng<br>trở lại đảo</h2><p>Cất giữ Dino, giữ tiến trình và chọn loài cho lần sinh tồn tiếp theo.</p><a class="btn btn-secondary" href="gara.html">Mở Gara →</a></div></article></section><section aria-labelledby="portal-features-title"><div class="portal-section-heading"><h2 id="portal-features-title">Khám phá ST25</h2><span>Sinh tồn · Kinh tế · Cộng đồng</span></div><div class="portal-feature-grid"><a class="portal-feature" href="gara.html"><span class="portal-feature-tag">DINO CLOUD</span><div class="portal-feature-art" aria-hidden="true"><img src="assets/imges/thumbs/Tyrannosaurus.png" alt="" width="224" height="224" loading="lazy" decoding="async"></div><div class="portal-feature-copy"><h3>Gara Khủng Long</h3><p>Lưu giữ và quản lý khủng long của bạn.</p></div></a>
+  <main class="portal-dashboard container"><div class="home-page-heading"><div><span class="portal-eyebrow">ST25 VIETNAM · GATEWAY</span><h1>Trạm sinh tồn của bạn</h1><p>Theo dõi khủng long, quản lý gara và khám phá cộng đồng.</p></div><div class="home-page-actions"><a class="btn btn-secondary" href="bando.html">Mở bản đồ</a><a class="btn btn-primary" href="gara.html">Gara của tôi</a></div></div><div class="portal-dashboard-grid"><div class="portal-primary"><section class="portal-banners" aria-label="Chào mừng và truy cập nhanh"><article class="portal-banner"><img class="portal-banner-art" src="assets/imges/thumbs/Triceratops.png" alt="" width="224" height="224" decoding="async"><div class="portal-banner-copy"><span class="portal-eyebrow">THE ISLE: EVRIMA · VIETNAM</span><h1>Chào mừng<br>đến ST25</h1><p>Sinh tồn cùng cộng đồng. Quản lý khủng long và tích lũy Lúa tại một nơi.</p><a class="btn btn-primary" href="lien-ket-steam.html">Liên kết Steam →</a></div></article><article class="portal-banner portal-banner--garage"><img class="portal-banner-art" src="assets/imges/thumbs/Tyrannosaurus.png" alt="" width="224" height="224" decoding="async"><div class="portal-banner-copy"><span class="portal-eyebrow">GARA KHỦNG LONG</span><h2>Sẵn sàng<br>trở lại đảo</h2><p>Cất giữ Dino, giữ tiến trình và chọn loài cho lần sinh tồn tiếp theo.</p><a class="btn btn-secondary" href="gara.html">Mở Gara →</a></div></article></section><section aria-labelledby="portal-features-title"><div class="portal-section-heading"><h2 id="portal-features-title">Khám phá ST25</h2><span>Sinh tồn · Kinh tế · Cộng đồng</span></div><div class="portal-feature-grid"><a class="portal-feature" href="gara.html"><span class="portal-feature-tag">DINO CLOUD</span><div class="portal-feature-art" aria-hidden="true"><img src="assets/imges/thumbs/Tyrannosaurus.png" alt="" width="224" height="224" loading="lazy" decoding="async"></div><div class="portal-feature-copy"><h3>Gara Khủng Long</h3><p>Lưu giữ và quản lý khủng long của bạn.</p></div></a>
 <a class="portal-feature" href="bando.html"><span class="portal-feature-tag">BẢN ĐỒ</span><div class="portal-feature-art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Zm6-3v15M15 6v15"/></svg></div><div class="portal-feature-copy"><h3>Bản Đồ Gateway</h3><p>Theo dõi vị trí và vùng sinh tồn.</p></div></a>
 <a class="portal-feature" href="nhiem-vu.html"><span class="portal-feature-tag">LÚA & XP</span><div class="portal-feature-art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M9 10l2 2 4-4M9 17h6"/></svg></div><div class="portal-feature-copy"><h3>Kho Lúa & Nhiệm Vụ</h3><p>Tích lũy Lúa và tiến trình mỗi ngày.</p></div></a>
 <a class="portal-feature" href="giao-dich.html"><span class="portal-feature-tag">GIAO DỊCH</span><div class="portal-feature-art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14m-4-4 4 4-4 4M19 17H5m4-4-4 4 4 4"/></svg></div><div class="portal-feature-copy"><h3>Chợ Giao Dịch</h3><p>Trao đổi Lúa và khủng long.</p></div></a>
@@ -112,7 +174,7 @@
     </div>
   </footer>
 
-  <script src="assets/js/app.js?v=20261009-spacing1"></script>
+  <script src="assets/js/app.js?v=20261009-ui1"></script>
   <script src="assets/js/home.js?v=20261009-live1"></script>
 </body>
 </html>
