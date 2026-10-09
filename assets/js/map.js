@@ -222,7 +222,7 @@ const IsleMap = {
       const m = L.marker([pos.lat, pos.lng], { icon: locIcon }).addTo(this.locationsGroup);
 
       // Tooltip on hover
-      m.bindTooltip(`<b>${loc.name}</b>`, {
+      m.bindTooltip(`<b>${App.escapeHTML(loc.name)}</b>`, {
         direction: 'top',
         offset: [0, -12],
         className: 'map-landmark-tooltip'
@@ -233,7 +233,7 @@ const IsleMap = {
         <div style="font-family: inherit; color: #0f172a; max-width: 270px; padding: 2px;">
           <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
             <span style="font-size: 16px;">📍</span>
-            <strong style="color: #0f172a; font-size: 13.5px; line-height: 1.3;">${loc.name}</strong>
+            <strong style="color: #0f172a; font-size: 13.5px; line-height: 1.3;">${App.escapeHTML(loc.name)}</strong>
           </div>
           <div style="background: #f1f5f9; border-left: 3px solid #0284c7; padding: 6px 8px; border-radius: 4px; margin-bottom: 8px;">
             <p style="font-size: 11.5px; color: #334155; line-height: 1.45; margin: 0; font-style: italic;">
@@ -507,7 +507,7 @@ const IsleMap = {
         const locations = await res.json();
         if (Array.isArray(locations) && locations.length > 0) {
           selectDest.innerHTML = '<option value="">-- Chọn điểm đến --</option>' + 
-            locations.map(loc => `<option value="${loc.id}">${loc.name} (${loc.cost > 0 ? loc.cost + ' Lúa' : 'Miễn phí'})</option>`).join('');
+            locations.map(loc => `<option value="${App.escapeHTML(loc.id)}">${App.escapeHTML(loc.name)} (${loc.cost > 0 ? loc.cost + ' Lúa' : 'Miễn phí'})</option>`).join('');
         } else {
           selectDest.innerHTML = '<option value="">-- Chưa có điểm TP --</option>';
         }

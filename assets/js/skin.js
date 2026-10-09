@@ -546,37 +546,7 @@ let myLiveBalance = 0;
     }
 
     async function quickLoginSkinManual() {
-      const inp = document.getElementById('skin-manual-login-steamid');
-      const sid = inp ? inp.value.trim() : '';
-      if (!sid || !/^\d{17}$/.test(sid)) {
-        App.showToast('Vui lòng nhập đúng 17 chữ số Steam ID 64 của bạn!', 'error');
-        return;
-      }
-
-      App.showToast('Đang kết nối tài khoản Steam...', 'info');
-      try {
-        const res = await fetch('/api/player/login-manual', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ steamId: sid })
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          localStorage.setItem('st25_steam_user', JSON.stringify({
-            steam_id: data.steamId,
-            persona_name: data.personaName,
-            avatar: data.avatar,
-            isAdmin: data.isAdmin
-          }));
-          App.showToast(`Chào mừng ${data.personaName}! Đã liên kết thành công.`, 'success');
-          window.location.href = 'skin.html';
-        } else {
-          App.showToast(data.error || 'Không thể liên kết Steam ID này!', 'error');
-        }
-      } catch (e) {
-        console.error(e);
-        App.showToast('Lỗi kết nối máy chủ!', 'error');
-      }
+      window.location.href = '/api/player/steam/login?redirect=/skin.html';
     }
 
     function loadSkinPageData() {

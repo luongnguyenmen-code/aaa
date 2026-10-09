@@ -79,3 +79,7 @@ the-isle-portal/
 ├── server-config.json          # File cấu hình Server & IslePilot API
 └── package.json                # Cấu hình dự án Node.js
 ```
+
+## Rà soát và kiểm tra
+
+Chạy `npm test` để kiểm tra mã nguồn, backend và frontend. Xem [kết quả và cấu hình triển khai](tests/AUDIT.md), đặc biệt `SESSION_SECRET` khi triển khai production/Vercel.

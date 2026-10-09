@@ -154,37 +154,7 @@ const Garage = {
   },
 
   async quickLoginManual() {
-    const inp = document.getElementById('manual-login-steamid');
-    const sid = inp ? inp.value.trim() : '';
-    if (!sid || !/^\d{17}$/.test(sid)) {
-      App.showToast('Vui lòng nhập đúng 17 chữ số Steam ID 64 của bạn!', 'error');
-      return;
-    }
-
-    App.showToast('Đang kết nối tài khoản Steam...', 'info');
-    try {
-      const res = await fetch('/api/player/login-manual', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ steamId: sid })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        localStorage.setItem('st25_steam_user', JSON.stringify({
-          steam_id: data.steamId,
-          persona_name: data.personaName,
-          avatar: data.avatar,
-          isAdmin: data.isAdmin
-        }));
-        App.showToast(`Chào mừng ${data.personaName}! Đã liên kết thành công.`, 'success');
-        window.location.href = 'gara.html';
-      } else {
-        App.showToast(data.error || 'Không thể liên kết Steam ID này!', 'error');
-      }
-    } catch (e) {
-      console.error(e);
-      App.showToast('Lỗi kết nối máy chủ!', 'error');
-    }
+    window.location.href = '/api/player/steam/login?redirect=/gara.html';
   },
 
   switchPlayer(targetSteamId) {
@@ -343,7 +313,7 @@ const Garage = {
       if (countEl) countEl.textContent = 'Đang lưu: 0 / 3 Khủng Long';
       if (roleBadge) roleBadge.textContent = 'Chưa liên kết';
       if (noticeEl) {
-        noticeEl.innerHTML = `Vui lòng đăng nhập hoặc nhập Steam ID 64 để đồng bộ khủng long riêng biệt của bạn trên ST25 Gara Cloud.`;
+        noticeEl.innerHTML = `Vui lòng đăng nhập qua Steam để đồng bộ khủng long của bạn trên ST25 Gara Cloud.`;
       }
       if (summaryBadge) {
         summaryBadge.textContent = '0 / 3 Slots';
@@ -354,9 +324,9 @@ const Garage = {
     if (nameEl) nameEl.textContent = `Tài khoản: ${this.playerInfo.personaName}`;
     if (steamEl) steamEl.textContent = `Steam ID: ${this.playerInfo.steamId || 'Chưa đăng nhập'}`;
     if (countEl) countEl.textContent = `Đang lưu: ${this.playerInfo.totalParked} / ${this.playerInfo.maxSlots} Khủng Long`;
-    if (roleBadge) roleBadge.textContent = `${this.playerInfo.roleName} (${this.playerInfo.maxSlots} Slots)`;
+    if (roleBadge) roleBadge.textContent = `${escapeGarageHtml(this.playerInfo.roleName)} (${this.playerInfo.maxSlots} Slots)`;
     if (noticeEl) {
-      noticeEl.innerHTML = `Bạn đang có vai trò: <strong style="color: #fbbf24;">${this.playerInfo.roleName}</strong> — Giới hạn lưu trữ tối đa: <strong style="color: #38bdf8;">${this.playerInfo.maxSlots} slots</strong>. Dữ liệu được đồng bộ trực tiếp với IslePilot Cloud.`;
+      noticeEl.innerHTML = `Bạn đang có vai trò: <strong style="color: #fbbf24;">${escapeGarageHtml(this.playerInfo.roleName)}</strong> — Giới hạn lưu trữ tối đa: <strong style="color: #38bdf8;">${this.playerInfo.maxSlots} slots</strong>. Dữ liệu được đồng bộ trực tiếp với IslePilot Cloud.`;
     }
     if (summaryBadge) {
       summaryBadge.textContent = `${this.playerInfo.totalParked} / ${this.playerInfo.maxSlots} Slots Đã Dùng`;
@@ -387,7 +357,7 @@ const Garage = {
           <div style="display:flex;justify-content:center;margin-bottom:12px;">${getDinoImage("Tyrannosaurus", "80px")}</div>
           <h3 style="color: #fff; margin-bottom: 6px;">Chưa Đăng Nhập Tài Khoản Steam</h3>
           <p style="color: #94a3b8; max-width: 520px; margin: 0 auto 16px; line-height: 1.6;">
-            Hãy đăng nhập bằng Steam chính chủ hoặc nhập nhanh Steam ID 64 ở ô phía trên để hiển thị khủng long đang sống in-game của bạn!
+            Hãy đăng nhập bằng Steam chính chủ để hiển thị khủng long đang sống in-game của bạn!
           </p>
           <a href="/api/player/steam/login?redirect=/gara.html" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); border: none;">
             🎮 Đăng Nhập Steam Ngay
@@ -419,9 +389,9 @@ const Garage = {
         ${getDinoImage(d.species, '90px')}
         </div>
         <div class="garage-active-identity">
-        <h3 style="color: #fff; margin-bottom: 6px; font-size: 1.45rem; font-weight: 800;">${d.species}</h3>
+        <h3 style="color: #fff; margin-bottom: 6px; font-size: 1.45rem; font-weight: 800;">${escapeGarageHtml(d.species)}</h3>
         <div style="display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap;">
-          <span class="rule-badge badge-allow">${d.gender}</span>
+          <span class="rule-badge badge-allow">${escapeGarageHtml(d.gender)}</span>
           ${d.isPrimeElder ? '<span class="rule-badge badge-gold">👑 PRIME ELDER</span>' : ''}
         </div>
         </div>
@@ -760,7 +730,7 @@ const Garage = {
     this.restoreSubmitting = true;
 
     const sid = d.steamId || this.getActiveSteamId();
-    App.showToast(`⏳ Hết 30 giây! Đang chính thức hồi phục [${d.species}] vào game server...`, 'info');
+    App.showToast(`⏳ Hết 30 giây! Đang chính thức hồi phục [${escapeGarageHtml(d.species)}] vào game server...`, 'info');
 
     try {
       const res = await fetch('/api/player/garage/restore', {
@@ -770,7 +740,7 @@ const Garage = {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        App.showToast(`🎉 XUẤT HIỆN THÀNH CÔNG: [${d.species} ${d.growth}%] đã ra đảo!`, 'success');
+        App.showToast(`🎉 XUẤT HIỆN THÀNH CÔNG: [${escapeGarageHtml(d.species)} ${d.growth}%] đã ra đảo!`, 'success');
         this.hideActionAlert();
         localStorage.setItem('the_isle_garage_cooldown', Date.now() + 30000);
         this.cooldownSeconds = 30;

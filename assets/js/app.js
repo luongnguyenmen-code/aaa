@@ -605,7 +605,7 @@ const App = {
     if (type === 'error') icon = '❌';
     if (type === 'warning') icon = '⚠️';
 
-    toast.innerHTML = `<span>${icon}</span> <div>${message}</div>`;
+    toast.innerHTML = `<span>${icon}</span> <div>${this.escapeHTML(message)}</div>`;
     container.appendChild(toast);
 
     setTimeout(() => {

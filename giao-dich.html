@@ -634,7 +634,7 @@
         sel.innerHTML = '<option value="">-- Chọn nhanh thành viên online (' + this.recentPlayers.length + ' người) --</option>' +
           this.recentPlayers.map(p => `
             <option value="${p.steamId}">
-              ${p.name} [${p.steamId}] ${p.species ? '• ' + p.species : ''}
+              ${App.escapeHTML(p.name)} [${p.steamId}] ${p.species ? '• ' + p.species : ''}
             </option>
           `).join('');
       },
@@ -681,7 +681,7 @@
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                 <div>
                   <div style="font-size: 0.8rem; color: #94a3b8;">Người gửi lời mời:</div>
-                  <strong style="color: #fff; font-size: 1.05rem;">${t.senderName}</strong>
+                  <strong style="color: #fff; font-size: 1.05rem;">${App.escapeHTML(t.senderName)}</strong>
                   <span style="font-family: monospace; font-size: 0.82rem; color: #fbbf24; margin-left: 6px;">[${t.senderSteamId}]</span>
                 </div>
                 <span class="offer-badge badge-pending trade-countdown" data-trade-id="${t.id}" data-expires-at="${expTime}">⏳ Chờ duyệt: <b class="countdown-sec" style="color: #ef4444; font-size: 0.95rem;">${leftSec}s</b></span>
@@ -739,7 +739,7 @@
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <div>
                   <span style="color: #94a3b8; font-size: 0.8rem;">Gửi tới:</span>
-                  <strong style="color: #fff; margin-left: 4px;">${t.receiverName}</strong>
+                  <strong style="color: #fff; margin-left: 4px;">${App.escapeHTML(t.receiverName)}</strong>
                   <span style="font-family: monospace; font-size: 0.8rem; color: #64748b;">[${t.receiverSteamId}]</span>
                 </div>
                 <button onclick="TradeApp.cancelTrade('${t.id}')" class="btn-action-cancel" title="Hủy lời mời và lấy lại khủng long">
@@ -793,11 +793,11 @@
             <tr>
               <td style="color: #94a3b8; font-size: 0.82rem; white-space: nowrap;">${t.updatedAt || t.createdAt}</td>
               <td>
-                <strong style="color: #fff;">${t.senderName}</strong>
+                <strong style="color: #fff;">${App.escapeHTML(t.senderName)}</strong>
                 <div style="font-family: monospace; font-size: 0.78rem; color: #64748b;">${t.senderSteamId}</div>
               </td>
               <td>
-                <strong style="color: #fff;">${t.receiverName}</strong>
+                <strong style="color: #fff;">${App.escapeHTML(t.receiverName)}</strong>
                 <div style="font-family: monospace; font-size: 0.78rem; color: #64748b;">${t.receiverSteamId}</div>
               </td>
               <td>

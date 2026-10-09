@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const os = require('os');
+const Auth = require('./server-auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,9 +16,70 @@ const TMP_DATA_FILE = path.join(os.tmpdir(), 'portal-data.json');
 let memoryConfig = null;
 let memoryPortalData = null;
 
-app.use(cors());
+app.disable('x-powered-by');
+app.use(cors({ origin: false }));
+// Reject cross-origin browser mutations, including requests without JSON bodies.
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers.origin) {
+    try {
+      if (new URL(req.headers.origin).host !== req.get('host')) return res.status(403).json({ error: 'Nguồn yêu cầu không hợp lệ.' });
+    } catch { return res.status(403).json({ error: 'Nguồn yêu cầu không hợp lệ.' }); }
+  }
+  next();
+});
+const pendingMutations = new Set();
+app.use('/api', (req, res, next) => {
+  const steamId = Auth.getRequestSteamId(req);
+  if (!steamId || ['GET', 'HEAD', 'OPTIONS'].includes(req.method) || req.path === '/player/logout') return next();
+  if (pendingMutations.has(steamId)) return res.status(429).json({ error: 'Yêu cầu trước đang được xử lý. Vui lòng đợi.' });
+  pendingMutations.add(steamId);
+  res.once('finish', () => pendingMutations.delete(steamId));
+  next();
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/api', (req, res, next) => {
+  const steamId = Auth.getRequestSteamId(req);
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && steamId && req.body?.steamId && String(req.body.steamId).trim() !== steamId) {
+    return res.status(403).json({ error: 'Chỉ được thao tác tài khoản Steam đang đăng nhập.' });
+  }
+  next();
+});
+
+// Lock shared participants and listings before an asynchronous transaction begins.
+app.use('/api', (req, res, next) => {
+  const steamId = Auth.getRequestSteamId(req);
+  if (!steamId || ['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  const keys = new Set();
+  const body = req.body || {};
+  if (req.path === '/market/transfer' && /^\d{17}$/.test(String(body.receiverSteamId || ''))) keys.add(String(body.receiverSteamId));
+  if (['/market/buy', '/market/cancel-listing'].includes(req.path)) {
+    const listingId = String(body.itemId || body.listingId || '');
+    if (listingId) keys.add('listing:' + listingId);
+    const listing = (getPortalData().marketListings || []).find(item => item.id === listingId);
+    if (listing?.sellerSteamId) keys.add(listing.sellerSteamId);
+  }
+  if (req.path.startsWith('/trade/') && body.tradeId) {
+    keys.add('trade:' + String(body.tradeId));
+    const trade = (getPortalData().trades || []).find(item => item.id === body.tradeId);
+    if (trade?.senderSteamId) keys.add(trade.senderSteamId);
+    if (trade?.receiverSteamId) keys.add(trade.receiverSteamId);
+  }
+  keys.delete(steamId);
+  if ([...keys].some(key => pendingMutations.has(key))) return res.status(429).json({ error: 'Giao dịch liên quan đang được xử lý. Vui lòng đợi.' });
+  req.mutationLocks = [...keys];
+  for (const key of keys) pendingMutations.add(key);
+  res.once('finish', () => { for (const key of keys) pendingMutations.delete(key); });
+  next();
+});
+
+for (const method of ['get', 'post', 'put', 'patch', 'delete']) {
+  const register = app[method].bind(app);
+  app[method] = (route, ...handlers) => register(route, ...handlers.map(handler =>
+    typeof handler === 'function' && handler.constructor.name === 'AsyncFunction'
+      ? (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next).finally(() => { if (res.destroyed) { pendingMutations.delete(Auth.getRequestSteamId(req)); for (const key of req.mutationLocks || []) pendingMutations.delete(key); } }) : handler));
+}
 
 // Chuyển hướng khi người dùng truy cập trang Sòng Bạc nếu tính năng đang bị tắt
 app.get('/song-bac.html', (req, res, next) => {
@@ -29,7 +91,13 @@ app.get('/song-bac.html', (req, res, next) => {
   next();
 });
 
-app.use(express.static(__dirname));
+// Serve only public pages/assets; never expose configuration, data or source files.
+app.use('/assets', express.static(path.join(__dirname, 'assets'), { dotfiles: 'deny', index: false }));
+app.get(['/', '/:page'], (req, res, next) => {
+  const page = req.params.page || 'index.html';
+  if (!/^[a-zA-Z0-9_-]+\.html$/.test(page)) return next();
+  res.sendFile(path.join(__dirname, page));
+});
 
 // ==========================================
 // MUTEX / CONCURRENCY LOCK MANAGER (CHỐNG SPAM & RACE CONDITION DUPLICATE LÚA)
@@ -83,7 +151,7 @@ function getConfig() {
       enabled: true,
       api_base_url: "https://islepilot.eu/api/v1",
       server_id: "cmufraiwk7fnooa01vpdzdhm4",
-      api_token: "ipa_4c51bd355513813f26ea6e759d4e6fb0dd5d8bb7174799de"
+      api_token: ""
     }
   };
   return memoryConfig;
@@ -118,7 +186,8 @@ const CACHE_TTL_MS = {
 // Helper: Call live IslePilot API with caching and scope awareness
 async function callIslePilot(endpoint, method = 'GET', body = null, bypassCache = false) {
   const cfg = getConfig();
-  const token = (cfg.islepilot && cfg.islepilot.api_token) || 'ipa_4c51bd355513813f26ea6e759d4e6fb0dd5d8bb7174799de';
+  const token = process.env.ISLEPILOT_API_TOKEN || cfg.islepilot?.api_token || '';
+  if (!token || cfg.islepilot?.enabled === false) return null;
   const base = (cfg.islepilot && cfg.islepilot.api_base_url) || 'https://islepilot.eu/api/v1';
   const cleanBase = base.replace(/\/$/, '');
   const url = `${cleanBase}${endpoint}`;
@@ -146,7 +215,7 @@ async function callIslePilot(endpoint, method = 'GET', body = null, bypassCache 
     if (body && method !== 'GET') {
       opts.body = JSON.stringify(body);
     }
-    const res = await fetch(url, opts);
+    const res = await fetch(url, { ...opts, signal: AbortSignal.timeout(10000) });
     let json = null;
     try {
       json = await res.json();
@@ -206,53 +275,11 @@ function posToLatLng(pos) {
 }
 
 // Helper to parse cookies from request header without extra dependency
-function parseCookies(req) {
-  const list = {};
-  const rc = req.headers.cookie;
-  if (rc) {
-    rc.split(';').forEach(cookie => {
-      const parts = cookie.split('=');
-      list[parts.shift().trim()] = decodeURI(parts.join('='));
-    });
-  }
-  return list;
-}
-
-// Multi-user sessions store: sessionId -> { steam_id, persona_name, ... }
-const activeSessions = new Map();
-
-// Helper: Resolve effective authenticated identity of the caller
-function getRequestSteamId(req) {
-  const cookies = parseCookies(req);
-  if (cookies.st25_steam_id) return String(cookies.st25_steam_id).trim();
-  if (cookies.st25_session_token && activeSessions.has(cookies.st25_session_token)) {
-    return String(activeSessions.get(cookies.st25_session_token).steam_id).trim();
-  }
-  if (req.headers && req.headers['x-steam-id']) return String(req.headers['x-steam-id']).trim();
-  if (req.headers && req.headers['x-admin-steam-id']) return String(req.headers['x-admin-steam-id']).trim();
-  if (req.query && req.query.steamId && /^\d{17}$/.test(String(req.query.steamId).trim())) {
-    return String(req.query.steamId).trim();
-  }
-  if (req.body && req.body.steamId && /^\d{17}$/.test(String(req.body.steamId).trim())) {
-    return String(req.body.steamId).trim();
-  }
-  return null;
-}
-
-// Helper: Resolve admin identity specifically for admin actions
+const parseCookies = Auth.parseCookies;
+const getRequestSteamId = Auth.getRequestSteamId;
 function getAdminSteamId(req) {
-  const cookies = parseCookies(req);
-  if (cookies.st25_steam_id && isUserAdmin(cookies.st25_steam_id)) return cookies.st25_steam_id;
-  if (cookies.st25_session_token && activeSessions.has(cookies.st25_session_token)) {
-    const sId = activeSessions.get(cookies.st25_session_token).steam_id;
-    if (isUserAdmin(sId)) return sId;
-  }
-  if (req.headers && req.headers['x-admin-steam-id'] && isUserAdmin(req.headers['x-admin-steam-id'])) {
-    return req.headers['x-admin-steam-id'];
-  }
-  const reqSid = getRequestSteamId(req);
-  if (reqSid && isUserAdmin(reqSid)) return reqSid;
-  return null;
+  const steamId = getRequestSteamId(req);
+  return steamId && isUserAdmin(steamId) ? steamId : null;
 }
 
 /* ==================== API ROUTES ==================== */
@@ -262,7 +289,7 @@ app.get('/api/server/status', async (req, res) => {
   const cfg = getConfig();
   const pilotServer = await callIslePilot('/server');
 
-  if (pilotServer) {
+  if (pilotServer && !pilotServer.error && !pilotServer._status) {
     return res.json({
       name: pilotServer.name || "ST25 VIETNAM",
       status: "online",
@@ -282,9 +309,11 @@ app.get('/api/server/status', async (req, res) => {
 
   res.json({
     name: "ST25 VIETNAM",
-    status: "online",
+    status: "offline",
+    online: false,
+    islepilot_sync: false,
     map: "Gateway v0.21.7",
-    online_players: 3,
+    online_players: 0,
     max_players: 100,
     hud_download_url: cfg.server.hud_download_url
   });
@@ -310,39 +339,44 @@ app.get('/api/server/players', async (req, res) => {
 
 // 3. Steam OpenID Login URL
 app.get('/api/player/steam/login', (req, res) => {
-  const redirect = req.query.redirect || '/lien-ket-steam.html';
-  const host = req.get('host') || `localhost:${PORT}`;
-  const protocol = req.protocol || 'http';
-  const returnTo = `${protocol}://${host}/api/player/steam/callback?redirect=${encodeURIComponent(redirect)}`;
-  const realm = `${protocol}://${host}`;
-
-  const steamOpenIdUrl = `https://steamcommunity.com/openid/login?openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.mode=checkid_setup&openid.return_to=${encodeURIComponent(returnTo)}&openid.realm=${encodeURIComponent(realm)}&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select`;
-
-  res.redirect(steamOpenIdUrl);
+  if (!Auth.configured) return res.status(503).json({ error: 'Máy chủ chưa cấu hình SESSION_SECRET.' });
+  const redirect = Auth.safeRedirect(req.query.redirect);
+  const origin = process.env.PUBLIC_ORIGIN || `${process.env.VERCEL || process.env.NODE_ENV === 'production' ? 'https' : req.protocol}://${req.get('host')}`;
+  const state = require('node:crypto').randomBytes(24).toString('hex');
+  const returnTo = `${origin}/api/player/steam/callback?state=${state}&redirect=${encodeURIComponent(redirect)}`;
+  res.cookie('st25_login_state', Auth.sign({ kind: 'login', state, returnTo, expires: Date.now() + 600000 }), Auth.cookieOptions(req, 600000));
+  const params = new URLSearchParams({ 'openid.ns': 'http://specs.openid.net/auth/2.0', 'openid.mode': 'checkid_setup', 'openid.return_to': returnTo, 'openid.realm': origin,
+    'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select', 'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select' });
+  res.redirect('https://steamcommunity.com/openid/login?' + params);
 });
 
-// Steam OpenID Callback
 app.get('/api/player/steam/callback', async (req, res) => {
-  const claimedId = req.query['openid.claimed_id'] || '';
-  let redirect = req.query.redirect || '/lien-ket-steam.html';
-  const match = claimedId.match(/https:\/\/steamcommunity\.com\/openid\/id\/(\d+)/);
-
-  if (match && match[1]) {
-    const steamId = match[1];
-    const sessionToken = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    const sessionData = await linkPlayerBySteamId(steamId);
-    activeSessions.set(sessionToken, sessionData);
-
-    // Set HTTP cookie for automatic authentication across all pages
-    res.cookie('st25_steam_id', steamId, { maxAge: 30 * 24 * 3600 * 1000, path: '/' });
-    res.cookie('st25_session_token', sessionToken, { maxAge: 30 * 24 * 3600 * 1000, path: '/' });
-
-    // Append steamId to redirect url for easy client-side storage
-    const separator = redirect.includes('?') ? '&' : '?';
-    redirect = `${redirect}${separator}steamId=${steamId}&login=success`;
+  if (!Auth.configured) return res.status(503).json({ error: 'Máy chủ chưa cấu hình SESSION_SECRET.' });
+  const login = Auth.verify(parseCookies(req).st25_login_state);
+  res.clearCookie('st25_login_state', { path: '/' });
+  const claimedId = req.query['openid.claimed_id'];
+  const match = typeof claimedId === 'string' && claimedId.match(/^https:\/\/steamcommunity\.com\/openid\/id\/(\d{17})$/);
+  const signed = String(req.query['openid.signed'] || '').split(',');
+  if (!login || login.kind !== 'login' || login.state !== req.query.state || login.returnTo !== req.query['openid.return_to'] ||
+      req.query['openid.mode'] !== 'id_res' || req.query['openid.op_endpoint'] !== 'https://steamcommunity.com/openid/login' ||
+      req.query['openid.identity'] !== claimedId || !match ||
+      !['op_endpoint', 'claimed_id', 'identity', 'return_to', 'response_nonce'].every(key => signed.includes(key))) {
+    return res.status(401).json({ error: 'Phiên đăng nhập Steam không hợp lệ. Vui lòng đăng nhập lại.' });
   }
-
-  res.redirect(redirect);
+  try {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(req.query)) if (key.startsWith('openid.') && typeof value === 'string') params.set(key, value);
+    params.set('openid.mode', 'check_authentication');
+    const response = await fetch('https://steamcommunity.com/openid/login', { method: 'POST', body: params, signal: AbortSignal.timeout(10000) });
+    if (!response.ok || !/^is_valid:true\r?$/m.test(await response.text())) return res.status(401).json({ error: 'Steam không xác nhận đăng nhập.' });
+    const steamId = match[1];
+    res.cookie('st25_session_token', Auth.sign({ kind: 'session', steamId, expires: Date.now() + Auth.SESSION_MS }), Auth.cookieOptions(req));
+    res.clearCookie('st25_steam_id', { path: '/' });
+    const redirect = Auth.safeRedirect(req.query.redirect);
+    res.redirect(redirect + (redirect.includes('?') ? '&' : '?') + 'steamId=' + steamId + '&login=success');
+  } catch {
+    res.status(503).json({ error: 'Không thể xác minh đăng nhập với Steam. Vui lòng thử lại.' });
+  }
 });
 
 // Helper: Chuẩn hóa phần trăm chỉ số (Health, Hunger, Thirst, Stamina) không vượt quá 100%
@@ -371,7 +405,7 @@ async function linkPlayerBySteamId(steamId, customName = null) {
   let playtime = 0;
   let wallet = 0;
 
-  if (pilotPlayer) {
+  if (pilotPlayer && !pilotPlayer.error && !pilotPlayer._status) {
     persona = pilotPlayer.name || persona || `Player_${steamId.slice(-4)}`;
     avatar = pilotPlayer.avatar || avatar;
     discord = pilotPlayer.discord || null;
@@ -415,31 +449,8 @@ async function linkPlayerBySteamId(steamId, customName = null) {
 }
 
 // 4. Liên kết / Đăng nhập Steam bằng Steam ID (Dành cho member & admin)
-app.post('/api/player/login-manual', async (req, res) => {
-  const { steamId } = req.body;
-  if (!steamId || !/^\d{17}$/.test(String(steamId).trim())) {
-    return res.status(400).json({ error: "Steam ID không hợp lệ! Vui lòng nhập đúng 17 chữ số Steam ID 64 của bạn." });
-  }
-
-  const cleanId = String(steamId).trim();
-  const sessionToken = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-  const sessionData = await linkPlayerBySteamId(cleanId);
-  activeSessions.set(sessionToken, sessionData);
-
-  res.cookie('st25_steam_id', cleanId, { maxAge: 30 * 24 * 3600 * 1000, path: '/' });
-  res.cookie('st25_session_token', sessionToken, { maxAge: 30 * 24 * 3600 * 1000, path: '/' });
-
-  const isAdmin = isUserAdmin(cleanId);
-  const isSuperAdmin = SUPER_ADMINS.includes(cleanId);
-
-  res.json({
-    success: true,
-    steamId: cleanId,
-    personaName: sessionData.persona_name,
-    avatar: sessionData.avatar,
-    isAdmin,
-    isSuperAdmin
-  });
+app.post('/api/player/login-manual', (req, res) => {
+  res.status(403).json({ error: 'Vui lòng đăng nhập qua Steam để xác minh tài khoản.', loginUrl: '/api/player/steam/login' });
 });
 
 // 5. Get Current Player info (Strictly based on requesting user's SteamID)
@@ -467,7 +478,7 @@ app.get('/api/player/me', async (req, res) => {
   const reqSteamId = getRequestSteamId(req);
   if (reqSteamId) {
     const pilotPlayer = await callIslePilot(`/players/${reqSteamId}`);
-    if (pilotPlayer) {
+    if (pilotPlayer && !pilotPlayer.error && !pilotPlayer._status) {
       const loc = posToLatLng(pilotPlayer.position);
       const isAdmin = isUserAdmin(reqSteamId);
       const isSuperAdmin = SUPER_ADMINS.includes(String(reqSteamId).trim());
@@ -522,14 +533,11 @@ app.get('/api/player/me', async (req, res) => {
     }
   }
 
+  if (reqSteamId) return res.status(503).json({ error: 'Không thể cập nhật tài khoản IslePilot.' });
   res.json({ linked: false, isLoggedIn: false, isAdmin: false, isSuperAdmin: false, persona_name: "Chưa liên kết", avatar: null, coins: 0, balance: 0, lua: 0 });
 });
 
 app.post('/api/player/logout', (req, res) => {
-  const cookies = parseCookies(req);
-  if (cookies.st25_session_token) {
-    activeSessions.delete(cookies.st25_session_token);
-  }
   res.clearCookie('st25_steam_id');
   res.clearCookie('st25_session_token');
   res.json({ success: true, message: "Đã đăng xuất thành công!" });
@@ -634,7 +642,7 @@ function isQuestClaimedInPeriod(q, userClaimedQuests) {
 
 // 6. Quests (Nhiệm Vụ Cá Nhân) Endpoint
 app.get('/api/player/quests', async (req, res) => {
-  const steamId = req.query.steamId || getRequestSteamId(req);
+  const steamId = getRequestSteamId(req);
   if (!steamId) {
     return res.json({
       steamId: null,
@@ -1079,11 +1087,12 @@ app.get('/api/map/zones', (req, res) => {
 
 // 8. Team / Pack Members (Real Data from IslePilot)
 app.get('/api/player/team', async (req, res) => {
-  const reqSteamId = getRequestSteamId(req) || "76561198636766540";
+  const reqSteamId = getRequestSteamId(req);
+  if (!reqSteamId) return res.status(401).json({ error: 'Chưa đăng nhập Steam.' });
   const onlineData = await callIslePilot('/players?online=true');
   const allOnline = (onlineData && onlineData.players) || [];
 
-  const thisPlayer = allOnline.find(p => p.steamId === reqSteamId) || allOnline[0];
+  const thisPlayer = allOnline.find(p => p.steamId === reqSteamId);
   const playerSpecies = (thisPlayer && thisPlayer.species) || "Tyrannosaurus";
 
   const packLimits = {
@@ -1158,7 +1167,7 @@ function cleanExpiredTrades(targetData = null) {
   const affectedSteamIds = new Set();
 
   data.trades.forEach(t => {
-    if (t.status === 'pending') {
+    if (t.status === 'pending' && !pendingMutations.has('trade:' + String(t.id))) {
       const createdTime = t.createdAtTimestamp || (t.createdAt ? new Date(t.createdAt).getTime() : 0);
       if (!createdTime || (now - createdTime >= TRADE_TIMEOUT_MS)) {
         t.status = 'expired';
@@ -1180,7 +1189,7 @@ function cleanExpiredTrades(targetData = null) {
 }
 
 // Tự động quét và giải phóng các giao dịch hết hạn định kỳ mỗi 5 giây
-setInterval(() => {
+if (require.main === module) setInterval(() => {
   try {
     cleanExpiredTrades();
   } catch (_) {}
@@ -1326,7 +1335,7 @@ app.get('/api/player/garage', async (req, res) => {
   let effectiveSteamId = null;
   if (req.query.steamId && /^\d{17}$/.test(String(req.query.steamId).trim())) {
     const qSid = String(req.query.steamId).trim();
-    if (callerIsAdmin || !callerSteamId || callerSteamId === qSid) {
+    if (callerIsAdmin || callerSteamId === qSid) {
       effectiveSteamId = qSid;
     } else {
       effectiveSteamId = callerSteamId;
@@ -2221,12 +2230,12 @@ async function getLivePlayerBalance(steamId) {
   if (p && p.wallet && typeof p.wallet.balance === 'number') {
     return p.wallet.balance;
   }
-  const data = getPortalData();
-  return data.userWallets[steamId] !== undefined ? data.userWallets[steamId] : 0;
+  throw Object.assign(new Error('Không thể xác minh số dư IslePilot.'), { status: 503 });
 }
 
 // Helper: Modify player wallet currency directly on IslePilot API
 async function modifyLivePlayerBalance(steamId, amount, reason = "web_portal") {
+  if (!Number.isFinite(Number(amount))) throw Object.assign(new Error("Số Lúa không hợp lệ."), { status: 400 });
   const res = await callIslePilot(`/players/${steamId}/currency`, 'POST', {
     amount: Number(amount),
     reason: reason
@@ -2241,12 +2250,7 @@ async function modifyLivePlayerBalance(steamId, amount, reason = "web_portal") {
     return { success: true, balance: res.balance, applied: res.applied };
   }
 
-  // Fallback if IslePilot is offline
-  const current = data.userWallets[steamId] !== undefined ? data.userWallets[steamId] : 0;
-  const newBal = Math.max(0, current + Number(amount));
-  data.userWallets[steamId] = newBal;
-  savePortalData(data);
-  return { success: true, balance: newBal, applied: amount };
+  throw Object.assign(new Error('IslePilot chưa xác nhận giao dịch Lúa.'), { status: 503 });
 }
 
 app.get('/api/market/data', async (req, res) => {
@@ -2297,9 +2301,9 @@ app.get('/api/market/data', async (req, res) => {
 // Đăng bán Dino từ Gara lên Chợ P2P
 app.post('/api/market/list-dino', async (req, res) => {
   const { dinoId, price, customTitle } = req.body;
-  const steamId = req.body.steamId || getRequestSteamId(req);
+  const steamId = getRequestSteamId(req);
   if (!steamId) return res.status(401).json({ error: "Vui lòng đăng nhập Steam để đăng bán!" });
-  if (!dinoId || !price || Number(price) <= 0) return res.status(400).json({ error: "Thông tin bán không hợp lệ!" });
+  if (!dinoId || !Number.isSafeInteger(Number(price)) || Number(price) < 1) return res.status(400).json({ error: "Thông tin bán không hợp lệ!" });
 
   const numPrice = Math.round(Number(price));
   const data = getPortalData();
@@ -2367,7 +2371,7 @@ app.post('/api/market/list-dino', async (req, res) => {
 // Thu hồi bài đăng bán trên Chợ
 app.post('/api/market/cancel-listing', async (req, res) => {
   const { listingId } = req.body;
-  const steamId = req.body.steamId || getRequestSteamId(req);
+  const steamId = getRequestSteamId(req);
   if (!steamId) return res.status(401).json({ error: "Vui lòng đăng nhập Steam!" });
 
   const data = getPortalData();
@@ -2555,7 +2559,7 @@ app.post('/api/market/buy', async (req, res) => {
   }
 
   // 5. Xóa bài khỏi Chợ
-  data.marketListings.splice(itemIndex, 1);
+  data.marketListings = data.marketListings.filter(listing => listing.id !== itemId);
   savePortalData(data);
 
   // Dọn dẹp cache cho cả hai người
@@ -3105,7 +3109,7 @@ app.post('/api/support/ticket', (req, res) => {
   }
 
   const data = getPortalData();
-  const steamId = (req.body.senderSteamId || getRequestSteamId(req)) || "Khách ẩn danh";
+  const steamId = getRequestSteamId(req) || "Khách ẩn danh";
 
   const newTicket = {
     id: `TK-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -3132,7 +3136,8 @@ app.post('/api/support/ticket', (req, res) => {
 
 app.get('/api/support/my-tickets', (req, res) => {
   const data = getPortalData();
-  const steamId = getRequestSteamId(req) || "76561198636766540";
+  const steamId = getRequestSteamId(req);
+  if (!steamId) return res.status(401).json({ error: 'Chưa đăng nhập Steam.' });
   const userTickets = data.tickets.filter(t => t.senderSteamId === steamId);
   res.json(userTickets);
 });
@@ -3528,7 +3533,9 @@ app.get('/api/player/owned-skins', async (req, res) => {
 
 // Lấy thông tin Skin, Khủng long đang chơi & Số Dư Lúa từ IslePilot Cloud
 app.get('/api/skin/info', async (req, res) => {
-  const steamId = getRequestSteamId(req);
+  const callerSteamId = getRequestSteamId(req);
+  const target = String(req.query.steamId || '').trim();
+  const steamId = getAdminSteamId(req) && /^\d{17}$/.test(target) ? target : callerSteamId;
   const userBal = steamId ? await getLivePlayerBalance(steamId) : 0;
   let personaName = "Chưa đăng nhập Steam";
   let species = "Tyrannosaurus";
@@ -3591,7 +3598,7 @@ app.get('/api/skin/info', async (req, res) => {
 // Đổi Màu Skin Khủng Long Trực Tiếp Khi Đang Chơi In-game (IslePilot Live Skin Apply)
 app.post('/api/skin/apply', async (req, res) => {
   const { species, colors, skinCode, female, gender, variation, pattern, theme } = req.body;
-  const steamId = req.body.steamId || getRequestSteamId(req);
+  const steamId = getRequestSteamId(req);
 
   if (!steamId) {
     return res.status(401).json({ error: "Vui lòng đăng nhập Steam để đổi màu skin!" });
@@ -3666,7 +3673,7 @@ app.post('/api/skin/apply', async (req, res) => {
 // Mua Skin từ Shop bằng Lúa (POST /api/skin/buy)
 app.post('/api/skin/buy', async (req, res) => {
   const { skinId, skinName, price } = req.body;
-  const steamId = req.body.steamId || getRequestSteamId(req);
+  const steamId = getRequestSteamId(req);
 
   if (!steamId) {
     return res.status(401).json({ error: "Vui lòng đăng nhập Steam để mua skin!" });
@@ -3709,7 +3716,7 @@ app.post('/api/skin/buy', async (req, res) => {
 // Áp Dụng Skin Preset Đã Sở Hữu Vào Game (POST /api/skin/preset/apply)
 app.post('/api/skin/preset/apply', async (req, res) => {
   const { presetId, variation } = req.body;
-  const steamId = req.body.steamId || getRequestSteamId(req);
+  const steamId = getRequestSteamId(req);
 
   if (!steamId) {
     return res.status(401).json({ error: "Vui lòng đăng nhập Steam!" });
@@ -3856,7 +3863,7 @@ async function getLiveIslePilotCrates() {
 
 // 1. Danh sách các hòm mở thưởng (Đồng bộ thời gian thực từ IslePilot Cloud)
 app.get('/api/crates/list', async (req, res) => {
-  const steamId = req.query.steamId || getRequestSteamId(req);
+  const steamId = getRequestSteamId(req);
   const userBal = steamId ? await getLivePlayerBalance(steamId) : 0;
   const crates = await getLiveIslePilotCrates();
 
@@ -3871,7 +3878,7 @@ app.get('/api/crates/list', async (req, res) => {
 
 // 2. Mở Hòm May Mắn — Tự Động Thêm Khủng Long Thẳng Vào Gara
 app.post('/api/crates/open', async (req, res) => {
-  const steamId = req.body.steamId || getRequestSteamId(req);
+  const steamId = getRequestSteamId(req);
 
   if (!steamId) {
     return res.status(401).json({ error: "Vui lòng đăng nhập Steam để quay thưởng!" });
@@ -5013,8 +5020,14 @@ app.post('/api/casino/dino-race/play', async (req, res) => {
   });
 });
 
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  console.error('Request failed:', err.message);
+  res.status(err.status || 500).json({ error: err.status === 400 ? 'Dữ liệu yêu cầu không hợp lệ.' : 'Không thể xử lý yêu cầu. Vui lòng thử lại.' });
+});
+
 // Start Server
-app.listen(PORT, () => {
+if (require.main === module) app.listen(PORT, () => {
   console.log(`=======================================================`);
   console.log(`🌾 SERVER ST25 VIETNAM — THE ISLE EVRIMA WEB PORTAL 🦖`);
   console.log(`Cổng dịch vụ:  http://localhost:${PORT}`);
