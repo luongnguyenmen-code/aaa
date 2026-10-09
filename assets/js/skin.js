@@ -155,6 +155,7 @@ let myLiveBalance = 0;
 
     function updateDinoPreview() {
       window.ST25SkinUI?.syncPresets();
+      window.ST25Skin3D?.sync();
       refreshSkinCode();
       const bodyEl = document.getElementById('svg-body');
       const bodyLegEl = document.getElementById('svg-body-leg');
@@ -198,6 +199,7 @@ let myLiveBalance = 0;
 
     function updateGrowth(val) {
       currentGrowth = Math.min(100, Math.max(10, Number(val) || 100));
+      window.ST25Skin3D?.sync();
       const growthValEl = document.getElementById('growth-val');
       if (growthValEl) growthValEl.textContent = `${currentGrowth}%`;
 
@@ -235,6 +237,7 @@ let myLiveBalance = 0;
       const badge = document.getElementById('selected-species-badge');
       if (badge) badge.textContent = name;
       window.ST25SkinUI?.syncSpecies();
+      window.ST25Skin3D?.sync();
       refreshSkinCode();
     }
 
@@ -573,7 +576,14 @@ let myLiveBalance = 0;
         if (!meUser) {
           try { localStorage.removeItem('st25_steam_user'); } catch (_) {}
           if (loginPanel) loginPanel.style.display = 'block';
-          if (contentPanel) contentPanel.style.display = 'none';
+          if (contentPanel) contentPanel.style.display = 'block';
+          myLiveBalance = 0;
+          document.getElementById('skin-balance-val').textContent = '—';
+          document.getElementById('player-status-tag').textContent = 'Thiết kế tự do · Đăng nhập để áp dụng trong game';
+          document.getElementById('player-dino-status-text').textContent = 'Bạn có thể phối màu, xem 3D và lưu mẫu ngay trên thiết bị.';
+          renderOwnedSkins([]);
+          document.getElementById('skin-shop-grid').textContent = 'Đăng nhập Steam để xem cửa hàng skin.';
+          document.getElementById('shop-skin-count').textContent = 'Cần đăng nhập';
           if (adminBar) adminBar.style.display = 'none';
           return;
         }

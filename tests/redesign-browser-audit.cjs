@@ -15,35 +15,82 @@ const fixtures={
   '/api/player/garage':{steamId:steam,activeDino:dino,maxSlots:20,totalParked:0,garage:[],slots:[],dinos:[],roleName:'Thành viên',roleKey:'default'},
   '/api/admin/check':{isAdmin:false,isSuperAdmin:false},'/api/casino/stats':{enabled:false}
 };
+if(process.env.ST25_3D_GUEST) fixtures['/api/player/me']={linked:false,isLoggedIn:false};
 const fallback={success:true,items:[],data:[],players:[],quests:[],trades:[],incomingTrades:[],outgoingTrades:[],listings:[],marketListings:[],inventory:[],garage:[],dinos:[],skins:[],ownedSkins:[],crates:[],tickets:[],types:[],locations:[],rules:[],leaderboard:[],referrals:[],balance:202,coins:202,lua:202};
 const server=http.createServer((req,res)=>{
   const url=new URL(req.url,'http://localhost');
   if(url.pathname.startsWith('/api/')){res.setHeader('Content-Type','application/json');if(req.method!=='GET'){res.writeHead(403);return res.end(JSON.stringify({error:'Offline fixture blocks live actions'}));}return res.end(JSON.stringify(fixtures[url.pathname]||fallback));}
   const requested=path.resolve(root,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));
-  if(!requested.startsWith(root+path.sep)||!/(?:\.html|\.css|\.js|\.png|\.jpg|\.webp|\.ico|\.ttf|\.json)$/.test(requested)){res.writeHead(404);return res.end();}
-  const types={'.html':'text/html','.css':'text/css','.js':'text/javascript','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.ttf':'font/ttf','.json':'application/json'};
+  if(!requested.startsWith(root+path.sep)||!/(?:\.html|\.css|\.js|\.mjs|\.png|\.jpg|\.webp|\.ico|\.ttf|\.json)$/.test(requested)){res.writeHead(404);return res.end();}
+  const types={'.html':'text/html','.css':'text/css','.js':'text/javascript','.mjs':'text/javascript','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.ttf':'font/ttf','.json':'application/json'};
   try{res.setHeader('Content-Type',types[path.extname(requested)]||'application/octet-stream');res.end(fs.readFileSync(requested));}catch{res.writeHead(404);res.end();}
 });
 (async()=>{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin=`http://127.0.0.1:${server.address().port}`;
   const profile=path.join(__dirname,`.redesign-browser-${Date.now()}`);
-  const child=spawn('C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless','--disable-gpu','--no-first-run','--disable-background-networking',`--user-data-dir=${profile}`,'--remote-debugging-port=0','about:blank'],{windowsHide:true,stdio:'ignore'});
+  const child=spawn('C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless','--disable-gpu',...(process.env.ST25_3D_FALLBACK?['--disable-webgl']:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']),'--no-first-run','--disable-background-networking',`--user-data-dir=${profile}`,'--remote-debugging-port=0','about:blank'],{windowsHide:true,stdio:'ignore'});
   const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));let socket;
   try{
     const portFile=path.join(profile,'DevToolsActivePort');for(let i=0;i<100&&!fs.existsSync(portFile);i++)await pause(100);
     const port=fs.readFileSync(portFile,'utf8').split('\n')[0];const tabs=await(await fetch(`http://127.0.0.1:${port}/json/list`)).json();
     socket=new WebSocket(tabs.find(t=>t.type==='page').webSocketDebuggerUrl);await new Promise((resolve,reject)=>{socket.onopen=resolve;socket.onerror=reject;});
     let id=0;const pending=new Map();let errors=[];
-    socket.onmessage=event=>{const message=JSON.parse(event.data);if(message.method==='Runtime.exceptionThrown')errors.push(message.params.exceptionDetails.exception?.description||message.params.exceptionDetails.text);const task=pending.get(message.id);if(task){pending.delete(message.id);message.error?task.reject(message.error):task.resolve(message.result);}};
+    socket.onmessage=event=>{const message=JSON.parse(event.data);if(message.method==='Runtime.exceptionThrown')errors.push(message.params.exceptionDetails.exception?.description||message.params.exceptionDetails.text);if(process.env.ST25_3D_AUDIT && message.method==='Runtime.consoleAPICalled' && message.params.type==='error' && !(process.env.ST25_3D_FALLBACK && message.params.args.some(arg=>/WebGL.*context|Error creating WebGL/.test(String(arg.value))))) errors.push(message.params.args.map(arg=>arg.value||arg.description||'').join(' '));const task=pending.get(message.id);if(task){pending.delete(message.id);message.error?task.reject(message.error):task.resolve(message.result);}};
     const call=(method,params={})=>new Promise((resolve,reject)=>{pending.set(++id,{resolve,reject});socket.send(JSON.stringify({id,method,params}));});
     await call('Runtime.enable');await call('Network.enable');
     await call('Network.setBlockedURLs',{urls:['*islepilot.eu*','*steamcommunity.com*','*api.steampowered.com*']});
     const pages=['index.html','bando.html','gara.html','nhiem-vu.html','giao-dich.html','hom-qua.html','skin.html','bxh.html','ho-tro.html','noi-quy.html','tai-hud.html','moi-ban.html','tha-xac.html','lien-ket-steam.html','cai-dat.html'];
-    const cases=process.env.ST25_SKIN_AUDIT ? [1440,1024,768,390,320].map(width=>({page:'skin.html',width})) : [...pages.map(page=>({page,width:1440})),...['index.html','bando.html','gara.html','nhiem-vu.html','giao-dich.html'].map(page=>({page,width:390}))];
+    const cases=(process.env.ST25_SKIN_AUDIT || process.env.ST25_3D_AUDIT) ? [1440,1024,768,390,320].map(width=>({page:'skin.html',width})) : [...pages.map(page=>({page,width:1440})),...['index.html','bando.html','gara.html','nhiem-vu.html','giao-dich.html'].map(page=>({page,width:390}))];
     const results=[];
     for(const {page,width} of cases){errors=[];await call('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:width<600});await call('Page.navigate',{url:origin+'/'+page});
       for(let attempt=0;attempt<40;attempt++){await pause(100);const ready=await call('Runtime.evaluate',{expression:'document.readyState !== "loading" && typeof App !== "undefined" && App.authResolved && !!window.ST25UI',returnByValue:true});if(ready.result.value)break;}
       await pause(300);
+      let threeD;
+      if (process.env.ST25_3D_AUDIT) {
+        await call('Runtime.evaluate',{expression:'document.getElementById("dino-stage").scrollIntoView({block:"center"})'});
+        await pause(200);
+        for(let attempt=0;attempt<80;attempt++) {
+          const readiness=await call('Runtime.evaluate',{expression:'!!window.ST25Skin3D?.viewer || document.getElementById("skin-3d-host")?.dataset.state === "error"',returnByValue:true});
+          if(readiness.result.value)break;await pause(100);
+        }
+        const check3d=await call('Runtime.evaluate',{expression: `(async()=>{
+          const host=document.getElementById('skin-3d-host'), viewer=window.ST25Skin3D?.viewer;
+          if(${!!process.env.ST25_3D_FALLBACK}) {onHexInputChange('body','#123456');return {fallback:host.dataset.state==='error'&&!document.getElementById('dino-svg-wrapper').hidden,colors:document.getElementById('svg-body').getAttribute('fill')==='#123456',retry:!document.querySelector('.skin-3d-retry').hidden};}
+          if(!viewer) return {ready:false,status:document.querySelector('.skin-3d-status')?.textContent};
+          const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+          await pause(100); const ready=host.dataset.state==='ready'&&viewer.renderer.info.render.triangles>100;
+          onHexInputChange('body','#123456');onHexInputChange('eyes','#fedcba'); await pause(80);
+          const colors=viewer.uniforms.body.value.getHexString()==='123456'&&viewer.materials.eyes.color.getHexString()==='fedcba';
+          updateGrowth(40);const growth=Math.abs(viewer.model.scale.x-.73)<.001;updateGrowth(100);
+          document.getElementById('skin-pattern-idx').value='3';document.getElementById('skin-pattern-idx').dispatchEvent(new Event('input',{bubbles:true}));
+          const pattern=viewer.uniforms.pattern.value===3;
+          const position=viewer.camera.position.clone();viewer.canvas.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true}));
+          const keyboard=position.distanceTo(viewer.camera.position)>.05;
+          const blob=await viewer.exportPNG();const image=await createImageBitmap(blob);const pixels=document.createElement('canvas');pixels.width=image.width;pixels.height=image.height;const pixelContext=pixels.getContext('2d');pixelContext.drawImage(image,0,0);const rgba=pixelContext.getImageData(0,0,image.width,image.height).data;let opaque=0;for(let i=3;i<rgba.length;i+=4)if(rgba[i]>100)opaque++;image.close();const png=blob.type==='image/png'&&opaque>2000;
+          let contextLost=true,contextRecovered=true;
+          if(innerWidth===1440){
+            const extension=viewer.renderer.getContext().getExtension('WEBGL_lose_context');
+            if(extension){extension.loseContext();await pause(100);contextLost=viewer.contextLost&&!document.getElementById('dino-svg-wrapper').hidden;extension.restoreContext();await pause(250);contextRecovered=!viewer.contextLost&&host.dataset.state==='ready';}
+          }
+          applyPreset('golden_rice');setGender('male');
+          const species=[];let maxGeometries=0;
+          if(innerWidth===1440) for(const option of document.getElementById('dino-species-select').options){
+            changeSpecies(option.value);await pause(60);maxGeometries=Math.max(maxGeometries,viewer.renderer.info.memory.geometries);
+            species.push({name:option.value,triangles:viewer.renderer.info.render.triangles});
+          }
+          changeSpecies('Tyrannosaurus');await pause(100);
+          const beforeIdle=viewer.draws;await pause(250);const idle=viewer.draws===beforeIdle;
+          viewer.setAutoRotate(true);await pause(120);const spinning=viewer.draws>beforeIdle;
+          document.getElementById('skin-workspace-tab-1').click();await pause(100);const hiddenDraws=viewer.draws;await pause(180);const hidden=viewer.draws===hiddenDraws;
+          document.getElementById('skin-workspace-tab-0').click();document.getElementById('dino-stage').scrollIntoView({block:'center'});await pause(180);const resumed=viewer.draws>hiddenDraws;viewer.setAutoRotate(false);
+          viewer.setQuality('low');const low=viewer.renderer.getPixelRatio()<=1;viewer.setQuality('auto');
+          viewer.setView('studio');resetAllColors();document.getElementById('skin-pattern-idx').value='0';window.ST25Skin3D.sync();await pause(100);
+          return {ready,colors,growth,pattern,keyboard,png,contextLost,contextRecovered,idle,spinning,hidden,resumed,low,maxGeometries,species,drawCalls:viewer.renderer.info.render.calls,triangles:viewer.renderer.info.render.triangles};
+        })()`,awaitPromise:true,returnByValue:true});
+        const metrics3d=check3d.result.value;threeD=metrics3d;console.log(JSON.stringify({page,width,threeD:metrics3d}));
+        if(!metrics3d || Object.entries(metrics3d).some(([key,value])=>typeof value==='boolean'&&!value) || metrics3d.maxGeometries>180) errors.push('3D verification failed: '+JSON.stringify(metrics3d));
+      }
+
       if (process.env.ST25_SKIN_AUDIT) {
         const exercise=await call('Runtime.evaluate',{expression:`JSON.stringify((()=>{
           const select=document.getElementById('dino-species-select');
@@ -105,12 +152,12 @@ const server=http.createServer((req,res)=>{
         await pause(800);
       }
       const check=await call('Runtime.evaluate',{expression:'JSON.stringify({width:innerWidth,scroll:document.documentElement.scrollWidth,icons:document.querySelectorAll(".site-header .st25-line-icon").length,dock:!!document.getElementById("st25-live-dock"),hud:!!document.querySelector(".player-hud-bar"),brokenImages:[...document.images].filter(i=>i.getAttribute("src")&&i.complete&&!i.naturalWidth).map(i=>i.getAttribute("src"))})',returnByValue:true});
-      const metrics=JSON.parse(check.result.value);const result={page,width,...metrics,errors:[...errors]};results.push(result);
+      const metrics=JSON.parse(check.result.value);const result={page,width,...metrics,threeD,errors:[...errors]};results.push(result);
       console.log(JSON.stringify(result));
       if(['index.html','bando.html','nhiem-vu.html','skin.html'].includes(page)){const shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});fs.writeFileSync(path.join(__dirname,`redesign-${page.replace('.html','')}-${width}.png`),Buffer.from(shot.data,'base64'));}
     }
-    fs.writeFileSync(path.join(__dirname,process.env.ST25_SKIN_AUDIT?'skin-audit-results.json':'redesign-audit-results.json'),JSON.stringify({scope:'Offline mocks; transactions blocked; not a live API test',results},null,2));
+    fs.writeFileSync(path.join(__dirname,process.env.ST25_3D_AUDIT ? (process.env.ST25_3D_FALLBACK?'skin-3d-fallback-results.json':process.env.ST25_3D_GUEST?'skin-3d-guest-results.json':'skin-3d-results.json') : process.env.ST25_SKIN_AUDIT?'skin-audit-results.json':'redesign-audit-results.json'),JSON.stringify({scope:'Offline mocks; transactions blocked; not a live API test',results},null,2));
     await call('Browser.close');
-    if(results.some(r=>r.scroll>r.width||r.errors.length))process.exitCode=1;
+    if(results.some(r=>r.scroll>r.width||r.errors.length||r.brokenImages.length))process.exitCode=1;
   }finally{socket?.close();child.kill();server.close();}
 })().catch(error=>{console.error(error);server.close();process.exitCode=1;});

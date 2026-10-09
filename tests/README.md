@@ -31,3 +31,7 @@ Root causes addressed:
 - Blank avatar URLs and a full map image used as favicon added unnecessary loads.
 
 The browser audit uses mock API data. It does not establish frame rate on a user's GPU/phone, hosting latency, or live IslePilot transaction success. The four IslePilot export snapshots receive static validation rather than live browser testing.
+
+## 3D skin checks
+
+`node tests/skin-model-regression.cjs` validates all 17 procedural illustrations, geometry attributes, bounds, indices and triangle budgets. `ST25_3D_AUDIT=1 node tests/redesign-browser-audit.cjs` checks WebGL at five sizes, live palette changes, growth, patterns, keyboard controls, nonempty PNG output, idle/offscreen rendering, species resource disposal and context recovery on desktop. Set `ST25_3D_GUEST=1` for anonymous access; add `ST25_3D_FALLBACK=1` to explicitly disable WebGL and check the 2D fallback. See `SKIN_3D.md` for PowerShell commands. These use offline API fixtures and never execute real transactions.
