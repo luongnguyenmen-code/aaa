@@ -106,10 +106,11 @@
   <link rel="stylesheet" href="assets/css/fonts.css?v=20261009-audit">
   <link rel="stylesheet" href="assets/css/motion.css?v=20261009-stable1">
   <script src="assets/js/motion.js?v=20261009-stable1" defer></script>
-  <link rel="stylesheet" href="assets/css/portal-layout.css?v=20261009-sidebar1">
+  <link rel="stylesheet" href="assets/css/portal-layout.css?v=20261009-spacing1">
   <link rel="stylesheet" href="assets/css/logo.css?v=20261009-stable1">
+  <link rel="stylesheet" href="assets/css/quests.css?v=20261009-quests1">
 </head>
-<body class="st25-portal">
+<body class="st25-portal quests-page">
 
   <!-- Header -->
   <header class="site-header">
@@ -138,22 +139,10 @@
   </header>
 
   <!-- Content -->
-  <main class="container" style="padding: 40px 20px; max-width: 1060px;">
+  <main class="container quest-page">
     
     <!-- Page Title -->
-    <div style="margin-bottom: 25px;">
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-        <span class="rule-badge badge-allow">🌾 Hệ Thống Nhiệm Vụ & Lúa ST25</span>
-        <span class="rule-badge badge-warn" id="privacy-badge">Bảo Mật Cá Nhân</span>
-      </div>
-      <h1 style="font-size: 2.2rem; font-weight: 800; color: #fff; margin: 0 0 8px;">
-        🌾 NHIỆM VỤ CÁ NHÂN & KHO LÚA ST25 🦖
-      </h1>
-      <p style="color: var(--text-secondary); line-height: 1.6; max-width: 750px;">
-        Hệ thống hiển thị độc quyền nhiệm vụ sinh tồn và số dư <strong>Lúa</strong> của riêng tài khoản Steam bạn liên kết. Hoàn thành thử thách để tích lũy Lúa ST25 đổi quà và bảo hộ trên đảo Gateway.
-      </p>
-    </div>
-
+    <div class="quest-page-heading"><div><h1>NHIỆM VỤ & THÀNH TỰU</h1><p>Hoàn thành thử thách sinh tồn để nhận phần thưởng.</p></div><span class="quest-page-label">ST25 · THE ISLE EVRIMA</span></div>
     <!-- Personal Profile Dashboard Banner -->
     <div id="personal-profile-banner" class="personal-profile-banner" style="border-color: rgba(245, 158, 11, 0.35); background: linear-gradient(135deg, rgba(20, 26, 21, 0.95), rgba(35, 42, 30, 0.9));">
       <div class="profile-left">
@@ -207,25 +196,22 @@
       <a href="lien-ket-steam.html" class="btn btn-primary">Liên Kết Tài Khoản Steam Ngay</a>
     </div>
 
-    <!-- Section 1: Server Quests (Daily & Weekly) -->
-    <section style="margin-bottom: 45px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <div>
-          <h2 style="color: #fff; font-size: 1.35rem; margin-bottom: 4px;">Nhiệm Vụ Hằng Ngày & Hằng Tuần (Server Quests)</h2>
-          <p style="font-size: 0.85rem; color: var(--text-secondary);">Hoàn thành để nhận Lúa 🌾 thưởng trực tiếp vào ví. <strong>(🔄 Nhiệm vụ Ngày tự động Reset mới mỗi 00:00 hằng ngày | Nhiệm vụ Tuần reset mỗi Thứ Hai)</strong></p>
-        </div>
-        <span class="rule-badge badge-warn" id="server-quest-count">0 Nhiệm vụ</span>
-      </div>
-
-      <div id="server-quests-grid" class="cards-grid" style="margin: 0;">
-        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted); background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-          Đang đồng bộ dữ liệu nhiệm vụ cá nhân của bạn từ máy chủ ST25...
-        </div>
-      </div>
+    
+    <div id="quest-tabs" class="quest-tabs" role="tablist" aria-label="Loại nhiệm vụ">
+      <button type="button" role="tab" id="quest-tab-daily" aria-controls="quest-board-panel" data-quest-tab="daily" aria-selected="true">☀ Hằng ngày <span>0</span></button>
+      <button type="button" role="tab" id="quest-tab-weekly" aria-controls="quest-board-panel" data-quest-tab="weekly" aria-selected="false" tabindex="-1">▦ Hằng tuần <span>0</span></button>
+      <button type="button" role="tab" id="quest-tab-monthly" aria-controls="quest-board-panel" data-quest-tab="monthly" aria-selected="false" tabindex="-1" hidden>◷ Hằng tháng <span>0</span></button>
+      <button type="button" role="tab" id="quest-tab-achievements" aria-controls="prime-section" data-quest-tab="achievements" aria-selected="false" tabindex="-1">♧ Thành tựu <span>0</span></button>
+      <button type="button" role="tab" id="quest-tab-events" aria-controls="quest-board-panel" data-quest-tab="events" aria-selected="false" tabindex="-1">ϟ Sự kiện <span>0</span></button>
+    </div>
+    <section id="quest-board-panel" role="tabpanel" aria-labelledby="quest-tab-daily">
+      <div class="quest-section-heading"><div class="quest-section-plaque"><div><h2 id="quest-section-title">NHIỆM VỤ ĐANG HOẠT ĐỘNG</h2><p id="quest-section-description">Hoàn thành mục tiêu để nhận thưởng vào ví</p></div><span id="server-quest-count">0</span></div></div>
+      <div class="quest-board-actions"><button type="button" id="quest-claim-all" class="quest-claim is-ready" onclick="claimAllQuests()" hidden>Nhận tất cả</button></div>
+      <div id="server-quests-grid" class="quest-grid"><div class="quest-empty">Đang đồng bộ nhiệm vụ từ máy chủ ST25…</div></div>
+      <p class="quest-footnote">Tiến độ dựa trên hoạt động trong game. Phần thưởng và điều kiện do máy chủ cung cấp.</p>
     </section>
-
     <!-- Section 2: Prime Elder Evolution Quests -->
-    <section>
+    <section id="prime-section" role="tabpanel" aria-labelledby="quest-tab-achievements" hidden>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
         <div>
           <h2 style="color: #fff; font-size: 1.35rem; margin-bottom: 4px;">10 Thử Thách Tiến Hóa Prime Elder</h2>
@@ -261,7 +247,8 @@
     </div>
   </footer>
 
-  <script src="assets/js/app.js?v=20261009-sidebar1"></script>
+  <script src="assets/js/app.js?v=20261009-spacing1"></script>
+  <script src="assets/js/quests.js?v=20261009-quests1"></script>
   <script>
     let currentSteamId = null;
 
@@ -295,6 +282,7 @@
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
+          if (data.steamId) currentSteamId = data.steamId;
           renderPersonalDashboard(data);
           renderQuests(data);
         } else {
@@ -310,12 +298,15 @@
       const banner = document.getElementById('personal-profile-banner');
       const unlinkedAlert = document.getElementById('unlinked-alert');
       if (unlinkedAlert) unlinkedAlert.style.display = 'block';
+      if (banner) banner.style.display = 'none';
     }
 
     function renderPersonalDashboard(data) {
       if (!data) return;
 
       const player = data.player;
+      document.getElementById('unlinked-alert').style.display = data.isLoggedIn ? 'none' : 'block';
+      document.getElementById('personal-profile-banner').style.display = data.isLoggedIn ? '' : 'none';
       const steamId = data.steamId;
 
       if (player) {
@@ -354,133 +345,7 @@
     }
 
     function renderQuests(data) {
-      // 1. Server Quests (Daily & Weekly)
-      const sGrid = document.getElementById('server-quests-grid');
-      const countBadge = document.getElementById('server-quest-count');
-
-      // Lấy danh sách nhiệm vụ đã nhận lưu trên trình duyệt của người chơi
-      const localClaimedMap = (() => {
-        try {
-          const s = localStorage.getItem('st25_claimed_quests_' + currentSteamId);
-          return s ? JSON.parse(s) : {};
-        } catch (_) { return {}; }
-      })();
-
-      // Kiểm tra trạng thái đã nhận theo chu kỳ (tự động reset khi qua ngày/tuần mới)
-      function isLocallyClaimed(q) {
-        const cKey = q.claimKey || (q.id + '_' + (q.periodKey || ''));
-        if (localClaimedMap[cKey]) return true;
-        // Kiểm tra bản ghi cũ theo ID (chỉ tính là đã nhận nếu trong cùng ngày hôm nay đối với daily)
-        if (localClaimedMap[q.id]) {
-          const ts = localClaimedMap[q.id];
-          if (typeof ts === 'number') {
-            const claimedDate = new Date(ts).toISOString().slice(0, 10);
-            const todayDate = new Date().toISOString().slice(0, 10);
-            if (q.period === 'daily') {
-              return claimedDate === todayDate;
-            }
-          }
-          return true;
-        }
-        return false;
-      }
-
-      // Tính toán danh sách thực sự còn có thể nhận trong chu kỳ này
-      const claimableQuests = (data.serverQuests || []).filter(q => q.canClaim && !isLocallyClaimed(q));
-      const totalClaimableLua = claimableQuests.reduce((sum, q) => sum + (q.rewardAmount || 0), 0);
-
-      // Nút nhận tất cả Lúa nếu có nhiệm vụ đủ điều kiện
-      let claimAllBtnHtml = '';
-      if (claimableQuests.length > 0) {
-        claimAllBtnHtml = `
-          <button onclick="claimAllQuests()" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35); padding: 6px 14px; margin-left: 10px;">
-            🎁 Nhận Tất Cả (+${totalClaimableLua} Lúa) 🌾
-          </button>
-        `;
-      }
-
-      if (data.serverQuests && data.serverQuests.length > 0) {
-        if (countBadge) {
-          countBadge.innerHTML = `<span>${data.serverQuests.length} Nhiệm vụ</span> ${claimAllBtnHtml}`;
-        }
-
-        sGrid.innerHTML = data.serverQuests.map(q => {
-          const isClaimed = q.claimed || isLocallyClaimed(q);
-          const canClaim = q.canClaim && !isClaimed;
-          const isDone = q.completed || isClaimed;
-
-          const rewardAmount = q.rewardAmount || 5;
-          const rewardText = `+${rewardAmount} Lúa 🌾`;
-          const periodLabel = q.period === 'daily' ? 'Hằng Ngày (Reset 0h)' : (q.period === 'weekly' ? 'Hằng Tuần' : 'Hằng Tháng');
-
-          let progressStr = '';
-          let progressPercent = isDone ? 100 : 0;
-          if (q.config && q.config.km) {
-            const currentKm = (q.progress / 1000).toFixed(1);
-            progressStr = `${currentKm} / ${q.config.km} km`;
-            progressPercent = Math.min(100, Math.round(((q.progress / 1000) / q.config.km) * 100));
-          } else if (q.config && q.config.minutes) {
-            progressStr = `${q.progress} / ${q.config.minutes} phút`;
-            progressPercent = Math.min(100, Math.round((q.progress / q.config.minutes) * 100));
-          } else if (q.config && q.config.days) {
-            progressStr = `${q.progress} / ${q.config.days} ngày đăng nhập`;
-            progressPercent = Math.min(100, Math.round((q.progress / q.config.days) * 100));
-          } else if (q.config && q.config.count) {
-            progressStr = `${q.progress} / ${q.config.count}`;
-            progressPercent = Math.min(100, Math.round((q.progress / q.config.count) * 100));
-          } else if (q.config && q.config.growthPct) {
-            progressStr = `${q.progress}% / ${q.config.growthPct}%`;
-            progressPercent = Math.min(100, Math.round((q.progress / q.config.growthPct) * 100));
-          } else if (isDone) {
-            progressPercent = 100;
-          }
-
-          const qClaimKey = q.claimKey || (q.id + '_' + (q.periodKey || ''));
-
-          return `
-            <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-color: ${canClaim ? '#fbbf24' : 'var(--border-color)'}; box-shadow: ${canClaim ? '0 4px 20px rgba(245, 158, 11, 0.15)' : 'none'};">
-              <div>
-                <div class="card-header" style="margin-bottom: 10px;">
-                  <span class="rule-badge ${q.period === 'daily' ? 'badge-allow' : 'badge-blue'}">${periodLabel}</span>
-                  <span class="rule-badge ${isClaimed ? 'badge-allow' : (canClaim ? 'badge-warn' : 'badge-orange')}">
-                    ${isClaimed ? '✓ ĐÃ NHẬN THƯỞNG' : (canClaim ? '🎁 ĐỦ ĐIỀU KIỆN' : 'ĐANG THỰC HIỆN')}
-                  </span>
-                </div>
-                <h3 class="card-title" style="font-size: 1.1rem; margin-bottom: 8px;">${q.name}</h3>
-                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">${q.description}</p>
-              </div>
-
-              <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; margin-top: 12px;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px;">
-                  <span style="color: var(--text-muted);">Tiến độ: <strong>${progressStr || (isDone ? '100%' : 'Chưa hoàn thành')}</strong></span>
-                  <strong style="color: var(--accent-amber); font-size: 0.95rem;">${rewardText}</strong>
-                </div>
-
-                <!-- Progress Bar -->
-                <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 10px;">
-                  <div style="width: ${progressPercent}%; height: 100%; background: ${isClaimed ? 'var(--accent-emerald)' : (canClaim ? 'linear-gradient(90deg, #f59e0b, #10b981)' : 'var(--accent-amber)')}; border-radius: 3px;"></div>
-                </div>
-
-                <!-- Action / Status -->
-                <div>
-                  ${isClaimed 
-                    ? '<div style="color: #6ee7b7; font-size: 0.8rem; font-weight: 600; text-align: center; padding: 6px 0;">✓ Đã nhận thưởng về ví Lúa</div>' 
-                    : (canClaim 
-                        ? `<button onclick="claimSingleQuest('${q.id}', '${qClaimKey}', '${q.name.replace(/'/g, "\\'")}', ${rewardAmount})" class="btn btn-primary btn-sm" style="width: 100%; font-weight: 800; background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);">🌾 Nhận +${rewardAmount} Lúa Thưởng Ngay 🚀</button>` 
-                        : '<div style="color: var(--text-muted); font-size: 0.78rem; text-align: center; padding: 4px 0;">Tiếp tục sinh tồn in-game để hoàn tất</div>')}
-                </div>
-              </div>
-            </div>
-          `;
-        }).join('');
-      } else {
-        sGrid.innerHTML = `
-          <div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: var(--text-muted); background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-            Hiện tại chưa có nhiệm vụ máy chủ mới cho ngày hôm nay. Hãy tiếp tục sinh tồn và quay lại sau!
-          </div>
-        `;
-      }
-
+      QuestBoard.render(data);
       // 2. Prime Elder Evolution Quests
       const pGrid = document.getElementById('prime-quests-grid');
       const primeStatus = document.getElementById('prime-quest-status');

@@ -128,7 +128,7 @@ async function callIslePilot(endpoint, method = 'GET', body = null, bypassCache 
 
   if (method === 'GET' && !bypassCache && apiCache.has(cacheKey)) {
     const entry = apiCache.get(cacheKey);
-    const ttl = CACHE_TTL_MS[cleanEpKey] || CACHE_TTL_MS['default'];
+    const ttl = /^\/players\/\d{17}$/.test(cleanEpKey) ? 2000 : (CACHE_TTL_MS[cleanEpKey] || CACHE_TTL_MS['default']);
     if (Date.now() - entry.time < ttl) {
       return entry.data;
     }
@@ -443,6 +443,26 @@ app.post('/api/player/login-manual', async (req, res) => {
 });
 
 // 5. Get Current Player info (Strictly based on requesting user's SteamID)
+// Lightweight live read: no garage/role/trade work on the fast vitals path.
+app.get('/api/player/vitals', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const steamId = getRequestSteamId(req);
+  if (!steamId) return res.status(401).json({ error: 'Chưa đăng nhập' });
+  const player = await callIslePilot(`/players/${steamId}`);
+  if (!player || player.error || player._status) return res.status(503).json({ error: 'Không thể cập nhật chỉ số' });
+  const location = posToLatLng(player.position);
+  return res.json({ steam_id: steamId, dino: {
+    species: player.species,
+    gender: player.female ? 'Cái (Female)' : 'Đực (Male)',
+    growth: Math.round((player.growth || 0) * 100),
+    health: normalizeStatPct(player.health, player.maxHealth),
+    hunger: normalizeStatPct(player.hunger, player.maxHunger),
+    thirst: normalizeStatPct(player.thirst, player.maxThirst),
+    isPrimeElder: !!player.isPrimeElder,
+    grid: location.grid
+  } });
+});
+
 app.get('/api/player/me', async (req, res) => {
   const reqSteamId = getRequestSteamId(req);
   if (reqSteamId) {
@@ -667,6 +687,9 @@ app.get('/api/player/quests', async (req, res) => {
         claimKey,
         name: q.name,
         description: q.description,
+        rarity: q.rarity || 'common',
+        locked: q.locked === true,
+        objectiveLabel: q.objectiveLabel || null,
         period: q.period, // daily, weekly, monthly
         progress: q.progress || 0,
         rewards: (q.rewards || []).map(r => ({
@@ -730,6 +753,12 @@ app.get('/api/player/quests', async (req, res) => {
     coins: liveBalance,
     balance: liveBalance,
     serverQuests,
+    events: Array.isArray(questsData?.events) ? questsData.events.map(event => ({
+      name: event.name || event.title,
+      description: event.description,
+      multiplier: event.multiplier,
+      endsAt: event.endsAt
+    })) : [],
     primeQuests,
     primeSummary: playerDetails ? playerDetails.prime : null,
     claimableCount: claimableQuests.length,

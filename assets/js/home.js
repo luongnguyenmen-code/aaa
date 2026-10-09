@@ -1,4 +1,4 @@
-// Reuse App's authenticated read/polling; never fetch a second copy of /player/me.
+// Account comes from App; fast vitals use a lightweight endpoint without garage reads.
 const HomePlayer = {
   state: null,
   icons: { Troodon: '👁️', Deinosuchus: '🐊', Pteranodon: '🦅', Stegosaurus: '🛡️', Beipiaosaurus: '🦆' },
@@ -8,6 +8,35 @@ const HomePlayer = {
     this.badge = document.getElementById('dino-status-badge');
     if (!this.body) return;
     this.unsubscribe = App.subscribeUser((user, error) => this.render(user, error));
+    document.addEventListener('visibilitychange', () => {
+      clearTimeout(this.timer);
+      this.timer = null;
+      if (!document.hidden) this.scheduleVitals(0);
+    });
+    window.addEventListener('pagehide', () => { this.suspended = true; clearTimeout(this.timer); this.timer = null; });
+    window.addEventListener('pageshow', () => { this.suspended = false; this.scheduleVitals(0); });
+  },
+  scheduleVitals(delay = 2000) {
+    if (this.timer || this.inFlight || this.suspended || document.hidden || !this.user?.linked || !this.user.steam_id) return;
+    this.timer = setTimeout(() => { this.timer = null; this.refreshVitals(); }, delay);
+  },
+  async refreshVitals() {
+    if (this.inFlight || document.hidden || this.suspended || !this.user?.linked) return;
+    const steamId = this.user.steam_id;
+    this.inFlight = true;
+    let delay = 2000;
+    try {
+      const data = await App.readJSON('/api/player/vitals', { cache: 'no-store' });
+      if (!document.hidden && !this.suspended && this.user?.steam_id === steamId && data.steam_id === steamId) {
+        this.render({ ...this.user, dino: data.dino });
+      }
+    } catch (_) {
+      delay = 5000;
+      if (!document.hidden && this.user?.steam_id === steamId) this.setBadge('CHỜ ĐỒNG BỘ', 'rule-badge badge-warn');
+    } finally {
+      this.inFlight = false;
+      this.scheduleVitals(delay);
+    }
   },
   setText(node, value) {
     const text = String(value);
@@ -31,6 +60,9 @@ const HomePlayer = {
       this.body.querySelector('#home-player-retry').addEventListener('click', () => App.checkAuth().then(() => App.renderPlayerHUD()));
       return;
     }
+    this.user = user;
+    if (!user?.linked) { clearTimeout(this.timer); this.timer = null; }
+    else this.scheduleVitals();
     const linked = !!(user?.linked && user.steam_id);
     const dino = user?.dino;
     const active = linked && dino?.species && !['Chưa xác định', 'Chưa chọn'].includes(dino.species);
