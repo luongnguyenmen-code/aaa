@@ -66,6 +66,18 @@ const input=(roundId,color='red',amount=10)=>({roundId,color,amount,requestId:cr
   await failed.store.withPlayer(sid,async()=>{});
   await assert.rejects(failed.service.bet(null,input(next.id)),e=>e.status===401);
   process.env.ROLL_ENABLED='false';await assert.rejects(failed.service.bet(sid,input(next.id)),e=>e.status===503);
+  // Separate serverless instances must share demo numbering, including cold starts.
+  delete process.env.ROLL_DATABASE_URL;
+  const demoBank={balance:async()=>null},demoStart=rules.demoNumberingStartsAt;
+  now=demoStart+1000;
+  const firstDemo=createService(demoBank);
+  const initial=await firstDemo.state(null);assert.equal(initial.round.number,1);
+  now+=rules.roundMs*5;
+  const warm=await firstDemo.state(null),cold=await createService(demoBank).state(null);
+  assert.equal(warm.round.number,6);assert.equal(cold.round.number,6);
+  assert.equal(cold.history[0].number,5);
+  now+=rules.roundMs;
+  assert.equal((await createService(demoBank).state(null)).round.number,7);
   console.log('PASS Roll: 15 slots, x2/x14 payouts, hidden seed/result, input validation, PostgreSQL schema, duplicate requests, color change without double debit, closed rounds, private history, confirmed payout once, uncertain debit/payout review, distributed lock release and disabled mode; no live currency calls');
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>{
   Date.now=originalNow;

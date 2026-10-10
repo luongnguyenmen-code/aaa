@@ -45,7 +45,7 @@ ORDER BY updated_at DESC;
 
 ## Chuyển động vòng quay
 
-Số vòng hiển thị bắt đầu từ 1 khi bản mới nhận yêu cầu trạng thái đầu tiên. Mốc đánh số được lưu trong PostgreSQL và dùng chung cho người chơi, giữ nguyên khi khởi động lại máy chủ. Mã vòng nội bộ và giao dịch cũ vẫn được giữ; các vòng trước mốc dùng mã cũ để đối soát. Chế độ thử không có database bắt đầu từ 1 theo phiên máy chủ.
+Số vòng hiển thị tăng đều 1, 2, 3… theo từng vòng 23 giây. Khi có PostgreSQL, mốc đánh số được lưu trong database và dùng chung cho người chơi. Chế độ thử dùng mốc cố định `demoNumberingStartsAt` trong `src/core/roll.js`, giữ nguyên giữa các instance Vercel, khởi động lại và deployment. Không dùng mốc trong bộ nhớ từng phiên máy chủ vì sẽ khiến số vòng nhảy về 1. Mã vòng nội bộ và giao dịch cũ vẫn được giữ; các vòng trước mốc dùng mã cũ để đối soát.
 
 Dải 15 ô dùng Web Animations API với easing `cubic-bezier(0.1, 0.8, 0.1, 1)`: chạy nhanh ở đầu rồi giảm tốc về 0 trong pha quay 8 giây. Đây là animation transform do trình duyệt chạy, dùng cùng hàm timing với CSS transition. Mỗi lần đi qua 60–75 ô và dừng đúng tâm ô kết quả của máy chủ. Trang chờ kết quả máy chủ trước khi bắt đầu; nếu mạng chậm, dùng thời gian còn lại đến hạn kết thúc. Khi trở lại tab, trang đọc lại trạng thái; chế độ giảm chuyển động hiển thị trực tiếp ô kết quả.
 

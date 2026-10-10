@@ -1,7 +1,6 @@
 const crypto=require('node:crypto'),engine=require('./roll-engine'),rules=require('../core/roll'),defaultStore=require('../models/roll-store');
 const error=(message,status=400)=>Object.assign(Error(message),{status});
 module.exports=function createRollService(bank,store=defaultStore){
-  let demoOrigin;
   const ready=()=>rules.enabled()&&!!process.env.ROLL_DATABASE_URL;
   async function current(now=Date.now(),client){
     const round=engine.makeRound(now);
@@ -19,7 +18,7 @@ module.exports=function createRollService(bank,store=defaultStore){
   }
   async function state(steamId){
     const now=Date.now(),round=await current(now);
-    const origin=process.env.ROLL_DATABASE_URL?await store.numberingOrigin(round.id):(demoOrigin??=round.id);
+    const origin=process.env.ROLL_DATABASE_URL?await store.numberingOrigin(round.id):Math.floor(rules.demoNumberingStartsAt/rules.roundMs);
     const roundNumber=id=>Number(id)>=origin?Number(id)-origin+1:null;
     let history=[],bets=[],totals=[],balance=null,pendingCount=0;
     if(process.env.ROLL_DATABASE_URL){
