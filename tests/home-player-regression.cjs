@@ -16,6 +16,7 @@ const body = {
 const badge = {textContent:'',className:''};
 const timers = new Map(); let timerId = 0;
 const context = { setTimeout(fn,delay) { timers.set(++timerId,{fn,delay}); return timerId; }, clearTimeout(id) { timers.delete(id); }, window: {addEventListener() {}}, App: { subscribeUser(fn) { listener = fn; return () => {}; } }, document: { hidden:false, getElementById: id => id === 'dino-status-badge' ? badge : body, addEventListener() {} } };
+context.ST25API = require('../src/api/endpoints');
 vm.createContext(context);
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets/js/home.js'),'utf8') + '\nglobalThis.widget = HomePlayer;', context);
 context.widget.init(); context.widget.init();
@@ -37,7 +38,8 @@ listener(user); assert.equal(badge.textContent,'● ONLINE');
 listener({linked:false}); assert.equal(builds,2);
 listener({linked:false}); assert.equal(builds,2);
 // Validate the real backend helper without starting Express or contacting IslePilot.
-const server = fs.readFileSync(path.join(__dirname,'../server.js'),'utf8');
+const server = ['src/controllers/context.js','src/controllers/player.js','src/api/islepilot-client.js']
+  .map(file => fs.readFileSync(path.join(__dirname,'..',file),'utf8')).join('\n');
 const helper = server.match(/function normalizeStatPct\(val, maxVal\) \{[\s\S]*?\n\}/)[0];
 vm.runInContext(helper,context);
 assert.equal(context.normalizeStatPct(0,100),0);
@@ -64,7 +66,7 @@ console.log('PASS sidebar: shared subscription, stable nodes, zero stats, change
   const request=context.widget.refreshVitals(); listener({linked:false});
   resolve({steam_id:'test',dino:{...user.dino,health:99}}); await request;
   assert.equal(context.widget.state,'anonymous'); assert.equal(timers.size,0);
-  const route=server.slice(server.indexOf("app.get('/api/player/vitals'"),server.indexOf("app.get('/api/player/me'"));
+  const route=server.slice(server.indexOf('app.get(ST25API.routes.playerVitals'),server.indexOf('app.get(ST25API.routes.playerMe'));
   assert.doesNotMatch(route,/getPlayerGarageStatus/);
   assert.match(route,/no-store/);
   assert.match(server,/test\(cleanEpKey\) \? 2000/);

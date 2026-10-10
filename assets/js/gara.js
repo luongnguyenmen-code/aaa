@@ -154,7 +154,7 @@ const Garage = {
   },
 
   async quickLoginManual() {
-    window.location.href = '/api/player/steam/login?redirect=/gara.html';
+    window.location.href = ST25API.routes.playerSteamLogin + "?redirect=/gara.html";
   },
 
   switchPlayer(targetSteamId) {
@@ -200,7 +200,7 @@ const Garage = {
         hdrs['x-admin-steam-id'] = storedUser.steam_id;
       }
 
-      const url = effectiveSid ? `/api/player/garage?steamId=${encodeURIComponent(effectiveSid)}` : '/api/player/garage';
+      const url = effectiveSid ? `${ST25API.routes.playerGarage}?steamId=${encodeURIComponent(effectiveSid)}` : ST25API.routes.playerGarage;
       const data = await App.readJSON(url, { headers: hdrs });
         
         // NẾU CHƯA ĐĂNG NHẬP (Chưa liên kết tài khoản Steam)
@@ -359,7 +359,7 @@ const Garage = {
           <p style="color: #94a3b8; max-width: 520px; margin: 0 auto 16px; line-height: 1.6;">
             Hãy đăng nhập bằng Steam chính chủ để hiển thị khủng long đang sống in-game của bạn!
           </p>
-          <a href="/api/player/steam/login?redirect=/gara.html" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); border: none;">
+          <a href="${ST25API.routes.playerSteamLogin}?redirect=/gara.html" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); border: none;">
             🎮 Đăng Nhập Steam Ngay
           </a>
         </div>
@@ -544,7 +544,7 @@ const Garage = {
 
     // 1. Gửi tín hiệu chuẩn bị cất lên server
     try {
-      const response = await this.prepareAction('/api/player/garage/park-prepare', { species: this.activeDino.species, steamId: sid }, sid);
+      const response = await this.prepareAction(ST25API.routes.playerGarageParkPrepare, { species: this.activeDino.species, steamId: sid }, sid);
       if (!response.ok) throw new Error('Không thể chuẩn bị cất khủng long. Vui lòng thử lại.');
     } catch (error) {
       if (token === this.actionToken) { this.actionBusy = false; App.showToast(error.message, 'error'); }
@@ -607,7 +607,7 @@ const Garage = {
 
     try {
       App.showToast('Hết 30 giây! Đang gửi lệnh niêm phong vào Gara...', 'info');
-      const res = await fetch('/api/player/garage/park', {
+      const res = await fetch(ST25API.routes.playerGaragePark, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(sid ? { 'x-steam-id': sid } : {}) },
         body: JSON.stringify({ steamId: sid })
@@ -664,7 +664,7 @@ const Garage = {
     // 1. Gửi tín hiệu chuẩn bị lên Server để phát cảnh báo 500m
     try {
       App.showToast(`Đang phát tín hiệu cảnh báo 500m cho [${species}]...`, 'info');
-      const response = await this.prepareAction('/api/player/garage/restore-prepare', { garageDinoId, species, growth, steamId: sid }, sid);
+      const response = await this.prepareAction(ST25API.routes.playerGarageRestorePrepare, { garageDinoId, species, growth, steamId: sid }, sid);
       if (!response.ok) throw new Error('Không thể chuẩn bị đưa khủng long ra đảo. Vui lòng thử lại.');
     } catch (error) {
       if (token === this.actionToken) { this.actionBusy = false; this.pendingRestoreDino = null; App.showToast(error.message, 'error'); }
@@ -733,7 +733,7 @@ const Garage = {
     App.showToast(`⏳ Hết 30 giây! Đang chính thức hồi phục [${escapeGarageHtml(d.species)}] vào game server...`, 'info');
 
     try {
-      const res = await fetch('/api/player/garage/restore', {
+      const res = await fetch(ST25API.routes.playerGarageRestore, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(sid ? { 'x-steam-id': sid } : {}) },
         body: JSON.stringify({ garageDinoId: d.garageDinoId, steamId: sid })
@@ -803,7 +803,7 @@ const Garage = {
     const sid = this.getActiveSteamId();
     try {
       App.showToast(`Đang bán [${species}] vào hệ thống...`, 'info');
-      const res = await fetch('/api/player/garage/sell', {
+      const res = await fetch(ST25API.routes.playerGarageSell, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(sid ? { 'x-steam-id': sid } : {}) },
         body: JSON.stringify({ garageDinoId, steamId: sid })

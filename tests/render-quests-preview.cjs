@@ -2,7 +2,7 @@
 const fs=require('node:fs');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
-const page=fs.readFileSync(path.join(root,'nhiem-vu.html'),'utf8');
+const page=require('./helpers/source.cjs').renderPage('nhiem-vu.html');
 const main=page.match(/<main\b[\s\S]*?<\/main>/)[0].replace(/<!-- Personal Profile Dashboard Banner -->[\s\S]*?<div id="quest-tabs"/,'<div id="quest-tabs"');
 const quests=[
   {id:'1',name:'Người săn mồi mới',description:'Hạ 3 khủng long.',period:'daily',config:{count:3},progress:0,rewardAmount:15000},

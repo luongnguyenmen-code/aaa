@@ -7,7 +7,7 @@ const elements = {};
 const tabs = ['daily','weekly','monthly','achievements','events'].map(key => ({dataset:{questTab:key}, count:{}, attrs:{}, querySelector(){return this.count;}, setAttribute(k,v){this.attrs[k]=v;}}));
 for (const id of ['prime-section','quest-board-panel','quest-section-title','quest-section-description','server-quest-count','quest-claim-all','server-quests-grid']) elements[id]={setAttribute(k,v){this[k]=v;}};
 const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const context={App:{escapeHTML:escape},document:{addEventListener(){},querySelectorAll(){return tabs;},getElementById(id){return elements[id];}}};
+const context={ST25API:require('../src/api/endpoints'),App:{escapeHTML:escape},document:{addEventListener(){},querySelectorAll(){return tabs;},getElementById(id){return elements[id];}}};
 vm.createContext(context);
 vm.runInContext(fs.readFileSync(path.join(root,'assets/js/quests.js'),'utf8')+'\nglobalThis.board=QuestBoard;',context);
 const board=context.board;
@@ -27,7 +27,10 @@ assert.equal(elements['quest-claim-all'].textContent,'Nhận tất cả · 500 L
 board.tab='events';board.render(data);assert.match(elements['server-quests-grid'].innerHTML,/Chưa có dữ liệu sự kiện/);
 board.tab='achievements';board.render(data);assert.equal(elements['prime-section'].hidden,false);assert.equal(elements['quest-board-panel'].hidden,true);
 assert.match(board.card({...data.serverQuests[0],name:'<script>alert(1)</script>'}),/&lt;script&gt;/);
-const html=fs.readFileSync(path.join(root,'nhiem-vu.html'),'utf8');
+const html=require('./helpers/source.cjs').renderPage('nhiem-vu.html');
 for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) if(!/src=/.test(m[1])) new vm.Script(m[2]);
-for(const [,reference] of html.matchAll(/(?:src|href)="(assets\/[^"?]+)(?:\?[^" ]*)?"/g)) assert.ok(fs.existsSync(path.join(root,reference)),reference);
+for(const [,reference] of html.matchAll(/(?:src|href)="(assets\/[^"?]+)(?:\?[^" ]*)?"/g)) {
+  if (/assets\/js\/(?:core\.js|api\/|features\/)/.test(reference)) require('./helpers/source.cjs').readPublicAsset(reference);
+  else assert.ok(fs.existsSync(path.join(root,reference)),reference);
+}
 console.log('PASS quests: tabs, correct counts, rarity, zero progress/reward, locked state, claim-all, Prime Elder, empty events, escaped text, inline syntax and asset references');

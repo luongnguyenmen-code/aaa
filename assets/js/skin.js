@@ -549,7 +549,7 @@ let myLiveBalance = 0;
     }
 
     async function quickLoginSkinManual() {
-      window.location.href = '/api/player/steam/login?redirect=/skin.html';
+      window.location.href = ST25API.routes.playerSteamLogin + "?redirect=/skin.html";
     }
 
     function loadSkinPageData() {
@@ -561,7 +561,7 @@ let myLiveBalance = 0;
       try {
         let meUser = null;
         try {
-          const meData = App.authResolved ? App.user : await App.readJSON('/api/player/me');
+          const meData = App.authResolved ? App.user : await App.readJSON(ST25API.routes.playerMe);
           if (meData) {
             if (meData && meData.isLoggedIn && meData.steam_id) {
               meUser = meData;
@@ -604,7 +604,7 @@ let myLiveBalance = 0;
         const swInp = document.getElementById('skin-switcher-steamid');
         if (swInp) swInp.value = activeSid;
 
-        const url = `/api/skin/info?steamId=${encodeURIComponent(activeSid)}`;
+        const url = `${ST25API.routes.skinInfo}?steamId=${encodeURIComponent(activeSid)}`;
         const data = await App.readJSON(url, { headers: { 'x-steam-id': activeSid } });
 
         myLiveBalance = data.balance || 0;
@@ -715,7 +715,7 @@ let myLiveBalance = 0;
       skinMutationBusy = true;
       try {
         App.showToast('Đang kết nối IslePilot để áp dụng 10 lớp màu da trực tiếp vào game...', 'info');
-        const res = await fetch('/api/skin/apply', {
+        const res = await fetch(ST25API.routes.skinApply, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-steam-id': activeSid },
           body: JSON.stringify({
@@ -758,7 +758,7 @@ let myLiveBalance = 0;
       skinMutationBusy = true;
       try {
         App.showToast('Đang xử lý giao dịch mua skin...', 'info');
-        const res = await fetch('/api/skin/buy', {
+        const res = await fetch(ST25API.routes.skinBuy, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-steam-id': activeSid },
           body: JSON.stringify({ skinId, skinName, price, steamId: activeSid })
@@ -787,7 +787,7 @@ let myLiveBalance = 0;
       skinMutationBusy = true;
       try {
         App.showToast(`Đang áp dụng ${App.escapeHTML(skinName)} vào nhân vật...`, 'info');
-        const res = await fetch('/api/skin/preset/apply', {
+        const res = await fetch(ST25API.routes.skinPresetApply, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-steam-id': activeSid },
           body: JSON.stringify({ presetId, variation: 0, steamId: activeSid })

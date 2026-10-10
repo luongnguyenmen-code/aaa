@@ -1,0 +1,49 @@
+# Cấu trúc mã nguồn ST25
+
+Luồng backend: `server.js → src/app.js → middleware → routes → controllers → models/api`.
+Luồng giao diện: `pages → views/render.js → partials → HTML trả về trình duyệt → features`.
+
+| Thư mục/file | Vai trò |
+| --- | --- |
+| `core/config.js` | Đường dẫn hệ thống, cổng web, nạp `.env`, địa chỉ IslePilot mặc định |
+| `core/server-config.json` | Cấu hình máy chủ game, chức năng, quyền và tích hợp IslePilot |
+| `core/web.js` | Cấu hình công khai cho trình duyệt |
+| `core/auth.js` | Xác thực phiên Steam và cookie |
+| `api/endpoints.js` | Danh sách URL API portal dùng chung cho backend/frontend |
+| `api/upstream-endpoints.js` | URL IslePilot, gồm hàm tạo đường dẫn có Steam ID và ID tài nguyên |
+| `api/islepilot-client.js` | Gọi IslePilot, timeout và cache |
+| `models/` | Đọc/ghi cấu hình và dữ liệu portal |
+| `controllers/` | Các handler theo chức năng: gara, skin, nhiệm vụ, chợ, hỗ trợ… |
+| `controllers/context.js` | Các hàm nghiệp vụ dùng chung và trạng thái của một application |
+| `middleware/` | Kiểm tra nguồn yêu cầu, phiên, giới hạn thao tác đồng thời và xử lý async |
+| `routes/` | Đăng ký API và URL trang công khai |
+| `pages/` | Toàn bộ trang HTML; `islepilot_*` là các bản HTML tham khảo đã có |
+| `views/partials/` | Header/footer dùng chung |
+| `views/render.js` | Ghép partial và giải quyết placeholder API |
+| `features/` | JavaScript chức năng đã tách từ các trang HTML |
+
+CSS, ảnh, thư viện và JavaScript dùng chung hiện có nằm trong `assets/`.
+`src/features/*.js` được phục vụ qua `/assets/js/features/*.js`; cấu hình công khai và danh sách API được phục vụ qua `/assets/js/core.js` và `/assets/js/api/endpoints.js`.
+
+## Thêm hoặc sửa trang
+
+1. Tạo/sửa `src/pages/ten-trang.html`.
+2. Dùng `<!-- include:header -->` và `<!-- include:footer -->` cho bố cục chung.
+3. Đưa logic riêng vào `src/features/ten-trang.js`, tải bằng `<script src="assets/js/features/ten-trang.js"></script>`.
+4. Tải `assets/js/core.js` và `assets/js/api/endpoints.js` trước các script chức năng.
+5. Gọi API bằng `ST25API.routes.tenEndpoint`; dùng `ST25API.url(path, params)` để tạo query.
+6. Với link API trong HTML, dùng `{{api:playerSteamLogin}}?redirect=/ten-trang.html`.
+
+Tên file tự ánh xạ sang URL `/ten-trang.html`. Các URL cũ và thư mục tài nguyên công khai giữ nguyên. URL `/pages/ten-trang.html` chuyển hướng sang URL chuẩn để liên kết tương đối luôn đúng.
+
+## Thêm API
+
+Thêm đường dẫn vào `api/endpoints.js`, thêm handler trong controller chức năng, rồi đăng ký controller trong `routes/api.js`. Controller nhận các phụ thuộc từ application context. Với API IslePilot, thêm đường dẫn/hàm vào `api/upstream-endpoints.js` và gọi qua client.
+
+## Chạy và triển khai
+
+Chạy `npm start` hoặc `node server.js` từ thư mục dự án `aaa`. Giao diện cần đi qua server để ghép header/footer. Vercel chạy cùng entry point `server.js` và đóng gói `src/` cùng `assets/`.
+
+`.env` đặt tại thư mục `aaa`. Biến môi trường hosting/shell được ưu tiên khi nạp `.env`; `ISLEPILOT_API_BASE_URL` có thể ghi đè địa chỉ upstream. Token và `SESSION_SECRET` thuộc cấu hình server, không đưa vào `core/web.js` hoặc API đường dẫn công khai.
+
+Chạy `npm test` để kiểm tra cú pháp, route, layout, asset, quyền truy cập và chức năng. Browser audit dùng dữ liệu giả lập và chặn giao dịch thật.

@@ -293,7 +293,7 @@ const IsleMap = {
     if (this.fetching) return;
     this.fetching = true;
     try {
-      let url = '/api/player/map';
+      let url = ST25API.routes.playerMap;
       if (this.selectedSteamId) {
         url += `?steamId=${encodeURIComponent(this.selectedSteamId)}`;
       }
@@ -502,7 +502,7 @@ const IsleMap = {
     if (!selectDest || !btnExecute) return;
 
     try {
-      const res = await fetch('/api/teleport/destinations');
+      const res = await fetch(ST25API.routes.teleportDestinations);
       if (res.ok) {
         const locations = await res.json();
         if (Array.isArray(locations) && locations.length > 0) {
@@ -532,7 +532,7 @@ const IsleMap = {
       btnExecute.textContent = 'Đang TP...';
 
       try {
-        const tpRes = await fetch('/api/teleport/execute', {
+        const tpRes = await fetch(ST25API.routes.teleportExecute, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ locationId, steamId: this.selectedSteamId })

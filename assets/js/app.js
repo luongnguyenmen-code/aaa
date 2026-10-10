@@ -26,7 +26,7 @@ const App = {
     const key = url + JSON.stringify(options);
     if (this.readRequests.has(key)) return this.readRequests.get(key);
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const timeout = setTimeout(() => controller.abort(), ST25Core.readTimeoutMs);
     const request = fetch(url, { ...options, signal: controller.signal })
       .then(async response => {
         if (!response.ok) {
@@ -95,7 +95,7 @@ const App = {
 
   async loadEnvironment() {
     try {
-      this.renderWeatherWidget(await this.readJSON('/api/server/environment'));
+      this.renderWeatherWidget(await this.readJSON(ST25API.routes.serverEnvironment));
     } catch (e) {
       // offline fallback
     }
@@ -156,7 +156,7 @@ const App = {
 
   async loadConfig() {
     try {
-      this.config = await this.readJSON('/api/server/status');
+      this.config = await this.readJSON(ST25API.routes.serverStatus);
       this.updateServerStatusBadge();
     } catch (e) {
       console.warn('API offline, running in standalone mode');
@@ -166,7 +166,7 @@ const App = {
   async checkAuth() {
     let error = null;
     try {
-      const u = await this.readJSON('/api/player/me');
+      const u = await this.readJSON(ST25API.routes.playerMe);
         if (u && u.linked && u.steam_id) {
           this.user = u;
           this.notifications = Array.isArray(u.notifications) ? u.notifications : [];
@@ -195,7 +195,7 @@ const App = {
 
   async checkAuthSilently() {
     try {
-      const u = await this.readJSON('/api/player/me');
+      const u = await this.readJSON(ST25API.routes.playerMe);
       const wasAdmin = !!this.user?.isAdmin;
       this.user = u && u.linked && u.steam_id ? u : null;
       this.authResolved = true;
@@ -583,7 +583,7 @@ const App = {
     this.user = null;
     localStorage.removeItem('the_isle_demo_user');
     localStorage.removeItem('st25_steam_user');
-    fetch('/api/player/logout', { method: 'POST' }).catch(() => {});
+    fetch(ST25API.routes.playerLogout, { method: 'POST' }).catch(() => {});
     this.updateUI();
     this.showToast('Đã đăng xuất tài khoản.', 'info');
     setTimeout(() => window.location.reload(), 500);

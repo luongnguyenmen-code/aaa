@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 
 module.exports = async function run(root = path.resolve(__dirname, '..')) {
   const results = [];
-  const read = file => fs.readFileSync(path.join(root, file), 'utf8');
+  const {read, pageScripts} = require('./helpers/source.cjs');
   function environment() {
     const timers = new Map();
     const listeners = [];
@@ -14,6 +14,7 @@ module.exports = async function run(root = path.resolve(__dirname, '..')) {
     const clock = { now: 1000 };
     const context = {
       console, AbortController, URLSearchParams,
+      ST25API: require('../src/api/endpoints'), ST25Core: require('../src/core/web'),
       Date: class extends Date { static now() { return clock.now; } },
       setTimeout: f => { timers.set(++timerId, f); return timerId; },
       clearTimeout: id => timers.delete(id),
@@ -33,8 +34,7 @@ module.exports = async function run(root = path.resolve(__dirname, '..')) {
     return e.context.subject;
   }
   function inline(e, file, name) {
-    const body = [...read(file).matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
-      .filter(m => !/\bsrc=/.test(m[1])).map(m => m[2]).join('\n');
+    const body = pageScripts(file);
     vm.runInContext(body + `\nglobalThis.subject = ${name};`, e.context, { filename: file });
     return e.context.subject;
   }

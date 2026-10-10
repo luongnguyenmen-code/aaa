@@ -87,4 +87,26 @@ Chạy `npm test` để kiểm tra mã nguồn, backend và frontend. Xem [kết
 
 Trình chỉnh skin có mô hình 3D minh họa cho 17 loài, xoay/zoom, đồng bộ bảng màu, camera tự căn và xuất ảnh PNG. Có thể thiết kế khi chưa đăng nhập; thao tác áp dụng vào game vẫn cần Steam.
 
-Xem [tính năng, tối ưu và cách kiểm tra](tests/SKIN_3D.md).
+Xem [tính năng, tối ưu và cách kiểm tra](tests/SKIN_3D.md).## ?? C?U TR?C TH? M?C
+
+```text
+src/
+??? app.js                 # Gh?p ?ng d?ng Express
+??? core/                  # C?u h?nh web/server v? x?c th?c
+??? api/                   # URL API portal, URL/client IslePilot
+??? models/                # L?u tr? c?u h?nh v? d? li?u
+??? controllers/           # Backend theo ch?c n?ng
+??? middleware/            # X?c th?c, kh?a thao t?c, x? l? y?u c?u
+??? routes/                # ??ng k? URL trang v? API
+??? pages/                 # To?n b? trang HTML
+??? views/partials/        # Header/footer d?ng chung
+??? features/              # JavaScript ch?c n?ng t?ch t? HTML
+assets/                    # CSS, ?nh, th? vi?n, JavaScript d?ng chung
+server.js                  # Entry point Node/Vercel
+```
+
+Xem [h??ng d?n c?u tr?c, th?m trang/API v? tri?n khai](src/ARCHITECTURE.md).
+S?a giao di?n t?i `src/pages/`; c?u h?nh m?y ch? t?i `src/core/server-config.json`.
+URL truy c?p v?n l? `/gara.html`, `/skin.html`? Ch?y qua Node server ?? gh?p header/footer.
+
+

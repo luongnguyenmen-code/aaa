@@ -1,29 +1,36 @@
 const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm'), assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '..');
+const {renderPage, readPublicAsset} = require('./helpers/source.cjs');
+const pagesDir = path.join(root, 'src/pages');
 // The editor must remain deployable even when its entry page is accidentally removed.
-for (const file of ['skin.html', 'assets/js/skin.js', 'assets/js/skin-editor-ui.js', 'assets/css/skin-editor.css']) {
+for (const file of ['src/pages/skin.html', 'assets/js/skin.js', 'assets/js/skin-editor-ui.js', 'assets/css/skin-editor.css']) {
   assert.ok(fs.existsSync(path.join(root, file)), `Skin editor: missing required file ${file}`);
 }
 let scripts = 0, json = 0, pages = 0;
 function walk(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (['node_modules', '.git'].includes(entry.name) || /^\.(?:redesign|quests)-browser-/.test(entry.name)) continue;
+    if (['node_modules', '.git', '.build-cache'].includes(entry.name) || /^\.(?:redesign|quests)-browser-/.test(entry.name)) continue;
     const file = path.join(dir, entry.name);
     if (entry.isDirectory()) walk(file);
     else if (/\.(?:js|cjs)$/.test(file)) { new vm.Script(fs.readFileSync(file, 'utf8'), { filename: file }); scripts++; }
     else if (file.endsWith('.json')) { JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, '')); json++; }
     else if (file.endsWith('.html')) {
-      const html = fs.readFileSync(file, 'utf8');
+      const isPage = path.dirname(file) === pagesDir;
+      const html = isPage ? renderPage(entry.name) : fs.readFileSync(file, 'utf8');
       for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
         if (/\bsrc\s*=|\btype\s*=\s*["'](?:application\/[^"']+|module)/i.test(match[1])) continue;
         new vm.Script(match[2], { filename: file }); scripts++;
       }
-      if (path.dirname(file) === root && !entry.name.startsWith('islepilot_')) {
+      if (isPage && !entry.name.startsWith('islepilot_')) {
         for (const [, ref] of html.replace(/<script\b[\s\S]*?<\/script>/gi, '').matchAll(/(?:src|href)\s*=\s*["']([^"']+)["']/gi)) {
           const clean = ref.split(/[?#]/)[0];
           if (!clean || /^(?:[a-z]+:|\/\/|\/api\/)/i.test(clean)) continue;
-          const local = path.resolve(root, clean.replace(/^\//, ''));
-          assert.ok(fs.existsSync(local), `${entry.name}: missing ${ref}`);
+          const normalized = clean.replace(/^\//, '');
+          if (/^assets\/js\/(?:core\.js|api\/|features\/)/.test(normalized)) readPublicAsset(normalized);
+          else {
+            const local = path.resolve(normalized.endsWith('.html') ? pagesDir : root, normalized);
+            assert.ok(fs.existsSync(local), `${entry.name}: missing ${ref}`);
+          }
         }
       }
       pages++;
@@ -31,4 +38,11 @@ function walk(dir) {
   }
 }
 walk(root);
+assert.equal(fs.readdirSync(root).filter(name=>name.endsWith('.html')).length, 0);
+for (const name of fs.readdirSync(pagesDir).filter(n=>n.endsWith('.html')&&!n.startsWith('islepilot_'))) {
+  const html=renderPage(name);
+  assert.doesNotMatch(html,/<!-- include:/);
+  assert.equal((html.match(/<header\b/g)||[]).length,1,name);
+  for(const [,source] of html.matchAll(/<script[^>]*\bsrc=["'](assets\/[^"']+)["']/g)) readPublicAsset(source);
+}
 console.log(`PASS project syntax: ${pages} HTML files, ${scripts} scripts, ${json} JSON files; public page local links/assets`);

@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sòng Bạc ST25 — Tài Xỉu & Bầu Cua Dino 🎲🦖</title>
+  <script src="assets/js/features/song-bac.js"></script>
+  <link rel="stylesheet" href="assets/css/style.css?v=20261009-stable1">
+  <style>
+    .casino-tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 25px;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 12px;
+    }
+    .casino-tab-btn {
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(20, 26, 21, 0.85);
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .casino-tab-btn:hover {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fff;
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+    .casino-tab-btn.active {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #000;
+      border-color: #fbbf24;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+    }
+
+    /* Arena Container */
+    .casino-arena {
+      background: rgba(15, 22, 17, 0.92);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: var(--radius-md);
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+      margin-bottom: 30px;
+      position: relative;
+      overflow: hidden;
+    }
+    .casino-arena::before {
+      content: "";
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Dice Plate & Cup Area */
+    .plate-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 15px 0 30px 0;
+    }
+    .dice-plate {
+      width: 280px;
+      height: 140px;
+      background: radial-gradient(ellipse, #1c2720 0%, #0d1410 70%, #060a08 100%);
+      border: 6px solid #4a3818;
+      border-radius: 50%;
+      box-shadow: inset 0 0 25px rgba(0,0,0,0.9), 0 8px 25px rgba(0,0,0,0.8), 0 0 15px rgba(245, 158, 11, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      position: relative;
+    }
+    .dice-plate.shaking {
+      animation: plateShake 0.6s infinite alternate;
+    }
+    @keyframes plateShake {
+      0% { transform: translate(2px, 1px) rotate(0deg); }
+      25% { transform: translate(-3px, -2px) rotate(-1deg); }
+      50% { transform: translate(3px, 2px) rotate(1deg); }
+      75% { transform: translate(-2px, 1px) rotate(0deg); }
+      100% { transform: translate(2px, -2px) rotate(1deg); }
+    }
+
+    /* Dice Visuals */
+    .dice-cube {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #fffdfa 0%, #e2e8f0 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #0f172a;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.6), inset 0 0 4px rgba(255,255,255,0.8);
+      border: 1px solid #cbd5e1;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .dice-cube.rolling {
+      animation: diceRoll 0.5s infinite linear;
+    }
+    @keyframes diceRoll {
+      0% { transform: rotate(0deg) scale(0.9); }
+      50% { transform: rotate(180deg) scale(1.1); }
+      100% { transform: rotate(360deg) scale(0.9); }
+    }
+    .dice-cube.red {
+      color: #dc2626;
+    }
+
+    /* Bầu Cua Dice */
+    .baucua-cube {
+      width: 58px;
+      height: 58px;
+      background: linear-gradient(135deg, #2a382e 0%, #17221b 100%);
+      border: 2px solid #fbbf24;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.7), 0 0 10px rgba(245, 158, 11, 0.2);
+    }
+    .baucua-cube .icon {
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+    .baucua-cube .label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #fbbf24;
+      margin-top: 2px;
+    }
+
+    /* Betting Board - Tài Xỉu */
+    .taixiu-board {
+      display: grid;
+      grid-template-columns: 1fr 140px 1fr;
+      gap: 16px;
+      margin-bottom: 25px;
+    }
+    .bet-box {
+      background: rgba(22, 32, 26, 0.7);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+    .bet-box:hover {
+      border-color: rgba(245, 158, 11, 0.5);
+      background: rgba(30, 42, 34, 0.9);
+      transform: translateY(-2px);
+    }
+    .bet-box.selected {
+      border-color: #fbbf24;
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.18) 0%, rgba(30, 42, 34, 0.95) 100%);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+    }
+    .bet-box.selected::after {
+      content: "✓ ĐÃ CHỌN";
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #fbbf24;
+    }
+    .bet-box-title {
+      font-size: 1.6rem;
+      font-weight: 900;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .bet-box-odds {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #34d399;
+      background: rgba(52, 211, 153, 0.1);
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 6px;
+    }
+    .bet-box-range {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Bầu Cua Grid */
+    .baucua-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 25px;
+    }
+    .baucua-cell {
+      background: rgba(22, 32, 26, 0.7);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      padding: 16px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .baucua-cell:hover {
+      border-color: rgba(245, 158, 11, 0.4);
+      background: rgba(30, 42, 34, 0.9);
+      transform: translateY(-2px);
+    }
+    .baucua-cell.active-bet {
+      border-color: #fbbf24;
+      background: rgba(245, 158, 11, 0.12);
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+    }
+    .baucua-cell-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #fbbf24;
+      color: #000;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+
+    /* Chip controls */
+    .chip-selector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .chip-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px dashed rgba(251, 191, 36, 0.5);
+      background: #19231c;
+      color: #fbbf24;
+      font-weight: 800;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .chip-btn:hover, .chip-btn.active {
+      transform: scale(1.12);
+      background: #fbbf24;
+      color: #000;
+      border-style: solid;
+      box-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
+    }
+
+    /* History & Stats Bar */
+    .history-beads {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 10px 14px;
+      background: rgba(10, 15, 12, 0.6);
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .bead {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 900;
+      color: #fff;
+    }
+    .bead.tai { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.4); }
+    .bead.xiu { background: #3b82f6; box-shadow: 0 0 6px rgba(59, 130, 246, 0.4); }
+    .bead.bao { background: #eab308; color: #000; box-shadow: 0 0 8px rgba(234, 179, 8, 0.6); }
+
+    /* Result Toast Overlay */
+    .result-announcement {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 800;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    .result-announcement.win {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1.5px solid #10b981;
+      color: #6ee7b7;
+    }
+    .result-announcement.lose {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1.5px solid #ef4444;
+      color: #fca5a5;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========================================== */
+    /* DINO DERBY RACETRACK STYLES */
+    /* ========================================== */
+    .race-track-wrapper {
+      background: radial-gradient(circle at top, #1b261e 0%, #0c130f 100%);
+      border: 2px solid rgba(245, 158, 11, 0.35);
+      border-radius: var(--radius-md);
+      padding: 18px 16px;
+      margin-bottom: 24px;
+      position: relative;
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9), 0 8px 30px rgba(0, 0, 0, 0.7);
+    }
+    .race-commentary-bar {
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      border-radius: 8px;
+      padding: 10px 16px;
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #fbbf24;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 46px;
+      text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+    }
+    .race-track-field {
+      position: relative;
+      background: linear-gradient(180deg, #141c16 0%, #1e2b22 50%, #141c16 100%);
+      border: 2px solid #2f3e33;
+      border-radius: 10px;
+      padding: 10px 0;
+      overflow: hidden;
+    }
+    .race-lane {
+      display: flex;
+      align-items: center;
+      height: 54px;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.12);
+      position: relative;
+      padding: 0 12px;
+    }
+    .race-lane:last-child {
+      border-bottom: none;
+    }
+    .race-lane-meta {
+      width: 140px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 2;
+    }
+    .lane-num-badge {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 900;
+      color: #cbd5e1;
+    }
+    .lane-racer-name {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+    }
+    .lane-racer-odds {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #34d399;
+    }
+    .race-lane-field {
+      flex: 1;
+      position: relative;
+      height: 100%;
+      margin: 0 50px 0 10px;
+    }
+    .finish-line-marker {
+      position: absolute;
+      right: 35px;
+      top: 0;
+      bottom: 0;
+      width: 18px;
+      background: repeating-linear-gradient(
+        45deg,
+        #fff,
+        #fff 6px,
+        #000 6px,
+        #000 12px
+      );
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+      z-index: 1;
+      opacity: 0.85;
+    }
+    .finish-cup-flag {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.3rem;
+      z-index: 2;
+    }
+    .racer-runner {
+      position: absolute;
+      top: 50%;
+      left: 0%;
+      transform: translateY(-50%);
+      font-size: 1.85rem;
+      line-height: 1;
+      transition: left 0.1s linear;
+      z-index: 3;
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.7));
+    }
+    .racer-runner.running {
+      animation: racerGallop 0.22s infinite alternate ease-in-out;
+    }
+    @keyframes racerGallop {
+      0% { transform: translateY(-52%) rotate(-4deg); }
+      100% { transform: translateY(-44%) rotate(5deg) scale(1.04); }
+    }
+    .racer-runner.winner-boost {
+      filter: drop-shadow(0 0 12px #fbbf24) brightness(1.2);
+    }
+
+    /* Dino Bet Cards Grid */
+    .race-bets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .race-bet-card {
+      background: rgba(22, 32, 26, 0.7);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      padding: 14px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .race-bet-card:hover {
+      border-color: rgba(245, 158, 11, 0.5);
+      background: rgba(30, 42, 34, 0.9);
+      transform: translateY(-2px);
+    }
+    .race-bet-card.active-bet {
+      border-color: #fbbf24;
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.15) 0%, rgba(30, 42, 34, 0.95) 100%);
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.25);
+    }
+    .race-bet-card .racer-avatar {
+      font-size: 2.2rem;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .race-bet-card .racer-title {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+    .race-bet-card .racer-odds {
+      display: inline-block;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #34d399;
+      background: rgba(52, 211, 153, 0.12);
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+    }
+    .race-bet-card .racer-current-bet {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .race-bet-card .racer-current-bet strong {
+      color: #fbbf24;
+      font-size: 0.95rem;
+    }
+  </style>
+  <link rel="stylesheet" href="assets/css/buttons.css?v=20261009-stable1">
+  <link rel="stylesheet" href="assets/css/fonts.css?v=20261009-audit">
+  <link rel="stylesheet" href="assets/css/motion.css?v=20261009-stable1">
+  <script src="assets/js/motion.js?v=20261009-stable1" defer></script>
+  <link rel="stylesheet" href="assets/css/portal-layout.css?v=20261009-spacing1">
+  <link rel="stylesheet" href="assets/css/logo.css?v=20261009-stable1">
+  <link rel="icon" type="image/png" href="assets/imges/st25-favicon.png?v=20261009-stable1">
+  <link rel="stylesheet" href="assets/css/redesign.css?v=20261009-ui1">
+  <script src="assets/js/ui.js?v=20261009-ui1" defer></script>
+  <script src="assets/js/core.js"></script>
+  <script src="assets/js/api/endpoints.js"></script>
+</head>
+<body class="st25-portal">
+
+  <!-- Header -->
+  <!-- include:header -->
+
+  <!-- Main Content -->
+  <main class="container" style="padding: 35px 20px; max-width: 1040px;">
+
+    <!-- Top Banner: User Balance & Server Treasury -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 25px;">
+      <!-- Player Wallet -->
+      <div class="card" style="padding: 20px; display: flex; align-items: center; justify-content: space-between; border-color: rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(20, 28, 22, 0.95), rgba(30, 40, 32, 0.9));">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <img id="user-avatar" src="https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #fbbf24;">
+          <div>
+            <div id="user-name" style="font-weight: 800; font-size: 1.05rem; color: #fff;">Đang kết nối...</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted);" id="user-steam-id">SteamID: ---</div>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 0.75rem; color: #fef08a; font-weight: 700; text-transform: uppercase;">🌾 Ví Lúa Live</div>
+          <div id="user-lua-balance" style="font-size: 1.55rem; font-weight: 900; color: #fbbf24; text-shadow: 0 0 12px rgba(245, 158, 11, 0.4);">
+            0 🌾
+          </div>
+        </div>
+      </div>
+
+      <!-- Server Treasury Pool (Kho Bạc Làng ST25) -->
+      <div class="card" style="padding: 20px; display: flex; align-items: center; justify-content: space-between; border-color: rgba(16, 185, 129, 0.35); background: linear-gradient(135deg, rgba(16, 26, 20, 0.95), rgba(22, 36, 28, 0.9));">
+        <div>
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+            <span style="font-size: 1.2rem;">🏛️</span>
+            <span style="font-weight: 800; color: #6ee7b7; font-size: 0.95rem;">KHO BẠC LÀNG ST25</span>
+          </div>
+          <div style="font-size: 0.76rem; color: var(--text-muted);">Quỹ thu hồi Lúa bảo trì & sự kiện server</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 0.75rem; color: #a7f3d0; font-weight: 700;">TỔNG LÚA ĐÃ THU HỒI</div>
+          <div id="server-treasury-amount" style="font-size: 1.55rem; font-weight: 900; color: #34d399; text-shadow: 0 0 12px rgba(52, 211, 153, 0.35);">
+            18,450 🌾
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Casino Switcher Tabs -->
+    <div class="casino-tabs">
+      <button class="casino-tab-btn active" onclick="switchGame('taixiu')">
+        <span>🎲</span> TÀI XỈU DINO (SICBO)
+      </button>
+      <button class="casino-tab-btn" onclick="switchGame('baucua')">
+        <span>🦀</span> BẦU CUA ST25 (REX - TRIKE - DEINO)
+      </button>
+      <button class="casino-tab-btn" onclick="switchGame('race')">
+        <span>🏁</span> ĐUA KHỦNG LONG (DINO DERBY)
+      </button>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- GAME 1: TÀI XỈU DINO (SICBO) -->
+    <!-- ========================================== -->
+    <section id="game-taixiu-sec" class="casino-arena">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div>
+          <h2 style="font-size: 1.35rem; color: #fff; margin-bottom: 2px;">🎲 Tài Xỉu Đảo Gateway</h2>
+          <p style="font-size: 0.82rem; color: var(--text-secondary);">Dự đoán tổng điểm 3 viên xí ngầu. Cược Ăn Thịt (11-17) hoặc Ăn Cỏ (4-10).</p>
+        </div>
+        <span class="rule-badge badge-warn">Tỉ lệ 1 : 1.95</span>
+      </div>
+
+      <!-- Soi Cầu (Recent Beads) -->
+      <div style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Lịch sử cầu gần đây (Đỏ: Tài | Xanh: Xỉu | Vàng: Bão)</span>
+          <span id="taixiu-ratio-stat" style="font-size: 0.75rem; color: #cbd5e1;">---</span>
+        </div>
+        <div id="taixiu-history-beads" class="history-beads">
+          <span style="color: var(--text-muted); font-size: 0.8rem;">Đang tải lịch sử...</span>
+        </div>
+      </div>
+
+      <!-- Dice Plate -->
+      <div class="plate-wrapper">
+        <div id="taixiu-plate" class="dice-plate">
+          <div class="dice-cube red" id="t-dice-1">4</div>
+          <div class="dice-cube" id="t-dice-2">5</div>
+          <div class="dice-cube red" id="t-dice-3">6</div>
+        </div>
+        <div id="taixiu-sum-display" style="margin-top: 12px; font-weight: 800; font-size: 1.1rem; color: #fbbf24;">
+          Tổng: 15 Điểm — [🥩 ĂN THỊT / TÀI]
+        </div>
+      </div>
+
+      <!-- Betting Boxes -->
+      <div class="taixiu-board">
+        <!-- Cửa XỈU (Ăn Cỏ) -->
+        <div id="bet-opt-xiu" class="bet-box" onclick="selectTaiXiuBet('xiu')">
+          <div class="bet-box-title" style="color: #60a5fa;">
+            <span>🥗</span> XỈU (ĂN CỎ)
+          </div>
+          <div class="bet-box-odds">1 ĂN 1.95</div>
+          <div class="bet-box-range">Tổng 4 đến 10 điểm (Trừ bão)</div>
+        </div>
+
+        <!-- Cửa BÃO (Bộ Ba) -->
+        <div id="bet-opt-bao" class="bet-box" onclick="selectTaiXiuBet('bao')">
+          <div class="bet-box-title" style="font-size: 1.25rem; color: #fbbf24;">
+            <span>⚡</span> BÃO DINO
+          </div>
+          <div class="bet-box-odds" style="color: #fbbf24; background: rgba(245, 158, 11, 0.15);">1 ĂN 10.0</div>
+          <div class="bet-box-range">Bộ 3 đồng nhất (111..666)</div>
+        </div>
+
+        <!-- Cửa TÀI (Ăn Thịt) -->
+        <div id="bet-opt-tai" class="bet-box selected" onclick="selectTaiXiuBet('tai')">
+          <div class="bet-box-title" style="color: #f87171;">
+            <span>🥩</span> TÀI (ĂN THỊT)
+          </div>
+          <div class="bet-box-odds">1 ĂN 1.95</div>
+          <div class="bet-box-range">Tổng 11 đến 17 điểm (Trừ bão)</div>
+        </div>
+      </div>
+
+      <!-- Quick Chips & Input -->
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+        <div class="chip-selector">
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-right: 4px;">Mức cược:</span>
+          <button class="chip-btn" onclick="setBetAmount(5)">5</button>
+          <button class="chip-btn active" onclick="setBetAmount(10)">10</button>
+          <button class="chip-btn" onclick="setBetAmount(25)">25</button>
+          <button class="chip-btn" onclick="setBetAmount(50)">50</button>
+          <button class="chip-btn" onclick="setBetAmount(100)">100</button>
+          <button class="chip-btn" onclick="setBetAmount(500)">500</button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; max-width: 420px; width: 100%;">
+          <input type="number" id="taixiu-bet-input" value="10" min="1" max="1000" class="form-control" style="text-align: center; font-size: 1.1rem; font-weight: 800; color: #fbbf24; background: #0f1612; border-color: rgba(245, 158, 11, 0.4);">
+          <span style="font-weight: 800; color: #fef08a;">Lúa 🌾</span>
+        </div>
+
+        <button id="btn-roll-taixiu" onclick="playTaiXiu()" class="btn btn-primary" style="padding: 14px 45px; font-size: 1.15rem; font-weight: 900; background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 20px rgba(245, 158, 11, 0.45); border-radius: 30px;">
+          🎲 LẮC BÁT & ĐẶT CƯỢC NGAY 🚀
+        </button>
+      </div>
+
+      <!-- Result Announcement -->
+      <div id="taixiu-announcement" class="result-announcement"></div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- GAME 2: BẦU CUA ST25 (DINO BẦU CUA) -->
+    <!-- ========================================== -->
+    <section id="game-baucua-sec" class="casino-arena" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div>
+          <h2 style="font-size: 1.35rem; color: #fff; margin-bottom: 2px;">🦀 Bầu Cua Khủng Long ST25</h2>
+          <p style="font-size: 0.82rem; color: var(--text-secondary);">Chọn 1 hoặc nhiều linh vật Gateway để đặt cược Lúa. Ra 1 con ăn x1, ra 2 con ăn x2, ra 3 con ăn x3!</p>
+        </div>
+        <button onclick="clearBauCuaBets()" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">
+          🧹 Xóa Hết Cược
+        </button>
+      </div>
+
+      <!-- Dice Plate (Bầu Cua) -->
+      <div class="plate-wrapper">
+        <div id="baucua-plate" class="dice-plate" style="width: 320px; gap: 18px;">
+          <div class="baucua-cube" id="bc-dice-1">
+            <span class="icon">🦖</span>
+            <span class="label">T-REX</span>
+          </div>
+          <div class="baucua-cube" id="bc-dice-2">
+            <span class="icon">🦀</span>
+            <span class="label">CUA</span>
+          </div>
+          <div class="baucua-cube" id="bc-dice-3">
+            <span class="icon">🐔</span>
+            <span class="label">GÀ</span>
+          </div>
+        </div>
+        <div id="baucua-result-display" style="margin-top: 12px; font-weight: 800; font-size: 1rem; color: #cbd5e1;">
+          Kết quả ván trước: [🦖 T-Rex] - [🦀 Cua Biển] - [🐔 Gà Rừng]
+        </div>
+      </div>
+
+      <!-- Bầu Cua 6 Cells -->
+      <div class="baucua-grid">
+        <!-- 1. T-Rex -->
+        <div class="baucua-cell" onclick="addBauCuaBet('rex')">
+          <div style="font-size: 2.3rem;">🦖</div>
+          <div style="font-weight: 800; font-size: 1rem; color: #fff; margin-top: 4px;">T-REX (BẠO CHÚA)</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Cược: <strong id="bc-bet-rex" style="color: #fbbf24;">0</strong> 🌾</div>
+        </div>
+
+        <!-- 2. Trike -->
+        <div class="baucua-cell" onclick="addBauCuaBet('trike')">
+          <div style="font-size: 2.3rem;">🦣</div>
+          <div style="font-weight: 800; font-size: 1rem; color: #fff; margin-top: 4px;">TRIKE (TAM GIÁC)</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Cược: <strong id="bc-bet-trike" style="color: #fbbf24;">0</strong> 🌾</div>
+        </div>
+
+        <!-- 3. Deinosuchus -->
+        <div class="baucua-cell" onclick="addBauCuaBet('deino')">
+          <div style="font-size: 2.3rem;">🐊</div>
+          <div style="font-weight: 800; font-size: 1rem; color: #fff; margin-top: 4px;">DEINO (CÁ SẤU)</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Cược: <strong id="bc-bet-deino" style="color: #fbbf24;">0</strong> 🌾</div>
+        </div>
+
+        <!-- 4. Cua Biển -->
+        <div class="baucua-cell" onclick="addBauCuaBet('cua')">
+          <div style="font-size: 2.3rem;">🦀</div>
+          <div style="font-weight: 800; font-size: 1rem; color: #fff; margin-top: 4px;">CUA BỜ BIỂN</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Cược: <strong id="bc-bet-cua" style="color: #fbbf24;">0</strong> 🌾</div>
+        </div>
+
+        <!-- 5. Gà Rừng -->
+        <div class="baucua-cell" onclick="addBauCuaBet('ga')">
+          <div style="font-size: 2.3rem;">🐔</div>
+          <div style="font-weight: 800; font-size: 1rem; color: #fff; margin-top: 4px;">GÀ RỪNG (AI)</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Cược: <strong id="bc-bet-ga" style="color: #fbbf24;">0</strong> 🌾</div>
+        </div>
+
+        <!-- 6. Ếch Ương -->
+        <div class="baucua-cell" onclick="addBauCuaBet('ech')">
+          <div style="font-size: 2.3rem;">🐸</div>
+          <div style="font-weight: 800; font-size: 1rem; color: #fff; margin-top: 4px;">ẾCH ƯƠNG (BULLFROG)</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Cược: <strong id="bc-bet-ech" style="color: #fbbf24;">0</strong> 🌾</div>
+        </div>
+      </div>
+
+      <!-- Chip selector for Bầu Cua -->
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+        <div class="chip-selector">
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-right: 4px;">Mệnh giá mỗi cú click:</span>
+          <button class="chip-btn" onclick="setBauCuaChip(5)">+5</button>
+          <button class="chip-btn active" onclick="setBauCuaChip(10)">+10</button>
+          <button class="chip-btn" onclick="setBauCuaChip(25)">+25</button>
+          <button class="chip-btn" onclick="setBauCuaChip(50)">+50</button>
+          <button class="chip-btn" onclick="setBauCuaChip(100)">+100</button>
+        </div>
+
+        <div style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 4px;">
+          Tổng tiền cược: <span id="bc-total-bet-display" style="color: #fbbf24; font-size: 1.3rem;">0</span> Lúa 🌾
+        </div>
+
+        <button id="btn-roll-baucua" onclick="playBauCua()" class="btn btn-primary" style="padding: 14px 45px; font-size: 1.15rem; font-weight: 900; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 20px rgba(16, 185, 129, 0.45); border-radius: 30px;">
+          🦀 XÓC BẦU CUA & MỞ BÁT 🚀
+        </button>
+      </div>
+
+      <!-- Result Announcement -->
+      <div id="baucua-announcement" class="result-announcement"></div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- GAME 3: ĐUA KHỦNG LONG (DINO DERBY) -->
+    <!-- ========================================== -->
+    <section id="game-race-sec" class="casino-arena" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h2 style="font-size: 1.35rem; color: #fff; margin-bottom: 2px;">🏁 Đua Khủng Long Ảo Gateway Derby</h2>
+          <p style="font-size: 0.82rem; color: var(--text-secondary);">Chọn chiến mã khủng long bạn tin tưởng, đặt cược và theo dõi màn bứt tốc ngoạn mục 6 giây!</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="rule-badge badge-warn" style="font-size: 0.75rem;">⚡ Tốc độ cao 6s</span>
+          <button onclick="clearRaceBets()" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">
+            🧹 Xóa Cược
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Commentary Bar -->
+      <div id="race-commentary-text" class="race-commentary-bar">
+        <span>📢</span> <span id="race-live-narrator">Chào mừng các chiến binh đến với Trường Đua ST25 Derby! Hãy đặt cược vào chiến mã bạn tin tưởng.</span>
+      </div>
+
+      <!-- Virtual Racetrack -->
+      <div class="race-track-wrapper">
+        <div class="race-track-field">
+          <!-- Vạch đích toàn đường đua -->
+          <div class="finish-line-marker"></div>
+          <div class="finish-cup-flag">🏆</div>
+
+          <!-- Làn 1: Gallimimus -->
+          <div class="race-lane" id="lane-row-galli">
+            <div class="race-lane-meta">
+              <span class="lane-num-badge" style="border: 1px solid #fbbf24; color: #fbbf24;">1</span>
+              <div>
+                <div class="lane-racer-name">Gallimimus</div>
+                <div class="lane-racer-odds">x2.0 (Gà Gió Lốc)</div>
+              </div>
+            </div>
+            <div class="race-lane-field">
+              <div class="racer-runner" id="runner-galli" style="left: 0%;">🏃</div>
+            </div>
+          </div>
+
+          <!-- Làn 2: Carnotaurus -->
+          <div class="race-lane" id="lane-row-carno">
+            <div class="race-lane-meta">
+              <span class="lane-num-badge" style="border: 1px solid #f87171; color: #f87171;">2</span>
+              <div>
+                <div class="lane-racer-name">Carnotaurus</div>
+                <div class="lane-racer-odds">x2.6 (Tên Lửa Đỏ)</div>
+              </div>
+            </div>
+            <div class="race-lane-field">
+              <div class="racer-runner" id="runner-carno" style="left: 0%;">🦖</div>
+            </div>
+          </div>
+
+          <!-- Làn 3: Pachycephalosaurus -->
+          <div class="race-lane" id="lane-row-pachy">
+            <div class="race-lane-meta">
+              <span class="lane-num-badge" style="border: 1px solid #60a5fa; color: #60a5fa;">3</span>
+              <div>
+                <div class="lane-racer-name">Pachycephalo</div>
+                <div class="lane-racer-odds">x3.8 (Thiết Đầu)</div>
+              </div>
+            </div>
+            <div class="race-lane-field">
+              <div class="racer-runner" id="runner-pachy" style="left: 0%;">🦘</div>
+            </div>
+          </div>
+
+          <!-- Làn 4: Ceratosaurus -->
+          <div class="race-lane" id="lane-row-cera">
+            <div class="race-lane-meta">
+              <span class="lane-num-badge" style="border: 1px solid #34d399; color: #34d399;">4</span>
+              <div>
+                <div class="lane-racer-name">Ceratosaurus</div>
+                <div class="lane-racer-odds">x5.0 (Độc Nhãn)</div>
+              </div>
+            </div>
+            <div class="race-lane-field">
+              <div class="racer-runner" id="runner-cera" style="left: 0%;">🐊</div>
+            </div>
+          </div>
+
+          <!-- Làn 5: Deinosuchus -->
+          <div class="race-lane" id="lane-row-deino">
+            <div class="race-lane-meta">
+              <span class="lane-num-badge" style="border: 1px solid #c084fc; color: #c084fc;">5</span>
+              <div>
+                <div class="lane-racer-name">Deinosuchus</div>
+                <div class="lane-racer-odds">x7.5 (Cá Sấu Thần)</div>
+              </div>
+            </div>
+            <div class="race-lane-field">
+              <div class="racer-runner" id="runner-deino" style="left: 0%;">🦆</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Winners Strip -->
+      <div style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">🏆 Các Quán Quân Derby Trận Gần Đây:</span>
+          <span id="race-recent-winner-tag" style="font-size: 0.75rem; color: #fbbf24;"></span>
+        </div>
+        <div id="race-history-ribbon" style="display: flex; gap: 8px; flex-wrap: wrap; padding: 8px 12px; background: rgba(10, 15, 12, 0.6); border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.06);">
+          <span style="color: var(--text-muted); font-size: 0.8rem;">Đang tải lịch sử trận...</span>
+        </div>
+      </div>
+
+      <!-- Betting Cards Grid -->
+      <div class="race-bets-grid">
+        <!-- Galli -->
+        <div class="race-bet-card" id="card-bet-galli" onclick="addRaceBet('galli')">
+          <div class="racer-avatar">🏃</div>
+          <div class="racer-title">Gallimimus</div>
+          <div class="racer-odds">1 ĂN 2.0</div>
+          <div class="racer-current-bet">Cược: <strong id="race-bet-val-galli">0</strong> 🌾</div>
+        </div>
+        <!-- Carno -->
+        <div class="race-bet-card" id="card-bet-carno" onclick="addRaceBet('carno')">
+          <div class="racer-avatar">🦖</div>
+          <div class="racer-title">Carnotaurus</div>
+          <div class="racer-odds">1 ĂN 2.6</div>
+          <div class="racer-current-bet">Cược: <strong id="race-bet-val-carno">0</strong> 🌾</div>
+        </div>
+        <!-- Pachy -->
+        <div class="race-bet-card" id="card-bet-pachy" onclick="addRaceBet('pachy')">
+          <div class="racer-avatar">🦘</div>
+          <div class="racer-title">Pachycephalo</div>
+          <div class="racer-odds">1 ĂN 3.8</div>
+          <div class="racer-current-bet">Cược: <strong id="race-bet-val-pachy">0</strong> 🌾</div>
+        </div>
+        <!-- Cera -->
+        <div class="race-bet-card" id="card-bet-cera" onclick="addRaceBet('cera')">
+          <div class="racer-avatar">🐊</div>
+          <div class="racer-title">Ceratosaurus</div>
+          <div class="racer-odds">1 ĂN 5.0</div>
+          <div class="racer-current-bet">Cược: <strong id="race-bet-val-cera">0</strong> 🌾</div>
+        </div>
+        <!-- Deino -->
+        <div class="race-bet-card" id="card-bet-deino" onclick="addRaceBet('deino')">
+          <div class="racer-avatar">🦆</div>
+          <div class="racer-title">Deinosuchus</div>
+          <div class="racer-odds" style="color: #fbbf24; background: rgba(245, 158, 11, 0.15);">1 ĂN 7.5</div>
+          <div class="racer-current-bet">Cược: <strong id="race-bet-val-deino">0</strong> 🌾</div>
+        </div>
+      </div>
+
+      <!-- Chip Selector & Controls -->
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+        <div class="chip-selector">
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-right: 4px;">Mệnh giá mỗi click:</span>
+          <button class="chip-btn" onclick="setRaceChip(5)">+5</button>
+          <button class="chip-btn active" onclick="setRaceChip(10)">+10</button>
+          <button class="chip-btn" onclick="setRaceChip(25)">+25</button>
+          <button class="chip-btn" onclick="setRaceChip(50)">+50</button>
+          <button class="chip-btn" onclick="setRaceChip(100)">+100</button>
+        </div>
+
+        <div style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 4px;">
+          Tổng tiền cược trận: <span id="race-total-bet-display" style="color: #fbbf24; font-size: 1.3rem;">0</span> Lúa 🌾
+        </div>
+
+        <button id="btn-start-race" onclick="startDinoRace()" class="btn btn-primary" style="padding: 14px 45px; font-size: 1.15rem; font-weight: 900; background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 20px rgba(245, 158, 11, 0.45); border-radius: 30px;">
+          🏁 XUẤT PHÁT ĐUA NGAY 🚀
+        </button>
+      </div>
+
+      <!-- Result Announcement -->
+      <div id="race-announcement" class="result-announcement"></div>
+    </section>
+
+    <!-- Rules & Safety Note -->
+    <div style="background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: var(--radius-sm); padding: 16px 20px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+      <strong style="color: #fbbf24;">📜 Lưu Ý & Luật Chơi Giải Trí ST25:</strong>
+      <ul style="margin: 6px 0 0 20px;">
+        <li>Số Lúa cược và thắng cược được cộng/trừ <strong>trực tiếp vào ví game IslePilot Cloud</strong> theo thời gian thực.</li>
+        <li>Tất cả số Lúa người chơi thua sẽ được đóng góp vào <strong>Kho Bạc Làng ST25</strong> để duy trì máy chủ và tổ chức các sự kiện giải đấu cuối tuần.</li>
+        <li>Chúc anh em giải trí vui vẻ, giữ vững bản lĩnh và không "cháy túi" trên Đảo Gateway! 🦖🌾</li>
+      </ul>
+    </div>
+
+  </main>
+
+  <script src="assets/js/app.js?v=20261009-ui1"></script>
+  <script src="assets/js/features/song-bac-2.js"></script>
+</body>
+</html>

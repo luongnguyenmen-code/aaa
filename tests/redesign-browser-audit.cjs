@@ -1,6 +1,7 @@
 // Local visual audit. The fixture blocks mutations and never contacts IslePilot.
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),{spawn}=require('node:child_process');
 const root=path.resolve(__dirname,'..');
+const {renderPage, readPublicAsset}=require('./helpers/source.cjs');
 const steam='76561198000000001';
 const dino={species:'Tyrannosaurus',gender:'Đực (Male)',growth:90,health:51,hunger:99,thirst:99,stamina:100,grid:'F7',lat:450,lng:500,position:{x:0,y:0}};
 const user={linked:true,isLoggedIn:true,steam_id:steam,persona_name:'ST25 Survivor',avatar:'/assets/imges/st25-favicon.png',balance:202,coins:202,lua:202,role:'Thành viên',roleKey:'default',maxSlots:20,totalParked:6,notifications:[],dino};
@@ -23,7 +24,12 @@ const server=http.createServer((req,res)=>{
   const requested=path.resolve(root,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));
   if(!requested.startsWith(root+path.sep)||!/(?:\.html|\.css|\.js|\.mjs|\.png|\.jpg|\.webp|\.ico|\.ttf|\.json)$/.test(requested)){res.writeHead(404);return res.end();}
   const types={'.html':'text/html','.css':'text/css','.js':'text/javascript','.mjs':'text/javascript','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.ttf':'font/ttf','.json':'application/json'};
-  try{res.setHeader('Content-Type',types[path.extname(requested)]||'application/octet-stream');res.end(fs.readFileSync(requested));}catch{res.writeHead(404);res.end();}
+  try{
+    res.setHeader('Content-Type',types[path.extname(requested)]||'application/octet-stream');
+    if (/^\/[a-zA-Z0-9_-]+\.html$/.test(url.pathname) || url.pathname==='/') res.end(renderPage(path.basename(requested)));
+    else if (/^\/assets\/js\/(?:core\.js|api\/|features\/)/.test(url.pathname)) res.end(readPublicAsset(url.pathname));
+    else res.end(fs.readFileSync(requested));
+  }catch{res.writeHead(404);res.end();}
 });
 (async()=>{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin=`http://127.0.0.1:${server.address().port}`;

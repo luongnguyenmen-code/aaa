@@ -74,7 +74,7 @@
     {
       "page": "bxh.html",
       "width": 1440,
-      "scroll": 1440,
+      "scroll": 1425,
       "icons": 19,
       "dock": true,
       "hud": true,
@@ -124,7 +124,7 @@
     {
       "page": "tha-xac.html",
       "width": 1440,
-      "scroll": 1440,
+      "scroll": 1425,
       "icons": 19,
       "dock": true,
       "hud": true,
@@ -144,7 +144,7 @@
     {
       "page": "cai-dat.html",
       "width": 1440,
-      "scroll": 1440,
+      "scroll": 1425,
       "icons": 19,
       "dock": true,
       "hud": true,

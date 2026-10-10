@@ -14,7 +14,8 @@ global.fetch = async (url) => {
 };
 const app = require('../server');
 const server = app.listen(0, '127.0.0.1');
-const originalData = fs.readFileSync(require('node:path').join(__dirname, '../portal-data.json'), 'utf8');
+const dataFile = require('../src/core/config').dataFile;
+const originalData = fs.readFileSync(dataFile, 'utf8');
 function request(url, method = 'GET', headers = {}, body) {
   return new Promise((resolve, reject) => {
     const req = http.request({ host: '127.0.0.1', port: server.address().port, path: url, method, headers }, res => {
@@ -74,6 +75,6 @@ function request(url, method = 'GET', headers = {}, body) {
   assert.match(signedCookie, /HttpOnly/);
   assert.match(signedCookie, /SameSite=Lax/);
   assert.equal(Auth.getRequestSteamId({ headers: { cookie: signedCookie.split(';')[0] } }), steam);
-  assert.equal(fs.readFileSync(require('node:path').join(__dirname, '../portal-data.json'), 'utf8'), originalData);
+  assert.equal(fs.readFileSync(dataFile, 'utf8'), originalData);
   console.log('PASS backend: signed/expired/tampered sessions, spoofed IDs, private files, invalid OpenID, CSRF, offline status, failed balance, concurrent mutations; no live calls or data changes');
 })().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => server.close());
