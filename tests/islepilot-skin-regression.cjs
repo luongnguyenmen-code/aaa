@@ -44,7 +44,7 @@ const handlers=new Map(),calls=[];
 require('../src/controllers/skin')({get(){},post:(route,handler)=>handlers.set(route,handler)},{
   getRequestSteamId:()=> '76561198000000001',getLivePlayerBalance:async()=>100,
   callIslePilot:async(url,method,body)=>{calls.push({url,method,body});return method==='POST'?{ok:true,jobId:'offline-job'}:{species:'Tyrannosaurus',online:true};},
-  modifyLivePlayerBalance:async()=>({balance:90}),apiCache:new Map()
+  modifyLivePlayerBalance:async()=>({balance:90}),clearPlayerCache:()=>{},apiCache:new Map()
 });
 (async()=>{
   const handler=handlers.get('/api/skin/apply');

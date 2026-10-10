@@ -26,7 +26,7 @@
     // 1. Load Online Dinosaurs Population (Only show Dino species & Growth, strictly NO player character names)
     async function loadOnlineDinos() {
       try {
-        const res = await fetch(ST25API.routes.serverPlayers);
+        const res = await App.readResponse(ST25API.routes.serverPlayers);
         if (res.ok) {
           const dinos = await res.json();
           const badge = document.getElementById('online-count-badge');
@@ -94,11 +94,12 @@
           } catch (appErr) {
             // App.readJSON ném lỗi nếu status không 2xx (ví dụ 503 IslePilot offline)
             console.warn('App.readJSON /api/player/me thất bại:', appErr);
+            throw appErr;
           }
         }
 
         if (!user) {
-          const res = await fetch(ST25API.routes.playerMe, { credentials: 'same-origin' });
+          const res = await App.readResponse(ST25API.routes.playerMe, { credentials: 'same-origin' });
           if (res.ok) {
             user = await res.json();
           } else {
@@ -249,7 +250,7 @@
     // 3. Load Team Pack Data
     async function loadTeamData() {
       try {
-        const res = await fetch(ST25API.routes.playerTeam);
+        const res = await App.readResponse(ST25API.routes.playerTeam);
         if (res.ok) {
           const team = await res.json();
           renderTeamRoster(team);

@@ -60,8 +60,8 @@
         const hdrs = sid ? { 'x-steam-id': sid } : {};
 
         const [cratesRes, marketRes] = await Promise.all([
-          fetch(cratesUrl, { headers: hdrs }),
-          fetch(marketUrl, { headers: hdrs })
+          App.readResponse(cratesUrl, { headers: hdrs }),
+          App.readResponse(marketUrl, { headers: hdrs })
         ]);
         const cratesData = await cratesRes.json();
         const marketData = await marketRes.json();

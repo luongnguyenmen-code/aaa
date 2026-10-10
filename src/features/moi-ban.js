@@ -15,7 +15,7 @@
 
     async function loadReferralData() {
       try {
-        const res = await fetch(ST25API.routes.referralMe, {
+        const res = await App.readResponse(ST25API.routes.referralMe, {
           headers: getAuthHeaders(),
           credentials: 'include'
         });

@@ -49,7 +49,8 @@
       try {
         let url = ST25API.routes.casinoStats;
         if (currentSteamId) url += `?steamId=${encodeURIComponent(currentSteamId)}`;
-        const res = await fetch(url);
+        const res = await App.readResponse(url);
+        if (res.status === 404) { window.location.replace('index.html'); return; }
         if (res.ok) {
           const data = await res.json();
           currentBalance = data.myBalance || 0;

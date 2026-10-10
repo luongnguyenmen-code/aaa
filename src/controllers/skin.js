@@ -3,7 +3,7 @@ const ST25API = require('../api/endpoints');
 const {validateSkinPayload} = require('../api/skin-payload');
 // skin feature HTTP handlers. Dependencies are supplied by the application.
 module.exports = function register(app, context) {
-  const {getPortalData, savePortalData, callIslePilot, apiCache, getRequestSteamId, getAdminSteamId, getLivePlayerBalance, modifyLivePlayerBalance, hexToLinear} = context;
+  const {getPortalData, savePortalData, callIslePilot, clearPlayerCache, getRequestSteamId, getAdminSteamId, getLivePlayerBalance, modifyLivePlayerBalance, hexToLinear} = context;
 
 
 // Lấy thông tin Skin, Khủng long đang chơi & Số Dư Lúa từ IslePilot Cloud
@@ -135,8 +135,7 @@ app.post(ST25API.routes.skinApply, async (req, res) => {
     const deduct = await modifyLivePlayerBalance(steamId, -SKIN_APPLY_COST, `Đổi màu skin in-game cho ${activeSpecies}`);
     
     // Xóa cache để cập nhật ngay
-    apiCache.delete(`/players/${steamId}`);
-    apiCache.delete(`GET:/players/${steamId}`);
+    clearPlayerCache(steamId);
 
     return res.json({
       success: true,

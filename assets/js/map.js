@@ -502,7 +502,7 @@ const IsleMap = {
     if (!selectDest || !btnExecute) return;
 
     try {
-      const res = await fetch(ST25API.routes.teleportDestinations);
+      const res = await App.readResponse(ST25API.routes.teleportDestinations);
       if (res.ok) {
         const locations = await res.json();
         if (Array.isArray(locations) && locations.length > 0) {

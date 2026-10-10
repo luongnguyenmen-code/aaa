@@ -1,7 +1,7 @@
 
     async function loadMyTickets() {
       try {
-        const res = await fetch(ST25API.routes.supportMyTickets);
+        const res = await App.readResponse(ST25API.routes.supportMyTickets);
         const tickets = await res.json();
 
         const badge = document.getElementById('ticket-count-badge');

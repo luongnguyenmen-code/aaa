@@ -2,7 +2,7 @@ const PilotAPI = require('../api/upstream-endpoints');
 const ST25API = require('../api/endpoints');
 // garage feature HTTP handlers. Dependencies are supplied by the application.
 module.exports = function register(app, context) {
-  const {getConfig, getPortalData, savePortalData, callIslePilot, apiCache, acquirePlayerLock, releasePlayerLock, getRequestSteamId, getAdminSteamId, normalizeStatPct, SUPER_ADMINS, isUserAdmin, getPlayerGarageStatus, formatGarageError, modifyLivePlayerBalance} = context;
+  const {getConfig, getPortalData, savePortalData, callIslePilot, clearPlayerCache, acquirePlayerLock, releasePlayerLock, getRequestSteamId, getAdminSteamId, normalizeStatPct, SUPER_ADMINS, isUserAdmin, getPlayerGarageStatus, formatGarageError, modifyLivePlayerBalance} = context;
 
 
 // 9.1 Lấy toàn bộ thông tin Gara của người chơi (Bảo mật theo tài khoản đăng nhập)
@@ -140,8 +140,7 @@ app.post(ST25API.routes.playerGaragePark, async (req, res) => {
   }
 
   const result = await callIslePilot(PilotAPI.playerGaragePark(steamId), 'POST', {});
-  apiCache.delete(`/players/${steamId}/garage`);
-  apiCache.delete(`/players/${steamId}`);
+  clearPlayerCache(steamId);
 
   if (result && !result.error) {
     return res.json({
@@ -245,8 +244,7 @@ app.post(ST25API.routes.playerGarageRestore, async (req, res) => {
       });
       data.userGarage[steamId].splice(dIdx, 1);
       savePortalData(data);
-      apiCache.delete(`/players/${steamId}/garage`);
-      apiCache.delete(`/players/${steamId}`);
+      clearPlayerCache(steamId);
       return res.json({
         success: true,
         message: `Đã đưa [${dino.species} ${dino.growth}%] ra đảo thành công! Nhân vật in-game đã được kích hoạt.`,
@@ -258,8 +256,7 @@ app.post(ST25API.routes.playerGarageRestore, async (req, res) => {
   const result = await callIslePilot(PilotAPI.playerGarageItemRestore(steamId, garageDinoId), 'POST', {
     mutations: Array.isArray(mutations) ? mutations : []
   });
-  apiCache.delete(`/players/${steamId}/garage`);
-  apiCache.delete(`/players/${steamId}`);
+  clearPlayerCache(steamId);
 
   if (result && !result.error) {
     return res.json({
@@ -314,8 +311,7 @@ app.post(ST25API.routes.playerGarageSell, async (req, res) => {
           throw err;
         }
 
-        apiCache.delete(`/players/${steamId}/garage`);
-        apiCache.delete(`/players/${steamId}`);
+        clearPlayerCache(steamId);
         return res.json({
           success: true,
           message: `Đã bán [${dino.species} ${dino.growth}%] thành công! Nhận được +${sellPrice} Lúa 🌾 vào ví!`,
@@ -325,8 +321,7 @@ app.post(ST25API.routes.playerGarageSell, async (req, res) => {
     }
 
     const result = await callIslePilot(PilotAPI.playerGarageItemSell(steamId, garageDinoId), 'POST', {});
-    apiCache.delete(`/players/${steamId}/garage`);
-    apiCache.delete(`/players/${steamId}`);
+    clearPlayerCache(steamId);
 
     if (result && !result.error) {
       return res.json({

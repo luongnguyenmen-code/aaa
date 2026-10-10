@@ -2,6 +2,7 @@ const Core = require('../core/config');
 const {getConfig} = require('../models/settings');
 // In-memory cache for GET endpoints to respect the 120 req/min limit
 const apiCache = new Map();
+const pendingReads = new Map();
 const CACHE_TTL_MS = {
   '/server': 15000,
   '/players': 10000,
@@ -24,16 +25,22 @@ async function callIslePilot(endpoint, method = 'GET', body = null, bypassCache 
 
   const cleanEpKey = endpoint.split('?')[0];
   const cacheKey = `${method}:${endpoint}`;
+  const scope = JSON.stringify([cleanBase, token]);
 
   if (method === 'GET' && !bypassCache && apiCache.has(cacheKey)) {
     const entry = apiCache.get(cacheKey);
     const ttl = /^\/players\/\d{17}$/.test(cleanEpKey) ? 2000 : (CACHE_TTL_MS[cleanEpKey] || CACHE_TTL_MS['default']);
-    if (Date.now() - entry.time < ttl) {
+    if (entry.scope === scope && Date.now() - entry.time < ttl) {
       return entry.data;
     }
   }
 
-  try {
+  // Fresh reads used around transactions must not join an older cached read.
+  const pendingKey = JSON.stringify([url, token]);
+  const shared = method === 'GET' && !bypassCache;
+  if (shared && pendingReads.has(pendingKey)) return pendingReads.get(pendingKey).promise;
+  const entry = { cacheKey, invalidated: false };
+  const request = (async () => { try {
     const opts = {
       method,
       headers: {
@@ -52,8 +59,8 @@ async function callIslePilot(endpoint, method = 'GET', body = null, bypassCache 
     } catch (_) { }
 
     if (res.ok) {
-      if (method === 'GET' && json) {
-        apiCache.set(cacheKey, { time: Date.now(), data: json });
+      if (shared && json && !entry.invalidated) {
+        apiCache.set(cacheKey, { time: Date.now(), data: json, scope });
       }
       return json;
     } else {
@@ -63,13 +70,25 @@ async function callIslePilot(endpoint, method = 'GET', body = null, bypassCache 
   } catch (err) {
     console.error(`Error calling IslePilot API (${endpoint}): ${err.message}`);
     return null;
-  }
+  } })();
+  entry.promise = request;
+  if (shared) pendingReads.set(pendingKey, entry);
+  try { return await request; }
+  finally { if (pendingReads.get(pendingKey) === entry) pendingReads.delete(pendingKey); }
 }
 
 // Helper dọn dẹp bộ nhớ đệm của người chơi ngay khi có giao dịch
 function clearPlayerCache(steamId) {
   if (!steamId) return;
   const s = String(steamId).trim();
+  const matches = key => key === `GET:/players/${s}` || key.startsWith(`GET:/players/${s}/`) || key.startsWith(`GET:/players/${s}?`);
+  for (const [key, entry] of pendingReads) {
+    if (matches(entry.cacheKey)) {
+      entry.invalidated = true;
+      pendingReads.delete(key);
+    }
+  }
+  for (const key of apiCache.keys()) if (matches(key)) apiCache.delete(key);
   apiCache.delete(`GET:/players/${s}`);
   apiCache.delete(`GET:/players/${s}/garage`);
   apiCache.delete(`/players/${s}`);

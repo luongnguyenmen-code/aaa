@@ -34,4 +34,6 @@ The browser audit uses mock API data. It does not establish frame rate on a user
 
 ## 3D skin checks
 
+API concurrency checks: `node tests/api-concurrency-regression.cjs` (also included in `npm test`). Offline fixtures cover twelve simultaneous upstream GETs becoming one request, failed-read release, independent response bodies, HTTP error preservation, timeout and recovery, fresh transaction reads, cache invalidation while an old request is in flight, changed upstream credentials, separate POSTs and double-click protection for carcass orders. `redesign-browser-audit.cjs` includes the casino page; its disabled-state check shares the statistics request instead of loading an extra script in the document head.
+
 `node tests/skin-model-regression.cjs` validates all 17 procedural illustrations, geometry attributes, bounds, indices and triangle budgets. `ST25_3D_AUDIT=1 node tests/redesign-browser-audit.cjs` checks WebGL at five sizes, live palette changes, growth, patterns, keyboard controls, nonempty PNG output, idle/offscreen rendering, species resource disposal and context recovery on desktop. Set `ST25_3D_GUEST=1` for anonymous access; add `ST25_3D_FALLBACK=1` to explicitly disable WebGL and check the 2D fallback. See `SKIN_3D.md` for PowerShell commands. These use offline API fixtures and never execute real transactions.

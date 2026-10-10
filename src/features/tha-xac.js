@@ -4,8 +4,8 @@
     async function loadCarcassData() {
       try {
         const [typesRes, marketRes] = await Promise.all([
-          fetch(ST25API.routes.carcassTypes),
-          fetch(ST25API.routes.marketData)
+          App.readResponse(ST25API.routes.carcassTypes),
+          App.readResponse(ST25API.routes.marketData)
         ]);
         const typesData = await typesRes.json();
         const marketData = await marketRes.json();
@@ -70,6 +70,7 @@
     }
 
     async function orderCarcass(carcassId, price, name) {
+      if (orderCarcass.pending) return;
       if (currentBalance < price) {
         App.showToast(`Bạn không đủ Lúa! Cần ${price} Lúa 🌾 (Hiện có: ${currentBalance}).`, 'error');
         return;
@@ -77,6 +78,7 @@
 
       if (!confirm(`Xác nhận dùng ${price} Lúa 🌾 để thả [${name}] tại toạ độ hiện tại của bạn?`)) return;
 
+      orderCarcass.pending = true;
       try {
         const res = await fetch(ST25API.routes.carcassOrder, {
           method: 'POST',
@@ -111,6 +113,8 @@
         }
       } catch (e) {
         App.showToast('Lỗi mạng khi gọi thả xác!', 'error');
+      } finally {
+        orderCarcass.pending = false;
       }
     }
 

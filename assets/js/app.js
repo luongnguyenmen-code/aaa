@@ -6,6 +6,7 @@ const App = {
   pollingTimer: null,
   nextWeatherUpdate: 0,
   readRequests: new Map(),
+  responseRequests: new Map(),
   userListeners: new Set(),
 
   subscribeUser(listener) {
@@ -22,6 +23,23 @@ const App = {
   },
 
   // Coalesce identical reads and bound their lifetime; mutations are never retried here.
+  readResponse(url, options = {}) {
+    if (options.method && options.method.toUpperCase() !== 'GET') throw new Error('readResponse only accepts GET');
+    const key = url + JSON.stringify(options);
+    let request = this.responseRequests.get(key);
+    if (!request) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), ST25Core.readTimeoutMs);
+      request = fetch(url, { ...options, signal: controller.signal }).then(async response => {
+        // Buffer once so every caller can consume its own body, including HTTP errors.
+        const body = await response.arrayBuffer();
+        return new Response([204,205,304].includes(response.status) ? null : body, { status: response.status, statusText: response.statusText, headers: response.headers });
+      }).finally(() => { clearTimeout(timeout); this.responseRequests.delete(key); });
+      this.responseRequests.set(key, request);
+    }
+    return request.then(response => response.clone());
+  },
+
   readJSON(url, options = {}) {
     const key = url + JSON.stringify(options);
     if (this.readRequests.has(key)) return this.readRequests.get(key);

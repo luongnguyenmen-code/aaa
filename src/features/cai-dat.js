@@ -57,7 +57,7 @@
           const hdrs = sid ? { 'x-steam-id': sid, 'x-admin-steam-id': sid } : {};
 
           // 1. Kiểm tra phiên đăng nhập người dùng từ server
-          const meRes = await fetch(url, { headers: hdrs });
+          const meRes = await App.readResponse(url, { headers: hdrs });
           const meData = await meRes.json();
 
           if (!meData || !meData.isLoggedIn || !meData.steam_id || !meData.isAdmin) {
@@ -255,7 +255,7 @@
 
         const previewCard = document.getElementById('player-preview');
         try {
-          const res = await fetch(`${ST25API.routes.adminPlayerInfo}?steamId=${encodeURIComponent(sid)}&adminSteamId=${encodeURIComponent(this.currentAdminSteamId)}`);
+          const res = await App.readResponse(`${ST25API.routes.adminPlayerInfo}?steamId=${encodeURIComponent(sid)}&adminSteamId=${encodeURIComponent(this.currentAdminSteamId)}`);
           if (res.ok) {
             const data = await res.json();
             previewCard.style.display = 'flex';

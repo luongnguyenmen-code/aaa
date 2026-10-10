@@ -152,6 +152,16 @@
       "errors": []
     },
     {
+      "page": "song-bac.html",
+      "width": 1440,
+      "scroll": 1425,
+      "icons": 19,
+      "dock": true,
+      "hud": true,
+      "brokenImages": [],
+      "errors": []
+    },
+    {
       "page": "index.html",
       "width": 390,
       "scroll": 390,

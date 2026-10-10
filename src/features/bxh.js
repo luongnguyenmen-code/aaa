@@ -13,7 +13,7 @@
 
       async loadData() {
         try {
-          const res = await fetch(ST25API.routes.leaderboard);
+          const res = await App.readResponse(ST25API.routes.leaderboard);
           if (res.ok) {
             const json = await res.json();
             const raw = json.categories || json;

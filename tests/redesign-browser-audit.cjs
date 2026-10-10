@@ -50,7 +50,7 @@ const server=http.createServer((req,res)=>{
     const call=(method,params={})=>new Promise((resolve,reject)=>{pending.set(++id,{resolve,reject});socket.send(JSON.stringify({id,method,params}));});
     await call('Runtime.enable');await call('Network.enable');
     await call('Network.setBlockedURLs',{urls:['*islepilot.eu*','*steamcommunity.com*','*api.steampowered.com*']});
-    const pages=['index.html','bando.html','gara.html','nhiem-vu.html','giao-dich.html','hom-qua.html','skin.html','bxh.html','ho-tro.html','noi-quy.html','tai-hud.html','moi-ban.html','tha-xac.html','lien-ket-steam.html','cai-dat.html'];
+    const pages=['index.html','bando.html','gara.html','nhiem-vu.html','giao-dich.html','hom-qua.html','skin.html','bxh.html','ho-tro.html','noi-quy.html','tai-hud.html','moi-ban.html','tha-xac.html','lien-ket-steam.html','cai-dat.html','song-bac.html'];
     const cases=(process.env.ST25_SKIN_AUDIT || process.env.ST25_3D_AUDIT || process.env.ST25_ILLUSTRATION_AUDIT) ? [1440,1024,768,390,320].map(width=>({page:'skin.html',width})) : [...pages.map(page=>({page,width:1440})),...['index.html','bando.html','gara.html','nhiem-vu.html','giao-dich.html'].map(page=>({page,width:390}))];
     const results=[];
     for(const {page,width} of cases){errors=[];await call('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:width<600});await call('Page.navigate',{url:origin+'/'+page});

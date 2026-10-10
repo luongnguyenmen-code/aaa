@@ -28,7 +28,7 @@
           url += `?steamId=${encodeURIComponent(steamId)}`;
         }
         
-        const res = await fetch(url);
+        const res = await App.readResponse(url);
         if (res.ok) {
           const data = await res.json();
           if (data.steamId) currentSteamId = data.steamId;
