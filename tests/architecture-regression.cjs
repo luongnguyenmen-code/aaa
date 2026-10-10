@@ -23,6 +23,13 @@ function get(url) {
   assert.equal(API.url(API.routes.skinInfo,{steamId:'123'}),'/api/skin/info?steamId=123');
   const assets=new Set(); let pages=0;
   for (const page of fs.readdirSync(Core.pagesDir).filter(name=>name.endsWith('.html'))) {
+    const rendered = require('../src/views/render').renderPage(page);
+    if (!page.startsWith('islepilot_')) {
+      const apiPosition = rendered.indexOf('assets/js/api/endpoints.js');
+      assert.ok(apiPosition >= 0, page);
+      const featurePosition = rendered.indexOf('assets/js/features/');
+      if (featurePosition >= 0) assert.ok(apiPosition < featurePosition, `${page}: API config must load before features`);
+    }
     const response=await get('/'+page);
     if(page==='song-bac.html' && !require('../src/models/settings').getConfig().casino?.enabled) {
       assert.equal(response.status,302); continue;

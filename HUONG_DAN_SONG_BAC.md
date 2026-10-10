@@ -12,12 +12,12 @@ Tài liệu này ghi chú chi tiết về trạng thái của tính năng **Sòn
 
 | Thành phần | Trạng thái hiện tại | Vị trí file |
 | :--- | :--- | :--- |
-| **Công tắc tổng (Master Switch)** | `"enabled": false` | `server-config.json` |
+| **Công tắc tổng (Master Switch)** | `"enabled": false` | `src/core/server-config.json` |
 | **API Backend (`/api/casino/*`)** | Chặn toàn bộ, trả về mã 404 Disabled | `server.js` (dòng 4560) |
-| **Đường dẫn `/song-bac.html`** | Tự động chuyển hướng về trang chủ (`/`) | `server.js` (dòng 23) & `song-bac.html` |
+| **Đường dẫn `/song-bac.html`** | Tự động chuyển hướng về trang chủ (`/`) | `server.js` (dòng 23) & `src/pages/song-bac.html` |
 | **Menu điều hướng Desktop** | Đã ẩn mục Sòng Bạc khỏi nhóm "Kinh Tế & Chợ" | `assets/js/app.js` (dòng 195) |
 | **Menu Mobile Drawer** | Đã ẩn mục Sòng Bạc khỏi menu trượt trên điện thoại | `assets/js/app.js` (dòng 420) |
-| **Nút bấm Trang Chủ** | Đã ẩn nút "🎲 Sòng Bạc ST25" ở phần Hero Actions | `index.html` (dòng 90) |
+| **Nút bấm Trang Chủ** | Đã ẩn nút "🎲 Sòng Bạc ST25" ở phần Hero Actions | `src/pages/index.html` (dòng 90) |
 
 ---
 
@@ -25,8 +25,8 @@ Tài liệu này ghi chú chi tiết về trạng thái của tính năng **Sòn
 
 Khi bạn muốn mở lại Sòng Bạc cho người chơi, chỉ cần thực hiện 2 bước đơn giản sau:
 
-### Bước 1: Bật công tắc trong file `server-config.json`
-Mở file `server-config.json`, tìm dòng `"casino"` và đổi `"enabled": false` thành `"enabled": true`:
+### Bước 1: Bật công tắc trong file `src/core/server-config.json`
+Mở file `src/core/server-config.json`, tìm dòng `"casino"` và đổi `"enabled": false` thành `"enabled": true`:
 
 ```json
 "casino": {
@@ -44,7 +44,7 @@ Mở file `server-config.json`, tìm dòng `"casino"` và đổi `"enabled": fal
    - Tìm đoạn `<!-- [TẮT TẠM THỜI] Bỏ comment dòng dưới khi muốn bật lại Sòng Bạc:`
    - Bỏ comment (xóa `<!--` và `-->`) thẻ `<a>` cho cả Desktop Menu và Mobile Drawer.
 
-2. **Trong file `index.html`:**
+2. **Trong file `src/pages/index.html`:**
    - Tìm đoạn `<!-- [TẮT TẠM THỜI] Bỏ comment nút dưới khi muốn bật lại Sòng Bạc:` ở phần Hero Section.
    - Bỏ comment thẻ `<a>` để nút "🎲 Sòng Bạc ST25" xuất hiện lại trên trang chủ.
 
@@ -52,13 +52,13 @@ Mở file `server-config.json`, tìm dòng `"casino"` và đổi `"enabled": fal
 
 ## 📂 3. DANH SÁCH FILE LIÊN QUAN ĐƯỢC BẢO TOÀN
 
-1. **`song-bac.html` (Còn nguyên vẹn 100%):**
+1. **`src/pages/song-bac.html` (Còn nguyên vẹn 100%):**
    - Minigame 1: **Tài Xỉu Gateway (Sicbo)** — Đầy đủ xí ngầu 3D, xóc đĩa, âm thanh lắc bát, bảng soi cầu.
    - Minigame 2: **Bầu Cua ST25** — Đầy đủ 6 linh vật: Rex, Trike, Deino, Cua, Gà, Ếch.
    - Minigame 3: **Đua Khủng Long (Dino Derby)** — Đầy đủ đường đua 5 chiến mã, animation chạy đua thời gian thực, bình luận viên.
    - Đồng bộ ví Lúa thời gian thực và Kho Bạc Làng ST25.
 
-2. **`server.js` (Còn nguyên vẹn 100%):**
+2. **`src/controllers/casino.js` (Còn nguyên vẹn 100%):**
    - Thuật toán xác suất Tài Xỉu (30% người chơi / 70% nhà cái để thu hồi Lúa).
    - Thuật toán Bầu Cua thông minh.
    - Thuật toán Đua Khủng Long có trọng số thể lực & tốc độ từng loài.
