@@ -18,6 +18,7 @@ Luồng giao diện: `pages → views/render.js → partials → HTML trả về
 | `middleware/` | Kiểm tra nguồn yêu cầu, phiên, giới hạn thao tác đồng thời và xử lý async |
 | `routes/` | Đăng ký API và URL trang công khai |
 | `pages/` | Toàn bộ trang HTML; `islepilot_*` là các bản HTML tham khảo đã có |
+| `pages/illustrations/` | Các trang minh họa khủng long nhập từ `DINO HTML`, phục vụ qua `/illustrations/` |
 | `views/partials/` | Header/footer dùng chung |
 | `views/render.js` | Ghép partial và giải quyết placeholder API |
 | `features/` | JavaScript chức năng đã tách từ các trang HTML |

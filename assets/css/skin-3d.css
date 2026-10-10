@@ -1,5 +1,19 @@
 .st25-skin #dino-stage { position:relative; display:block; width:100%; min-height:380px; height:clamp(340px,38vw,500px); overflow:hidden; border-radius:8px; background:radial-gradient(ellipse at 50% 43%,#222820 0%,#0a0e0c 72%); }
 .skin-3d-host { position:absolute; inset:0; width:100%; height:100%; }
+.skin-preview-modes { display:flex; flex-wrap:wrap; gap:8px; width:100%; margin:12px 0; }
+.skin-preview-modes button { min-height:38px; padding:8px 12px; border:1px solid #ffffff20; border-radius:6px; background:#141b16; color:#c3cfc6; font:inherit; font-size:12px; cursor:pointer; }
+.skin-preview-modes button[aria-pressed="true"] { border-color:#bd8e45; color:#f6c272; background:#2a2417; }
+.skin-preview-modes button:disabled { opacity:.45; cursor:default; }
+.skin-motion-frame { position:absolute; inset:0; width:100%; height:100%; border:0; z-index:3; }
+.skin-motion-loading { position:absolute; top:14px; left:12px; right:12px; z-index:4; padding:8px 10px; border-radius:6px; background:#111b13e8; color:#c7d5c8; font-size:12px; pointer-events:none; }
+.skin-motion-loading[hidden] { display:none; }
+#dino-stage[data-preview-mode="motion"] .skin-3d-host,
+#dino-stage[data-preview-mode="motion"] .skin-3d-status,
+#dino-stage[data-preview-mode="motion"] .skin-3d-hint,
+#dino-stage[data-preview-mode="motion"] #dino-svg-wrapper,
+#dino-stage[data-preview-mode="motion"] ~ .skin-3d-toolbar,
+#dino-stage[data-preview-mode="motion"] ~ .skin-3d-light,
+#dino-stage[data-preview-mode="motion"] ~ .skin-3d-retry { display:none!important; }
 .skin-3d-host canvas { width:100%; height:100%; display:block; touch-action:none; outline-offset:-4px; }
 .st25-skin #dino-svg-wrapper[hidden] { display:none !important; }
 .st25-skin #dino-svg-wrapper { position:relative; pointer-events:none; padding:45px 0; }

@@ -157,6 +157,7 @@ let myLiveBalance = 0;
       window.ST25SkinUI?.syncPresets();
       window.ST25Skin3D?.sync();
       refreshSkinCode();
+      window.ST25SkinIllustrations?.sync();
       const bodyEl = document.getElementById('svg-body');
       const bodyLegEl = document.getElementById('svg-body-leg');
       const bodyArmEl = document.getElementById('svg-body-arm');
@@ -238,6 +239,7 @@ let myLiveBalance = 0;
       if (badge) badge.textContent = name;
       window.ST25SkinUI?.syncSpecies();
       window.ST25Skin3D?.sync();
+      window.ST25SkinIllustrations?.sync();
       refreshSkinCode();
     }
 

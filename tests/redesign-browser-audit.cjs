@@ -2,6 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),{spawn}=require('node:child_process');
 const root=path.resolve(__dirname,'..');
 const {renderPage, readPublicAsset}=require('./helpers/source.cjs');
+const {renderIllustration}=require('../src/views/illustration');
 const steam='76561198000000001';
 const dino={species:'Tyrannosaurus',gender:'Đực (Male)',growth:90,health:51,hunger:99,thirst:99,stamina:100,grid:'F7',lat:450,lng:500,position:{x:0,y:0}};
 const user={linked:true,isLoggedIn:true,steam_id:steam,persona_name:'ST25 Survivor',avatar:'/assets/imges/st25-favicon.png',balance:202,coins:202,lua:202,role:'Thành viên',roleKey:'default',maxSlots:20,totalParked:6,notifications:[],dino};
@@ -27,6 +28,10 @@ const server=http.createServer((req,res)=>{
   try{
     res.setHeader('Content-Type',types[path.extname(requested)]||'application/octet-stream');
     if (/^\/[a-zA-Z0-9_-]+\.html$/.test(url.pathname) || url.pathname==='/') res.end(renderPage(path.basename(requested)));
+    else if (url.pathname.startsWith('/illustrations/')) {
+      const illustration=renderIllustration(url.pathname.slice('/illustrations/'.length),url.searchParams.get('embed')==='1');
+      if(illustration===null){res.writeHead(404);res.end();}else res.end(illustration);
+    }
     else if (/^\/assets\/js\/(?:core\.js|api\/|features\/)/.test(url.pathname)) res.end(readPublicAsset(url.pathname));
     else res.end(fs.readFileSync(requested));
   }catch{res.writeHead(404);res.end();}
@@ -37,8 +42,13 @@ const server=http.createServer((req,res)=>{
   const child=spawn('C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless','--disable-gpu',...(process.env.ST25_3D_FALLBACK?['--disable-webgl']:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']),'--no-first-run','--disable-background-networking',`--user-data-dir=${profile}`,'--remote-debugging-port=0','about:blank'],{windowsHide:true,stdio:'ignore'});
   const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));let socket;
   try{
-    const portFile=path.join(profile,'DevToolsActivePort');for(let i=0;i<100&&!fs.existsSync(portFile);i++)await pause(100);
-    const port=fs.readFileSync(portFile,'utf8').split('\n')[0];const tabs=await(await fetch(`http://127.0.0.1:${port}/json/list`)).json();
+    const portFile=path.join(profile,'DevToolsActivePort');let port;
+    for(let i=0;i<100;i++) {
+      try {const candidate=fs.readFileSync(portFile,'utf8').split('\n')[0].trim();if(/^\d+$/.test(candidate)){port=candidate;break;}}catch{}
+      await pause(100);
+    }
+    if(!port)throw new Error('Chrome debugging port did not become ready');
+    const tabs=await(await fetch(`http://127.0.0.1:${port}/json/list`)).json();
     socket=new WebSocket(tabs.find(t=>t.type==='page').webSocketDebuggerUrl);await new Promise((resolve,reject)=>{socket.onopen=resolve;socket.onerror=reject;});
     let id=0;const pending=new Map();let errors=[];
     socket.onmessage=event=>{const message=JSON.parse(event.data);if(message.method==='Runtime.exceptionThrown')errors.push(message.params.exceptionDetails.exception?.description||message.params.exceptionDetails.text);if(process.env.ST25_3D_AUDIT && message.method==='Runtime.consoleAPICalled' && message.params.type==='error' && !(process.env.ST25_3D_FALLBACK && message.params.args.some(arg=>/WebGL.*context|Error creating WebGL/.test(String(arg.value))))) errors.push(message.params.args.map(arg=>arg.value||arg.description||'').join(' '));const task=pending.get(message.id);if(task){pending.delete(message.id);message.error?task.reject(message.error):task.resolve(message.result);}};
@@ -46,11 +56,41 @@ const server=http.createServer((req,res)=>{
     await call('Runtime.enable');await call('Network.enable');
     await call('Network.setBlockedURLs',{urls:['*islepilot.eu*','*steamcommunity.com*','*api.steampowered.com*']});
     const pages=['index.html','bando.html','gara.html','nhiem-vu.html','giao-dich.html','hom-qua.html','skin.html','bxh.html','ho-tro.html','noi-quy.html','tai-hud.html','moi-ban.html','tha-xac.html','lien-ket-steam.html','cai-dat.html'];
-    const cases=(process.env.ST25_SKIN_AUDIT || process.env.ST25_3D_AUDIT) ? [1440,1024,768,390,320].map(width=>({page:'skin.html',width})) : [...pages.map(page=>({page,width:1440})),...['index.html','bando.html','gara.html','nhiem-vu.html','giao-dich.html'].map(page=>({page,width:390}))];
+    const cases=(process.env.ST25_SKIN_AUDIT || process.env.ST25_3D_AUDIT || process.env.ST25_ILLUSTRATION_AUDIT) ? [1440,1024,768,390,320].map(width=>({page:'skin.html',width})) : [...pages.map(page=>({page,width:1440})),...['index.html','bando.html','gara.html','nhiem-vu.html','giao-dich.html'].map(page=>({page,width:390}))];
     const results=[];
     for(const {page,width} of cases){errors=[];await call('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:width<600});await call('Page.navigate',{url:origin+'/'+page});
       for(let attempt=0;attempt<40;attempt++){await pause(100);const ready=await call('Runtime.evaluate',{expression:'document.readyState !== "loading" && typeof App !== "undefined" && App.authResolved && !!window.ST25UI',returnByValue:true});if(ready.result.value)break;}
       await pause(300);
+      if(process.env.ST25_ILLUSTRATION_AUDIT){
+        const imported=await call('Runtime.evaluate',{expression:`(async()=>{
+          const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+          const stage=document.getElementById('dino-stage');stage.scrollIntoView({block:'center'});
+          for(let i=0;i<60&&!window.ST25Skin3D.viewer;i++)await pause(100);
+          const viewer=window.ST25Skin3D.viewer;if(!viewer)return {viewer:false};
+          viewer.setAutoRotate(true);
+          const results={};
+          for(const species of ['Triceratops','Troodon','Tyrannosaurus']){
+            changeSpecies(species);window.ST25SkinIllustrations.setMode('motion');
+            for(let i=0;i<60;i++){await pause(100);const f=document.getElementById('skin-motion-frame');if(f?.dataset.ready==='true'&&f?.dataset.rendered==='true')break;}
+            const f=document.getElementById('skin-motion-frame');
+            results[species]=f?.dataset.ready==='true'&&f.dataset.rendered==='true'&&f.dataset.reportedSpecies===species&&f.src.includes(species.toLowerCase()+'.html')&&viewer.presentationPaused===true&&viewer.frame===0;
+          }
+          changeSpecies('Carnotaurus');await pause(150);
+          results.unavailable=window.ST25SkinIllustrations.mode==='3d'&&!document.getElementById('skin-motion-frame')&&document.querySelector('[data-preview="motion"]').disabled;
+          changeSpecies('Triceratops');await pause(300);
+          document.getElementById('skin-workspace-tab-1').click();await pause(300);
+          results.hidden=!document.getElementById('skin-motion-frame');
+          document.getElementById('skin-workspace-tab-0').click();stage.scrollIntoView({block:'center'});await pause(300);
+          window.ST25SkinIllustrations.setMode('3d');await pause(200);
+          results.resumed=!viewer.presentationPaused&&viewer.frame!==0&&!document.getElementById('skin-motion-frame');
+          viewer.setAutoRotate(false);
+          window.ST25SkinIllustrations.setMode('motion');
+          for(let i=0;i<40&&document.getElementById('skin-motion-frame')?.dataset.ready!=='true';i++)await pause(100);
+          return results;
+        })()`,awaitPromise:true,returnByValue:true});
+        console.log(JSON.stringify({width,illustrations:imported.result.value}));
+        if(!imported.result.value||Object.values(imported.result.value).some(value=>value!==true))errors.push('Imported illustration checks failed');
+      }
       let threeD;
       if (process.env.ST25_3D_AUDIT) {
         await call('Runtime.evaluate',{expression:'document.getElementById("dino-stage").scrollIntoView({block:"center"})'});
@@ -160,9 +200,13 @@ const server=http.createServer((req,res)=>{
       const check=await call('Runtime.evaluate',{expression:'JSON.stringify({width:innerWidth,scroll:document.documentElement.scrollWidth,icons:document.querySelectorAll(".site-header .st25-line-icon").length,dock:!!document.getElementById("st25-live-dock"),hud:!!document.querySelector(".player-hud-bar"),brokenImages:[...document.images].filter(i=>i.getAttribute("src")&&i.complete&&!i.naturalWidth).map(i=>i.getAttribute("src"))})',returnByValue:true});
       const metrics=JSON.parse(check.result.value);const result={page,width,...metrics,threeD,errors:[...errors]};results.push(result);
       console.log(JSON.stringify(result));
-      if(['index.html','bando.html','nhiem-vu.html','skin.html'].includes(page)){const shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});fs.writeFileSync(path.join(__dirname,`redesign-${page.replace('.html','')}-${width}.png`),Buffer.from(shot.data,'base64'));}
+      if(process.env.ST25_ILLUSTRATION_AUDIT){
+        await call('Runtime.evaluate',{expression:`document.getElementById('dino-stage').scrollIntoView({block:'center',behavior:'instant'})`});
+        await pause(500);
+      }
+      if(['index.html','bando.html','nhiem-vu.html','skin.html'].includes(page)){const shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:!process.env.ST25_ILLUSTRATION_AUDIT});fs.writeFileSync(path.join(__dirname,`${process.env.ST25_ILLUSTRATION_AUDIT?'skin-motion':'redesign-'+page.replace('.html','')}-${width}.png`),Buffer.from(shot.data,'base64'));}
     }
-    fs.writeFileSync(path.join(__dirname,process.env.ST25_3D_AUDIT ? (process.env.ST25_3D_FALLBACK?'skin-3d-fallback-results.json':process.env.ST25_3D_GUEST?'skin-3d-guest-results.json':'skin-3d-results.json') : process.env.ST25_SKIN_AUDIT?'skin-audit-results.json':'redesign-audit-results.json'),JSON.stringify({scope:'Offline mocks; transactions blocked; not a live API test',results},null,2));
+    fs.writeFileSync(path.join(__dirname,process.env.ST25_ILLUSTRATION_AUDIT?'skin-motion-results.json':process.env.ST25_3D_AUDIT ? (process.env.ST25_3D_FALLBACK?'skin-3d-fallback-results.json':process.env.ST25_3D_GUEST?'skin-3d-guest-results.json':'skin-3d-results.json') : process.env.ST25_SKIN_AUDIT?'skin-audit-results.json':'redesign-audit-results.json'),JSON.stringify({scope:'Offline mocks; transactions blocked; not a live API test',results},null,2));
     await call('Browser.close');
     if(results.some(r=>r.scroll>r.width||r.errors.length||r.brokenImages.length))process.exitCode=1;
   }finally{socket?.close();child.kill();server.close();}

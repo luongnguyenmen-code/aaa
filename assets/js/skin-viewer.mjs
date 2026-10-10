@@ -151,12 +151,12 @@ export class SkinViewer {
     if(this.lastWidth!==width||this.lastHeight!==height){this.lastWidth=width;this.lastHeight=height;this.fitView();}
   }
   invalidate(){
-    if(this.disposed||this.contextLost||document.hidden||!this.visible){this.stop();return;}
+    if(this.disposed||this.contextLost||this.presentationPaused||document.hidden||!this.visible){this.stop();return;}
     if(!this.frame)this.frame=requestAnimationFrame(time=>this.render(time));
   }
   render(time=0){
     this.frame=0;
-    if(this.disposed||document.hidden||!this.visible||this.contextLost)return;
+    if(this.disposed||this.presentationPaused||document.hidden||!this.visible||this.contextLost)return;
     if(this.autoRotate){
       const delta=Math.min(.05,Math.max(0,(time-(this.lastFrame||time))/1000));
       this.camera.position.sub(this.controls.target).applyAxisAngle(new THREE.Vector3(0,1,0),delta*.3).add(this.controls.target);
@@ -167,6 +167,7 @@ export class SkinViewer {
     if(this.autoRotate)this.invalidate();
   }
   stop(){if(this.frame)cancelAnimationFrame(this.frame);this.frame=0;this.lastFrame=0;}
+  setPresentationPaused(paused){this.presentationPaused=!!paused;this.invalidate();}
   setAutoRotate(enabled){this.autoRotate=!!enabled;this.host.dispatchEvent(new CustomEvent('viewerrotate',{detail:this.autoRotate}));this.invalidate();}
   setQuality(value){this.quality=value;this.resize();this.invalidate();}
   setLight(value){this.renderer.toneMappingExposure=Math.max(.5,Math.min(2.5,Number(value)||1.25));this.invalidate();}

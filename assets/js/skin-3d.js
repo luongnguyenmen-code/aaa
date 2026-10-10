@@ -14,7 +14,7 @@
   const retry=document.createElement('button');retry.type='button';retry.className='skin-3d-retry';retry.textContent='Thử tải 3D lại';retry.hidden=true;lighting.after(retry);
   const updateNote=()=>{const note=document.querySelector('.skin-preview-note');if(note)note.textContent='Mô hình 3D minh họa do ST25 tạo · Kết quả trong game có thể khác.';};
   updateNote();document.addEventListener('DOMContentLoaded',updateNote,{once:true});
-  let viewer,loading=false,failed=false,disposed=false;
+  let viewer,loading=false,failed=false,disposed=false,presentationPaused=false;
   const currentState=()=>({...getSkinPayload(),mode:currentMode});
   function setStatus(message,state){
     status.textContent=message;host.dataset.state=state;status.classList.toggle('is-ready',state==='ready');stage.classList.toggle('has-3d',state==='ready');
@@ -22,12 +22,13 @@
     if(state==='ready'){fallback.hidden=true;host.style.visibility='visible';retry.hidden=true;hint.textContent='Kéo để xoay · Cuộn / chụm để zoom';}
   }
   async function start(){
-    if(viewer||loading||disposed)return;
+    if(viewer||loading||disposed||presentationPaused)return;
     loading=true;failed=false;setStatus('Đang tải trình xem 3D…','loading');
     try{
-      const {SkinViewer}=await import('./skin-viewer.mjs?v=20261009-3d1');
+      const {SkinViewer}=await import('./skin-viewer.mjs?v=20261010-illustrations1');
       if(disposed)return;
       viewer=new SkinViewer(host,currentState(),setStatus);
+      viewer.setPresentationPaused(presentationPaused);
       window.ST25Skin3D.viewer=viewer;
       fallback.hidden=true;
       for(const button of toolbar.querySelectorAll('button'))button.disabled=false;
@@ -37,7 +38,9 @@
       console.warn('ST25 3D fallback:',error.message);
     }finally{loading=false;}
   }
-  window.ST25Skin3D={sync(){viewer?.setState(currentState());},viewer:null,start};
+  window.ST25Skin3D={sync(){viewer?.setState(currentState());},viewer:null,start,
+    setPresentationPaused(paused){presentationPaused=!!paused;viewer?.setPresentationPaused(paused);if(!paused&&!failed)start();}
+  };
   host.addEventListener('viewerrotate',event=>document.getElementById('skin-auto-rotate').setAttribute('aria-pressed',String(event.detail)));
   retry.addEventListener('click',()=>{viewer?.dispose();viewer=null;window.ST25Skin3D.viewer=null;start();});
   for(const button of toolbar.querySelectorAll('button'))button.disabled=true;

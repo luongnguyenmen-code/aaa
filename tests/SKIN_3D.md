@@ -4,6 +4,12 @@ Phần chỉnh skin sử dụng 17 mô hình minh họa 3D được tạo bằng
 
 ## Tính năng
 
+Ba trang gốc `triceratops.html`, `troodon.html`, `tyrannosaurus.html` từ thư mục `DINO HTML` được giữ tại `src/pages/illustrations/`. Đây là minh họa chuyển động từ ảnh bằng canvas 2D. Nút **Minh họa chuyển động** trong preview chọn đúng file theo loài; nút **Mô hình 3D** quay lại preview phối màu. Ảnh gốc giữ màu có sẵn. Loài chưa có file dùng preview 3D/2D hiện tại.
+
+Danh mục loài ở `assets/js/skin-illustrations-catalog.js`. Chỉ tải iframe khi chọn chế độ chuyển động và khung preview đang hiện. Hủy iframe khi chuyển chế độ/loài, sang Kho skin/Cửa hàng, cuộn ra ngoài hoặc ẩn tab; preview 3D dừng render trong chế độ chuyển động.
+
+Kiểm tra nhập minh họa: `$env:ST25_ILLUSTRATION_AUDIT='1'; node tests/redesign-browser-audit.cjs`. Audit kiểm tra ba loài ở năm kích thước, file/ảnh/hoạt ảnh đúng, dừng và khôi phục 3D, loài chưa có file, hủy iframe khi ẩn workspace. Kết quả tại `tests/skin-motion-results.json`.
+
 - Xoay bằng kéo chuột/cảm ứng, zoom bằng cuộn hoặc chụm hai ngón tay.
 - Phím mũi tên để xoay; cộng/trừ để zoom khi canvas được focus.
 - Góc studio, ngang, chính diện; xoay tự động bật/tắt.

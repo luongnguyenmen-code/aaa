@@ -45,6 +45,17 @@ function get(url) {
     pages++;
   }
   for(const source of assets) assert.equal((await get(source)).status,200,source);
+  for(const entry of Object.values(require('../assets/js/skin-illustrations-catalog'))) {
+    const source=await get('/illustrations/'+entry.file);
+    assert.equal(source.status,200,entry.file);
+    assert.match(source.text,/id="fallback"/);
+    assert.match(source.text,/src="data:image\//);
+    const embedded=await get('/illustrations/'+entry.file+'?embed=1');
+    assert.equal(embedded.status,200);
+    assert.ok(embedded.text.includes('st25-illustration-ready'));
+    for(const [,script] of embedded.text.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) new (require('node:vm').Script)(script);
+  }
+  assert.equal((await get('/illustrations/unknown.html')).status,404);
   assert.equal((await get('/pages/gara.html')).headers.location,'/gara.html');
   for(const url of ['/src/core/server-config.json','/src/core/auth.js','/src/models/data/portal-data.json','/src/pages/index.html','/assets/js/api/islepilot-client.js','/assets/js/api/upstream-endpoints.js']) {
     assert.equal((await get(url)).status,404,url);
