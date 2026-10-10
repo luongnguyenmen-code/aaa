@@ -33,6 +33,16 @@ const input=(roundId,color='red',amount=10)=>({roundId,color,amount,requestId:cr
   assert.equal(engine.payout(71,'green',0),994);assert.equal(engine.payout(72,'green',0),1000);
   assert.equal(engine.payout(500,'red',1),1000);assert.equal(engine.payout(500,'black',8),1000);
   assert.doesNotThrow(()=>engine.validateBet(input(round.id,'green',500)));
+  const matchedSeed=engine.findMatchingSeed(0);assert.equal(engine.draw(matchedSeed),0);
+  const sampleRound={id:99,seed:crypto.randomBytes(32).toString('hex'),result:1};
+  const biased=engine.biasResult(sampleRound,[{color:'red',amount:100}]);
+  assert.equal(engine.draw(biased.seed),biased.result);
+  const beCauRound=engine.biasResult(sampleRound,[{color:'red',amount:100}],{beCau:true});
+  assert.equal(rules.slots[beCauRound.result]!=='red',true);
+  assert.equal(engine.draw(beCauRound.seed),beCauRound.result);
+  const nhaCauRound=engine.biasResult(sampleRound,[{color:'red',amount:100}],{nhaCau:true});
+  assert.equal(rules.slots[nhaCauRound.result],'red');
+  assert.equal(engine.draw(nhaCauRound.seed),nhaCauRound.result);
   const f=fixture();await f.store.database();
   let seed='winning';while(engine.draw(seed)<1||engine.draw(seed)>7)seed+='x';
   const winningRound=await f.store.ensureRound(engine.makeRound(now,seed)),request=input(winningRound.id);

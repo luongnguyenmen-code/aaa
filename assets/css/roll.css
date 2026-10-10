@@ -20,3 +20,12 @@
   to{transform:scale(1.08);filter:brightness(1.4);border-color:#fff;box-shadow:0 0 28px var(--winner-glow),0 0 8px #fff,inset 0 0 10px #ffffff45}
 }
 @media(prefers-reduced-motion:reduce){.roll-tile.winner{animation:none;transform:none;filter:brightness(1.15)}}
+.roll-bets-scroll{margin-top:8px;max-height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding-right:2px}
+.roll-bets-scroll::-webkit-scrollbar{width:4px}
+.roll-bets-scroll::-webkit-scrollbar-thumb{background:#303238;border-radius:4px}
+.roll-bet-entry{display:flex;align-items:center;gap:6px;padding:5px 8px;background:#16171b;border:1px solid #23252a;border-radius:7px;font-size:11px}
+.roll-bet-entry.is-own{background:#231a0e;border-color:#f6ab4580;box-shadow:inset 0 0 6px #f6ab4520}
+.roll-bet-entry.is-own .roll-bet-name{color:#f6ab45;font-weight:700}
+.roll-bet-avatar{font-size:12px;line-height:1;flex-shrink:0}
+.roll-bet-name{color:#b6b9c2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-size:10px}
+.roll-bet-val{font-weight:700;color:#e2c394;flex-shrink:0;font-size:10px}

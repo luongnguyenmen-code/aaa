@@ -27,6 +27,7 @@
     amount().disabled=busy||!!bet;
     document.querySelectorAll('[data-amount]').forEach(b=>b.disabled=busy||!!bet);
     document.querySelectorAll('input[name=color]').forEach(x=>x.disabled=busy||!open||!!locked);
+    renderTotals();
   }
   const cycle=value=>15+((value%15)+15)%15;
   const rollEasing='cubic-bezier(0.1, 0.8, 0.1, 1)';
@@ -112,13 +113,81 @@
     amount().max=data.rules?.maxBet||500;
     $('roll-login').hidden=data.authenticated;$('roll-balance').textContent=Number.isFinite(data.balance)?money(data.balance):'—';
     renderHistory();
-    $('roll-totals').innerHTML=['red','green','black'].map(c=>{const total=data.totals.find(x=>x.color===c)||{amount:0,players:0},own=ownBet();return `<div class="roll-total ${c}"><div class="roll-total-head"><span class="roll-dot ${c}"></span><span>${names[c]}</span><small>${total.players}</small><strong>${money(total.amount)}</strong></div>${own?.color===c?`<div class="roll-total-own"><span>Bạn · ${esc(statuses[own.status])}</span><b>${money(own.amount)}</b></div>`:`<p class="roll-total-empty">${total.players?'Đã có lượt gửi trong vòng':'Chưa có lượt gửi'}</p>`}</div>`;}).join('');
+    renderTotals();
     const bet=ownBet();
     $('roll-own-bet').textContent=bet?`Bạn gửi ${money(bet.amount)} vào ${names[bet.color]} · ${statuses[bet.status]}`:'Bạn chưa gửi vòng này.';
     const signature=bet?JSON.stringify([bet.id,bet.amount,bet.color]):'';
     if(bet&&signature!==lastOwnSignature){amount().value=bet.amount;document.querySelector(`input[name=color][value=${bet.color}]`).checked=true;}lastOwnSignature=signature;
     $('roll-my-history').innerHTML=data.bets.length?data.bets.map(b=>`<tr><td>${b.round_number??Number(b.round_id)}</td><td>${names[b.color]||'—'}</td><td>${money(b.amount)}</td><td>${b.status==='settled'?money(b.payout):'—'}</td><td>${esc(statuses[b.status]||b.status)}</td></tr>`).join(''):`<tr><td colspan="5">${data.authenticated?'Chưa có gửi bằng Lúa.':'Liên kết Steam để xem lịch sử gửi.'}</td></tr>`;
     quote();updateClock();
+  }
+  const communityDinos=[
+    {name:'Rex_NamDinh',avatar:'🦖'},{name:'Giga_Hunter_VN',avatar:'🦕'},{name:'Carno_Speed',avatar:'🐊'},
+    {name:'Spino_Gateway',avatar:'🦎'},{name:'Deino_Swamp',avatar:'🐊'},{name:'Raptor_Alpha',avatar:'🦅'},
+    {name:'Stego_Tanker',avatar:'🛡️'},{name:'Trike_Leader',avatar:'🦏'},{name:'Allo_SanMoi',avatar:'🥩'},
+    {name:'Cerato_Chunky',avatar:'🍖'},{name:'Pachy_Bonk',avatar:'💥'},{name:'Maia_Runner',avatar:'🏃'},
+    {name:'Ptera_Cliffs',avatar:'🪶'},{name:'Troodon_Night',avatar:'🌙'},{name:'Survivor_F7',avatar:'🌴'},
+    {name:'Long_Bien_Raptor',avatar:'⚡'},{name:'Dino_Gamer_VN',avatar:'🎮'},{name:'BaoChua_F6',avatar:'🦖'}
+  ];
+  function getCommunityBets(roundId){
+    if(!roundId)return [];
+    let s=(roundId^0x5f3759df)>>>0;
+    const rnd=()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};
+    const count=5+Math.floor(rnd()*5);
+    const bets=[],amounts=[10,20,25,50,50,100,100,150,200,250,500],used=new Set();
+    for(let i=0;i<count;i++){
+      const idx=Math.floor(rnd()*communityDinos.length);
+      if(used.has(idx))continue;
+      used.add(idx);
+      const player=communityDinos[idx],rc=rnd();
+      const color=rc<0.45?'red':rc<0.90?'black':'green';
+      const amount=amounts[Math.floor(rnd()*amounts.length)];
+      const delay=1200+rnd()*11500;
+      bets.push({name:player.name,avatar:player.avatar,color,amount,delay});
+    }
+    return bets;
+  }
+  let lastTotalsSig='';
+  function renderTotals(){
+    if(!data)return;
+    const now=Date.now()+offset,open=now<data.round.closesAt,elapsed=Math.max(0,now-data.round.startsAt);
+    const community=getCommunityBets(data.round.id).filter(b=>!open||b.delay<=elapsed);
+    const own=ownBet();
+    const sig=JSON.stringify([data.round.id,community.length,own?.id,own?.amount,own?.color,data.activeBets?.length||0]);
+    if(sig===lastTotalsSig)return;
+    lastTotalsSig=sig;
+    const activeMap=data.activeBets||[];
+    const userSteam=App.user?.steam_id||App.user?.steamId||null;
+    $('roll-totals').innerHTML=['red','green','black'].map(c=>{
+      const list=[];
+      if(own&&own.color===c)list.push({name:'Bạn (Tôi)',avatar:'⭐',amount:own.amount,isOwn:true});
+      for(const b of activeMap){
+        if(b.color===c&&(!userSteam||b.steam_id!==userSteam)){
+          const shortId=b.steam_id?b.steam_id.slice(-4):'';
+          list.push({name:shortId?('Người chơi #'+shortId):'Người chơi',avatar:'🎮',amount:b.amount,isOwn:false});
+        }
+      }
+      for(const b of community){
+        if(b.color===c)list.push(b);
+      }
+      const count=list.length;
+      const sum=list.reduce((acc,x)=>acc+x.amount,0);
+      return `<div class="roll-total ${c}">
+        <div class="roll-total-head">
+          <span class="roll-dot ${c}"></span>
+          <span>${names[c]}</span>
+          <small>${count}</small>
+          <strong>${money(sum)}</strong>
+        </div>
+        <div class="roll-bets-scroll">
+          ${count?list.map(b=>`<div class="roll-bet-entry ${b.isOwn?'is-own':''}">
+            <span class="roll-bet-avatar">${b.avatar}</span>
+            <span class="roll-bet-name">${esc(b.name)}</span>
+            <strong class="roll-bet-val">+${money(b.amount)}</strong>
+          </div>`).join(''):`<p class="roll-total-empty">Chưa có lượt gửi</p>`}
+        </div>
+      </div>`;
+    }).join('');
   }
   async function post(url,body){
     const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
