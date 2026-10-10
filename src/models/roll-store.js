@@ -1,7 +1,23 @@
 const fs=require('node:fs'),path=require('node:path');
-let pool,initialization;
+let pool,initialization,memDb,memInit;
+function createMemPool(){
+  const {newDb}=require('pg-mem'),locks=new Set();
+  const db=newDb();
+  db.public.registerFunction({name:'hashtext',args:['text'],returns:'integer',implementation:s=>Array.from(s).reduce((h,c)=>(h*31+c.charCodeAt(0))|0,0)});
+  db.public.registerFunction({name:'pg_try_advisory_lock',args:['integer','integer'],returns:'bool',impure:true,implementation:(a,b)=>{const k=a+':'+b;if(locks.has(k))return false;locks.add(k);return true;}});
+  db.public.registerFunction({name:'pg_advisory_unlock',args:['integer','integer'],returns:'bool',impure:true,implementation:(a,b)=>locks.delete(a+':'+b)});
+  return db.adapters.createPg();
+}
 async function database(){
-  if(!process.env.ROLL_DATABASE_URL)throw Object.assign(Error('Roll chưa kết nối cơ sở dữ liệu.'),{status:503});
+  if(!process.env.ROLL_DATABASE_URL||process.env.ROLL_DATABASE_URL.includes('local-st25:mem')){
+    if(!memDb){
+      const pg=createMemPool();
+      memDb=new pg.Pool();
+      memInit=memDb.query(fs.readFileSync(path.join(__dirname,'roll-schema.sql'),'utf8')).catch(err=>{memInit=null;throw err;});
+    }
+    await memInit;
+    return memDb;
+  }
   const address=new URL(process.env.ROLL_DATABASE_URL);
   if(/pooler|pgbouncer/i.test(address.hostname)||address.port==='6543')throw Object.assign(Error('Roll cần kết nối PostgreSQL trực tiếp: tắt Connection pooling khi sao chép URL.'),{status:503});
   if(!pool){const {Pool}=require('pg');pool=new Pool({connectionString:process.env.ROLL_DATABASE_URL,max:3,connectionTimeoutMillis:5000,idleTimeoutMillis:10000,query_timeout:10000});pool.on('error',()=>console.error('Roll database connection failed'));}

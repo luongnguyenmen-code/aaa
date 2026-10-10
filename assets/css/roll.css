@@ -29,3 +29,24 @@
 .roll-bet-avatar{font-size:12px;line-height:1;flex-shrink:0}
 .roll-bet-name{color:#b6b9c2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-size:10px}
 .roll-bet-val{font-weight:700;color:#e2c394;flex-shrink:0;font-size:10px}
+
+/* Big win celebratory toast notification */
+.roll-bigwin-toast{position:fixed;top:20px;right:20px;z-index:99999;display:flex;align-items:center;gap:14px;padding:14px 18px;background:linear-gradient(135deg,rgba(28,20,12,.96),rgba(14,15,18,.98));border:2px solid #f6ab45;border-radius:14px;box-shadow:0 10px 35px rgba(0,0,0,.7),0 0 25px rgba(246,171,69,.45);backdrop-filter:blur(10px);max-width:440px;width:calc(100% - 40px);color:#fff;animation:roll-toast-in .4s cubic-bezier(0.16,1,0.3,1);pointer-events:auto}
+.roll-bigwin-toast.is-own{border-color:#ffe1a1;background:linear-gradient(135deg,rgba(48,32,14,.98),rgba(20,22,26,.98));box-shadow:0 10px 40px rgba(0,0,0,.8),0 0 35px rgba(255,215,0,.6)}
+@keyframes roll-toast-in{from{transform:translateY(-20px) scale(.95);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+.roll-bigwin-icon{font-size:32px;line-height:1;flex-shrink:0;animation:roll-bounce .7s infinite alternate ease-in-out}
+@keyframes roll-bounce{from{transform:scale(1) rotate(-4deg)}to{transform:scale(1.15) rotate(4deg)}}
+.roll-bigwin-body{flex:1;min-width:0}
+.roll-bigwin-tag{font-size:10px;font-weight:900;letter-spacing:1.5px;color:#f6ab45;text-transform:uppercase;margin-bottom:2px}
+.roll-bigwin-toast.is-own .roll-bigwin-tag{color:#ffd700}
+.roll-bigwin-text{font-size:12px;line-height:1.4;color:#e2e4ea}
+.roll-bigwin-name{color:#fff;font-weight:700}
+.roll-bigwin-amt{color:#ffcf56;font-size:14px;font-weight:800;text-shadow:0 0 8px rgba(255,207,86,.5)}
+.roll-bigwin-color{padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;margin-left:2px}
+.roll-bigwin-color.red{background:#8b2529;color:#ff8e8e}
+.roll-bigwin-color.green{background:#11644b;color:#47e7a5}
+.roll-bigwin-color.black{background:#2a2c33;color:#e5e6ed}
+.roll-bigwin-close{background:none;border:0;color:#8e929d;font-size:22px;line-height:1;cursor:pointer;padding:4px;margin-left:4px;border-radius:6px;transition:color .2s}
+.roll-bigwin-close:hover{color:#fff}
+@media(max-width:500px){.roll-bigwin-toast{top:12px;right:12px;left:12px;width:auto;padding:10px 14px}.roll-bigwin-icon{font-size:24px}.roll-bigwin-text{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.roll-bigwin-toast{animation:none}.roll-bigwin-icon{animation:none}}

@@ -55,7 +55,7 @@ module.exports=function createRollService(bank,store=defaultStore){
     if(steamId)try{balance=await bank.balance(steamId);}catch{}
     const responseTime=Date.now();
     return {serverTime:responseTime,ready:ready(),demo:!ready(),authenticated:!!steamId,balance,
-      message:ready()?'Gửi và trả thưởng bằng ví Lúa IslePilot.':'Đang mở chế độ thử miễn phí. Gửi Lúa sẽ mở sau khi kết nối dữ liệu.',
+      message:ready()?'Gửi và trả thưởng bằng ví Lúa IslePilot trực tiếp. Đặt là trừ Lúa, thắng là cộng ngay.':'Đang mở chế độ thử miễn phí. Gửi Lúa sẽ mở sau khi kết nối dữ liệu.',
       round:{...engine.publicRound(round,responseTime),number:roundNumber(round.id)},
       history:history.map(item=>({...item,number:roundNumber(item.id)})),
       bets:bets.map(item=>({...item,round_number:roundNumber(item.round_id)})),totals,activeBets,pendingCount,
@@ -128,7 +128,7 @@ module.exports=function createRollService(bank,store=defaultStore){
         if(payout>0)balance=await changeBalance(client,row,payout,'payout');
         settled.push((await client.query("UPDATE st25_roll_bets SET status='settled',balance=$2,updated_at=$3 WHERE id=$1 RETURNING *",[row.id,balance,Date.now()])).rows[0]);
       }
-      return {bets:settled};
+      return {bets:settled,balance:(settled.length?settled[settled.length-1].balance:null)};
     });
   }
   return {state,bet,settle};

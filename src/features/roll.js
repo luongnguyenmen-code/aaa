@@ -14,7 +14,7 @@
   function updateClock(){
     if(!data)return;
     const now=Date.now()+offset,open=now<data.round.closesAt,seconds=Math.max(0,((open?data.round.closesAt:data.round.endsAt)-now)/1000);
-    $('roll-clock').textContent=seconds.toFixed(2)+'s';$('roll-phase').textContent=open?'Chọn màu và gửi Lúa':'';
+    $('roll-clock').textContent=seconds.toFixed(2)+'s';$('roll-phase').textContent=open?'Chọn màu và đặt cược Lúa':'';
     $('roll-clock').hidden=!open;$('roll-phase').hidden=!open;
     document.querySelector('.roll-arena').classList.toggle('is-spinning',!open);
     if(!open&&now<data.round.endsAt){
@@ -23,7 +23,7 @@
     }
     const bet=ownBet(),locked=bet&&bet.status!=='placed';
     $('roll-submit').disabled=busy||!open||(!data.demo&&(!data.authenticated||locked));
-    $('roll-submit').textContent=busy?'Đang xử lý…':!open?'Chờ vòng tiếp theo':data.demo?'Thử Roll miễn phí':!data.authenticated?'Liên kết Steam để gửi':bet?'Đổi màu gửi':'Gửi bằng Lúa';
+    $('roll-submit').textContent=busy?'Đang xử lý…':!open?'Chờ vòng tiếp theo':!data.authenticated?'Liên kết Steam để cược':bet?'Đổi màu cược':data.demo?'Thử Roll miễn phí':'Đặt cược bằng Lúa';
     amount().disabled=busy||!!bet;
     document.querySelectorAll('[data-amount]').forEach(b=>b.disabled=busy||!!bet);
     document.querySelectorAll('input[name=color]').forEach(x=>x.disabled=busy||!open||!!locked);
@@ -66,8 +66,8 @@
     if(!duration||document.hidden||reducedMotion.matches){
       trackPosition=15+slot;paint(trackPosition);
       if(!document.hidden){
-        if(duration)winnerTimer=setTimeout(()=>{if(animationKey===key){highlightWinner();publishResult(revealedRound);}},duration);
-        else{highlightWinner();publishResult(revealedRound);}
+        if(duration)winnerTimer=setTimeout(()=>{if(animationKey===key){highlightWinner();publishResult(revealedRound);if(typeof checkSettle==='function')checkSettle();}},duration);
+        else{highlightWinner();publishResult(revealedRound);if(typeof checkSettle==='function')checkSettle();}
       }
       return;
     }
@@ -83,12 +83,14 @@
       animation=undefined;trackPosition=cycle(target);paint(trackPosition);
       arena.classList.remove('is-revealing');
       highlightWinner();publishResult(revealedRound);
+      if(typeof checkSettle==='function')checkSettle();
     }).catch(()=>{});
   }
   function publishResult(round){
     if(!round||!Number.isInteger(round.result))return;
     completedRound=round;
     renderHistory();
+    if(typeof checkBigWins==='function')checkBigWins(round);
   }
   function renderHistory(){
     if(!data)return;
@@ -115,10 +117,10 @@
     renderHistory();
     renderTotals();
     const bet=ownBet();
-    $('roll-own-bet').textContent=bet?`Bạn gửi ${money(bet.amount)} vào ${names[bet.color]} · ${statuses[bet.status]}`:'Bạn chưa gửi vòng này.';
+    $('roll-own-bet').textContent=bet?`Bạn cược ${money(bet.amount)} vào ${names[bet.color]} · ${statuses[bet.status]}`:'Bạn chưa cược vòng này.';
     const signature=bet?JSON.stringify([bet.id,bet.amount,bet.color]):'';
     if(bet&&signature!==lastOwnSignature){amount().value=bet.amount;document.querySelector(`input[name=color][value=${bet.color}]`).checked=true;}lastOwnSignature=signature;
-    $('roll-my-history').innerHTML=data.bets.length?data.bets.map(b=>`<tr><td>${b.round_number??Number(b.round_id)}</td><td>${names[b.color]||'—'}</td><td>${money(b.amount)}</td><td>${b.status==='settled'?money(b.payout):'—'}</td><td>${esc(statuses[b.status]||b.status)}</td></tr>`).join(''):`<tr><td colspan="5">${data.authenticated?'Chưa có gửi bằng Lúa.':'Liên kết Steam để xem lịch sử gửi.'}</td></tr>`;
+    $('roll-my-history').innerHTML=data.bets.length?data.bets.map(b=>`<tr><td>${b.round_number??Number(b.round_id)}</td><td>${names[b.color]||'—'}</td><td>${money(b.amount)}</td><td>${b.status==='settled'?money(b.payout):'—'}</td><td>${esc(statuses[b.status]||b.status)}</td></tr>`).join(''):`<tr><td colspan="5">${data.authenticated?'Chưa có cược bằng Lúa.':'Liên kết Steam để xem lịch sử cược.'}</td></tr>`;
     quote();updateClock();
   }
   const communityDinos=[
@@ -197,6 +199,83 @@
     }catch(error){if(error.name==='AbortError')throw Error('Chưa nhận được xác nhận. Kiểm tra lịch sử gửi trước khi gửi lại.');throw error;}
     finally{clearTimeout(timeout);}
   }
+  let bigWinTimer;
+  function showBigWin(winnerName,amountVal,colorName,isOwn=false,avatar='🎉'){
+    const box=$('roll-bigwin');if(!box)return;
+    clearTimeout(bigWinTimer);
+    const colorKey=colorName==='Đỏ'?'red':colorName==='Xanh'?'green':'black';
+    box.className='roll-bigwin-toast'+(isOwn?' is-own':'');
+    box.innerHTML=`<div class="roll-bigwin-icon">${avatar||(isOwn?'👑':'🎉')}</div><div class="roll-bigwin-body"><div class="roll-bigwin-tag">${isOwn?'🌟 BẠN TRÚNG LỚN! 🌟':'🎉 THÔNG BÁO TRÚNG LỚN 🎉'}</div><div class="roll-bigwin-text"><strong class="roll-bigwin-name">${esc(winnerName)}</strong> vừa thắng <strong class="roll-bigwin-amt">+${money(amountVal)}</strong> vào ô <span class="roll-bigwin-color ${colorKey}">${esc(colorName)}</span>!</div></div><button type="button" class="roll-bigwin-close" aria-label="Đóng">&times;</button>`;
+    box.hidden=false;
+    box.querySelector('.roll-bigwin-close')?.addEventListener('click',()=>{box.hidden=true;clearTimeout(bigWinTimer);});
+    bigWinTimer=setTimeout(()=>{box.hidden=true;},6000);
+  }
+  let announcedRounds=new Set();
+  function checkBigWins(round){
+    if(!round||announcedRounds.has(round.id))return;
+    announcedRounds.add(round.id);
+    const winColor=round.color||(round.result===0?'green':round.result<=7?'red':'black');
+    const community=getCommunityBets(round.id);
+    let top=null,maxWin=0;
+    for(const b of community){
+      if(b.color===winColor){
+        const payout=Math.min(b.amount*(winColor==='green'?14:2),winColor==='green'?1000:Infinity);
+        if((payout>=100||winColor==='green')&&payout>maxWin){
+          maxWin=payout;
+          top={name:b.name,amount:payout,colorName:names[winColor],avatar:b.avatar};
+        }
+      }
+    }
+    const activeMap=data?.activeBets||[];
+    const userSteam=App.user?.steam_id||App.user?.steamId||null;
+    for(const b of activeMap){
+      if(b.color===winColor&&(!userSteam||b.steam_id!==userSteam)){
+        const payout=Math.min(b.amount*(winColor==='green'?14:2),winColor==='green'?1000:Infinity);
+        if((payout>=100||winColor==='green')&&payout>maxWin){
+          maxWin=payout;
+          const shortId=b.steam_id?b.steam_id.slice(-4):'';
+          top={name:shortId?('Người chơi #'+shortId):'Người chơi',amount:payout,colorName:names[winColor],avatar:'🎮'};
+        }
+      }
+    }
+    const own=ownBet();
+    const ownWon=own&&own.color===winColor;
+    if(!ownWon&&top){
+      showBigWin(top.name,top.amount,top.colorName,false,top.avatar);
+    }
+  }
+  async function checkSettle(){
+    if(!data||settling||busy)return;
+    const due=data.pendingCount>0||data.bets.some(b=>b.status==='placed'&&Number(b.round_id)<=data.round.id);
+    if(!due)return;
+    settling=true;
+    try{
+      const res=await post(ST25API.routes.rollSettle,{});
+      if(res&&Number.isFinite(res.balance)){
+        data.balance=res.balance;
+        if(App.user)App.user.balance=res.balance;
+        $('roll-balance').textContent=money(res.balance);
+        const hudBalance=$('hud-balance');if(hudBalance)hudBalance.textContent=Number(res.balance).toLocaleString('vi-VN');
+      }
+      if(res?.bets?.length){
+        for(const sb of res.bets){
+          const idx=data.bets.findIndex(b=>b.id===sb.id);
+          if(idx>=0)data.bets[idx]=sb;else data.bets.unshift(sb);
+          if(sb.payout>0){
+            feedback(`🎉 THẮNG ${money(sb.payout)}! Đã cộng ngay vào ví Lúa.`);
+            if(sb.payout>=100||sb.color==='green'){
+              showBigWin('Bạn',sb.payout,names[sb.color],true,'👑');
+            }
+          }
+        }
+        render();
+      }
+    }catch(e){
+      if(e?.message)feedback(e.message);
+    }finally{
+      settling=false;
+    }
+  }
   async function refresh(){
     if(reading||busy||disposed||document.hidden)return;reading=true;
     const account=App.user?.steam_id||App.user?.steamId||null;
@@ -204,8 +283,8 @@
       const next=await App.readJSON(ST25API.routes.rollState);
       if(account!==(App.user?.steam_id||App.user?.steamId||null))return;
       data=next;offset=data.serverTime-Date.now();render();
-      const due=data.pendingCount>0||data.bets.some(b=>b.status==='placed'&&Number(b.round_id)<data.round.id);
-      if(due&&!settling&&!busy){settling=true;try{await post(ST25API.routes.rollSettle,{});}catch(e){feedback(e.message);}finally{settling=false;}}
+      const due=data.pendingCount>0||data.bets.some(b=>b.status==='placed'&&Number(b.round_id)<=data.round.id);
+      if(due&&!settling&&!busy){checkSettle();}
     }catch(e){$('roll-notice').textContent='Mất kết nối Roll. Đang thử kết nối lại…';$('roll-submit').disabled=true;data=null;}
     finally{reading=false;clearTimeout(timer);if(!disposed&&!document.hidden)timer=setTimeout(refresh,data&&Date.now()+offset>=data.round.closesAt?300:1000);}
   }
@@ -214,13 +293,21 @@
     if(!amount().checkValidity()){amount().reportValidity();return;}
     if(data.demo){demoBet={roundId:data.round.id,color:color()};feedback('Đã chọn '+names[color()]+' cho vòng thử miễn phí. Không sử dụng Lúa.');return;}
     if(!data.authenticated){location.href='lien-ket-steam.html';return;}
-    busy=true;updateClock();feedback('Đang gửi…');
+    busy=true;updateClock();feedback('Đang đặt cược…');
     const account=App.user?.steam_id||App.user?.steamId||null;
+    const betAmt=Number(amount().value),betCol=color();
     try{
-      const response=await post(ST25API.routes.rollBet,{roundId:data.round.id,color:color(),amount:Number(amount().value),requestId:crypto.randomUUID()});
+      const response=await post(ST25API.routes.rollBet,{roundId:data.round.id,color:betCol,amount:betAmt,requestId:crypto.randomUUID()});
       if(!data||account!==(App.user?.steam_id||App.user?.steamId||null))return;
-      data.bets=[response.bet,...data.bets.filter(b=>b.id!==response.bet.id)];if(Number.isFinite(response.balance))data.balance=response.balance;
-      feedback(response.replayed?'Gửi trước đã được ghi nhận.':'Đã ghi nhận gửi bằng Lúa.');render();
+      data.bets=[response.bet,...data.bets.filter(b=>b.id!==response.bet.id)];
+      if(Number.isFinite(response.balance)){
+        data.balance=response.balance;
+        if(App.user)App.user.balance=response.balance;
+        $('roll-balance').textContent=money(response.balance);
+        const hudBalance=$('hud-balance');if(hudBalance)hudBalance.textContent=Number(response.balance).toLocaleString('vi-VN');
+      }
+      feedback(response.replayed?'Cược trước đã được ghi nhận.':`Đã trừ ${money(betAmt)}! Đặt cược vào ${names[betCol]} thành công.`);
+      render();
     }catch(e){feedback(e.message);}finally{busy=false;updateClock();refresh();}
   });
   amount().addEventListener('input',()=>{const max=data?.rules?.maxBet||500;if(amount().value&&Number(amount().value)>max)amount().value=max;quote();});
