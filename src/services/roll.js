@@ -41,7 +41,7 @@ module.exports=function createRollService(bank,store=defaultStore){
       round:{...engine.publicRound(round,responseTime),number:roundNumber(round.id)},
       history:history.map(item=>({...item,number:roundNumber(item.id)})),
       bets:bets.map(item=>({...item,round_number:roundNumber(item.round_id)})),totals,pendingCount,
-      rules:{minBet:rules.minBet,maxBet:rules.maxBet,payouts:rules.payouts,probabilities:{red:7/15,black:7/15,green:1/15},roundMs:rules.roundMs,betMs:rules.betMs}};
+      rules:{minBet:rules.minBet,maxBet:rules.maxBet,maxGreenPayout:rules.maxGreenPayout,payouts:rules.payouts,probabilities:{red:7/15,black:7/15,green:1/15},roundMs:rules.roundMs,betMs:rules.betMs}};
   }
   async function bet(steamId,input){
     if(!steamId)throw error('Vui lòng liên kết Steam trước khi gửi.',401);

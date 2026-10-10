@@ -111,3 +111,9 @@ S?a giao di?n t?i `src/pages/`; c?u h?nh m?y ch? t?i `src/core/server-config.jso
 URL truy c?p v?n l? `/gara.html`, `/skin.html`? Ch?y qua Node server ?? gh?p header/footer.
 
 
+
+### Roll chính thức
+
+Roll nhận đặt Lúa từ người chơi đã liên kết Steam khi hosting có `ROLL_DATABASE_URL` (PostgreSQL trực tiếp), `SESSION_SECRET` dài ít nhất 32 ký tự và quyền cập nhật ví IslePilot. Roll mặc định mở khi đủ cấu hình; `ROLL_ENABLED=false` tạm dừng nhận cược mới. Khi mở chính thức, đặt `ROLL_ENABLED=true` trên hosting và redeploy nếu trước đó đang dùng `false`.
+
+Mỗi người đặt từ 1 đến 100 Lúa mỗi vòng. Đỏ/đen trả tổng x2; xanh trả tổng `min(số Lúa đặt × 14, 500)` Lúa, bao gồm vốn. Ví dụ: đặt xanh 10 nhận 140 Lúa; đặt xanh 100 nhận 500 Lúa nếu thắng. Giao diện và API cùng áp dụng giới hạn này.

@@ -24,4 +24,4 @@ function validateBet(body){
     typeof body?.requestId!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(body.requestId))throw Object.assign(Error(`Cược không hợp lệ: chọn màu và số Lúa nguyên từ ${rules.minBet} đến ${rules.maxBet}.`),{status:400});
   return body;
 }
-module.exports={draw,makeRound,publicRound,validateBet,payout:(amount,color,result)=>rules.slots[result]===color?amount*rules.payouts[color]:0};
+module.exports={draw,makeRound,publicRound,validateBet,payout:(amount,color,result)=>rules.slots[result]===color?Math.min(amount*rules.payouts[color],color==='green'?rules.maxGreenPayout:Infinity):0};
