@@ -1,26 +1,19 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "server.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": [
-          "src/**",
-          "assets/**"
-        ],
-        "excludeFiles": "assets/vendor/islepilot-skin/cdn/**"
-      }
-    },
-    {
-      "src": "assets/vendor/islepilot-skin/cdn/**",
-      "use": "@vercel/static"
+  "buildCommand": "node tools/build-vercel.cjs",
+  "outputDirectory": "public",
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "{src,assets}/**",
+      "excludeFiles": "assets/vendor/islepilot-skin/cdn/**"
     }
-  ],
+  },
   "routes": [
     {
       "src": "/cdn/skinviewer/(.*)",
-      "headers": {"Cache-Control":"public, max-age=604800, stale-while-revalidate=86400"},
+      "headers": {
+        "Cache-Control": "public, max-age=604800, stale-while-revalidate=86400"
+      },
       "dest": "/assets/vendor/islepilot-skin/cdn/skinviewer/$1"
     },
     {
@@ -28,7 +21,8 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/server.js"
+      "dest": "/api/index.js"
     }
-  ]
+  ],
+  "framework": null
 }

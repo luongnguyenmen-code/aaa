@@ -8,3 +8,5 @@ tests/*.log
 tests/*-process.txt
 tests/.redesign-browser-*/
 tests/.quests-browser-*/
+
+/public/
