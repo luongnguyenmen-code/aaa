@@ -52,3 +52,5 @@ Dải 15 ô dùng Web Animations API với easing `cubic-bezier(0.1, 0.8, 0.1, 1
 `node tests/roll-motion-regression.cjs` kiểm tra easing, thời lượng 8 giây, đủ 15 ô và không khởi động lại animation khi polling. `node tests/roll-browser.cjs` kiểm tra Chrome ở 1440, 768, 390 và 320 px bằng dữ liệu giả lập, chặn các giao dịch thật.
 
 Khi animation kết thúc, ô nằm đúng tâm vạch được gắn class `winner`: nhịp sáng 1,5 giây, co giãn nhẹ, hào quang theo màu ô và viền sáng. Hiệu ứng được xóa khi bắt đầu vòng quay mới. Chế độ giảm chuyển động chỉ dùng viền và ánh sáng tĩnh; vẫn chờ kết thúc vòng trước khi nhấn sáng kết quả.
+
+Trạng thái được đọc mỗi giây khi nhận gửi và mỗi 300 ms khi quay. Số vòng luôn lấy từ máy chủ. Lịch sử hiển thị 14 kết quả gần nhất, mới nhất đứng đầu; bộ đếm màu tính trên cùng danh sách này. Kết quả mới được đưa vào lịch sử ngay khi animation dừng và không bị lặp khi API trả lại cùng vòng. Nếu phản hồi API chậm, kết quả vừa dừng vẫn được giữ cho đến khi lịch sử máy chủ cập nhật.

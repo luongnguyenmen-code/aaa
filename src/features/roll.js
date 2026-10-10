@@ -1,7 +1,7 @@
 (() => {
   const $=id=>document.getElementById(id),names={red:'Đỏ',black:'Đen',green:'Xanh'},multipliers={red:2,black:2,green:14};
   const statuses={debit_pending:'Đang đối soát tiền gửi',placed:'Đã gửi',credit_pending:'Đang đối soát tiền trả',settled:'Đã kết thúc',review:'Cần đối soát — liên hệ hỗ trợ'};
-  let data,busy=false,reading=false,settling=false,timer,clock,offset=0,animation,animationKey='',trackPosition=15,lastHistory='',demoBet,disposed=false,lastAccount,lastOwnSignature,closeRequested;
+  let data,busy=false,reading=false,settling=false,timer,clock,offset=0,animation,animationKey='',trackPosition=15,lastHistory='',completedRound,demoBet,disposed=false,lastAccount,lastOwnSignature,closeRequested;
   const esc=value=>App.escapeHTML(value),amount=()=>$('roll-amount'),color=()=>document.querySelector('input[name=color]:checked').value;
   const money=value=>Number(value).toLocaleString('vi-VN')+' Lúa';
   const order=[1,8,2,9,3,10,4,0,11,5,12,6,13,7,14];
@@ -34,6 +34,7 @@
   let winnerTimer;
   function clearWinner(){
     clearTimeout(winnerTimer);
+    winnerTimer=undefined;
     $('roll-track').querySelectorAll('.winner').forEach(tile=>tile.classList.remove('winner'));
   }
   function highlightWinner(){
@@ -59,12 +60,13 @@
     animationKey=key;stopMotion();
     // Wait for the authoritative result rather than changing speed between two curves.
     if(key.startsWith('spin:'))return;
+    const revealedRound=data?.round?.id===Number(key.slice(7))?{...data.round}:null;
     const slot=target%15,from=cycle(trackPosition),arena=document.querySelector('.roll-arena');
     if(!duration||document.hidden||reducedMotion.matches){
       trackPosition=15+slot;paint(trackPosition);
       if(!document.hidden){
-        if(duration)winnerTimer=setTimeout(()=>{if(animationKey===key)highlightWinner();},duration);
-        else highlightWinner();
+        if(duration)winnerTimer=setTimeout(()=>{if(animationKey===key){highlightWinner();publishResult(revealedRound);}},duration);
+        else{highlightWinner();publishResult(revealedRound);}
       }
       return;
     }
@@ -79,23 +81,36 @@
       if(animation!==running)return;
       animation=undefined;trackPosition=cycle(target);paint(trackPosition);
       arena.classList.remove('is-revealing');
-      highlightWinner();
+      highlightWinner();publishResult(revealedRound);
     }).catch(()=>{});
+  }
+  function publishResult(round){
+    if(!round||!Number.isInteger(round.result))return;
+    completedRound=round;
+    renderHistory();
+  }
+  function renderHistory(){
+    if(!data)return;
+    const activeId=animation||winnerTimer!==undefined?Number(animationKey.slice(7)):null;
+    const history=[...(completedRound?[completedRound]:[]),...data.history]
+      .filter((round,index,all)=>round.id!==activeId&&all.findIndex(other=>other.id===round.id)===index)
+      .sort((a,b)=>b.id-a.id).slice(0,14);
+    const historyKey=JSON.stringify(history.map(x=>[x.id,x.result]));
+    if(historyKey!==lastHistory){
+      lastHistory=historyKey;
+      $('roll-history').innerHTML=history.map(x=>`<span class="roll-dot ${x.color}" title="Vòng ${x.number??x.id}: ${names[x.color]} ${x.result}">${x.result}</span>`).join('');
+      $('roll-counts').innerHTML=['red','black','green'].map(c=>`<span><i class="roll-dot ${c}" style="width:6px;height:6px"></i>${history.filter(x=>x.color===c).length}</span>`).join('');
+      const last=history[0];if(last){
+        $('roll-result').textContent=`Vòng ${last.number??last.id}: ${names[last.color]} · Số ${last.result}`;
+        if(!animation&&Date.now()+offset<data.round.closesAt)animate(90+order.indexOf(last.result),0,'result:'+last.id,true);
+      }
+      if(demoBet&&last?.id===demoBet.roundId){const won=last.color===demoBet.color;feedback(won?'Thử miễn phí: bạn chọn đúng màu! Không cộng Lúa.':'Thử miễn phí: chưa trúng màu. Không trừ Lúa.');demoBet=null;}
+    }
   }
   function render(){
     $('roll-notice').textContent=data.message;$('roll-round').textContent=data.round.number??data.round.id;
     $('roll-login').hidden=data.authenticated;$('roll-balance').textContent=Number.isFinite(data.balance)?money(data.balance):'—';
-    const historyKey=JSON.stringify(data.history.map(x=>[x.id,x.result]));
-    if(historyKey!==lastHistory){
-      lastHistory=historyKey;
-      $('roll-history').innerHTML=data.history.map(x=>`<span class="roll-dot ${x.color}" title="Vòng ${x.number??x.id}: ${names[x.color]} ${x.result}">${x.result}</span>`).join('');
-      $('roll-counts').innerHTML=['red','black','green'].map(c=>`<span><i class="roll-dot ${c}" style="width:6px;height:6px"></i>${data.history.filter(x=>x.color===c).length}</span>`).join('');
-      const last=data.history[0];if(last){
-        $('roll-result').textContent=`Vòng ${last.number??last.id}: ${names[last.color]} · Số ${last.result}`;
-        if(Date.now()+offset<data.round.closesAt)animate(90+order.indexOf(last.result),0,'result:'+last.id,true);
-      }
-      if(demoBet&&last?.id===demoBet.roundId){const won=last.color===demoBet.color;feedback(won?'Thử miễn phí: bạn chọn đúng màu! Không cộng Lúa.':'Thử miễn phí: chưa trúng màu. Không trừ Lúa.');demoBet=null;}
-    }
+    renderHistory();
     $('roll-totals').innerHTML=['red','green','black'].map(c=>{const total=data.totals.find(x=>x.color===c)||{amount:0,players:0},own=ownBet();return `<div class="roll-total ${c}"><div class="roll-total-head"><span class="roll-dot ${c}"></span><span>${names[c]}</span><small>${total.players}</small><strong>${money(total.amount)}</strong></div>${own?.color===c?`<div class="roll-total-own"><span>Bạn · ${esc(statuses[own.status])}</span><b>${money(own.amount)}</b></div>`:`<p class="roll-total-empty">${total.players?'Đã có lượt gửi trong vòng':'Chưa có lượt gửi'}</p>`}</div>`;}).join('');
     const bet=ownBet();
     $('roll-own-bet').textContent=bet?`Bạn gửi ${money(bet.amount)} vào ${names[bet.color]} · ${statuses[bet.status]}`:'Bạn chưa gửi vòng này.';
@@ -122,7 +137,7 @@
       const due=data.pendingCount>0||data.bets.some(b=>b.status==='placed'&&Number(b.round_id)<data.round.id);
       if(due&&!settling&&!busy){settling=true;try{await post(ST25API.routes.rollSettle,{});}catch(e){feedback(e.message);}finally{settling=false;}}
     }catch(e){$('roll-notice').textContent='Mất kết nối Roll. Đang thử kết nối lại…';$('roll-submit').disabled=true;data=null;}
-    finally{reading=false;clearTimeout(timer);if(!disposed&&!document.hidden)timer=setTimeout(refresh,data&&Date.now()+offset>=data.round.closesAt?300:2000);}
+    finally{reading=false;clearTimeout(timer);if(!disposed&&!document.hidden)timer=setTimeout(refresh,data&&Date.now()+offset>=data.round.closesAt?300:1000);}
   }
   $('roll-form').addEventListener('submit',async e=>{
     e.preventDefault();if(busy||!data||Date.now()+offset>=data.round.closesAt)return;
