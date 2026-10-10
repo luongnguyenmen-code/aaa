@@ -7,6 +7,7 @@
   const order=[1,8,2,9,3,10,4,0,11,5,12,6,13,7,14];
   $('roll-track').innerHTML=Array.from({length:120},(_,i)=>{const n=order[i%15],c=n===0?'green':n<=7?'red':'black';return `<span class="roll-tile ${c}">${n}</span>`;}).join('');
   $('roll-track').style.transform=`translateX(${-35-trackPosition*76}px)`;
+  function reelMetrics(){const tiles=$('roll-track').children,width=tiles[0].getBoundingClientRect().width,step=tiles[1].getBoundingClientRect().left-tiles[0].getBoundingClientRect().left;return {half:width/2,step:step||76};}
   function feedback(text){$('roll-feedback').textContent=text;}
   function ownBet(){return data?.bets.find(b=>Number(b.round_id)===data.round.id);}
   function quote(){const value=Number(amount().value),total=value*multipliers[color()];$('roll-quote').textContent=`Thắng: nhận tổng ${money(total)} · Lãi ${money(total-value)}`;}
@@ -15,6 +16,7 @@
     const now=Date.now()+offset,open=now<data.round.closesAt,seconds=Math.max(0,((open?data.round.closesAt:data.round.endsAt)-now)/1000);
     $('roll-clock').textContent=seconds.toFixed(2)+'s';$('roll-phase').textContent=open?'Chọn màu và gửi Lúa':seconds>0?'Đang quay…':'Đang nhận kết quả…';
     document.querySelector('.roll-arena').classList.toggle('is-spinning',!open);
+    if(!open&&now<data.round.endsAt)animate(75,Math.max(200,data.round.endsAt-now+2500),'spin:'+data.round.id);
     const bet=ownBet(),locked=bet&&bet.status!=='placed';
     $('roll-submit').disabled=busy||!open||(!data.demo&&(!data.authenticated||locked));
     $('roll-submit').textContent=busy?'Đang xử lý…':!open?'Chờ vòng tiếp theo':data.demo?'Thử Roll miễn phí':!data.authenticated?'Liên kết Steam để gửi':bet?'Đổi màu gửi':'Gửi bằng Lúa';
@@ -24,16 +26,16 @@
   }
   function animate(target,duration,key){
     if(animationKey===key)return;const previousKey=animationKey;animationKey=key;
-    const track=$('roll-track');let from=getComputedStyle(track).transform;
-    let visiblePosition=from==='none'?trackPosition:(-35-new DOMMatrixReadOnly(from).m41)/76;
+    const track=$('roll-track'),{half,step}=reelMetrics();let from=getComputedStyle(track).transform;
+    let visiblePosition=from==='none'?trackPosition:(-half-new DOMMatrixReadOnly(from).m41)/step;
     animation?.cancel();
-    if(key.startsWith('spin:')){trackPosition=15+trackPosition%15;from=`translateX(${-35-trackPosition*76}px)`;track.style.transform=from;}
+    if(key.startsWith('spin:')){trackPosition=15+((visiblePosition%15)+15)%15;from=`translateX(${-half-trackPosition*step}px)`;track.style.transform=from;}
     else if(key.startsWith('result:')){
       const slot=target%15;
       if(!previousKey){target=15+slot;duration=0;}
-      else{visiblePosition=15+((visiblePosition%15)+15)%15;from=`translateX(${-35-visiblePosition*76}px)`;target=Math.ceil((visiblePosition+6-slot)/15)*15+slot;duration=Math.min(5000,Math.max(1800,(target-visiblePosition)*400));}
+      else{visiblePosition=15+((visiblePosition%15)+15)%15;from=`translateX(${-half-visiblePosition*step}px)`;target=Math.ceil((visiblePosition+6-slot)/15)*15+slot;duration=Math.min(5000,Math.max(1800,(target-visiblePosition)*400));}
     }
-    const transform=`translateX(${-35-target*76}px)`;trackPosition=target;
+    const transform=`translateX(${-half-target*step}px)`;trackPosition=target;
     track.style.transform=transform;
     const arena=document.querySelector('.roll-arena');arena.classList.remove('is-revealing');
     if(duration>0&&!matchMedia('(prefers-reduced-motion: reduce)').matches&&!document.hidden){animation=track.animate([{transform:from==='none'?'translateX(-35px)':from},{transform}],{duration,easing:key.startsWith('spin:')?'linear':'cubic-bezier(.25,.5,.5,1)'});if(key.startsWith('result:')){arena.classList.add('is-revealing');const running=animation;running.finished.catch(()=>{}).finally(()=>{if(animation===running)arena.classList.remove('is-revealing');});}}
@@ -52,7 +54,6 @@
       }
       if(demoBet&&last?.id===demoBet.roundId){const won=last.color===demoBet.color;feedback(won?'Thử miễn phí: bạn chọn đúng màu! Không cộng Lúa.':'Thử miễn phí: chưa trúng màu. Không trừ Lúa.');demoBet=null;}
     }
-    if(data.round.phase==='spinning')animate(75,Math.max(200,data.round.endsAt-Date.now()-offset+2500),'spin:'+data.round.id);
     $('roll-totals').innerHTML=['red','green','black'].map(c=>{const total=data.totals.find(x=>x.color===c)||{amount:0,players:0},own=ownBet();return `<div class="roll-total ${c}"><div class="roll-total-head"><span class="roll-dot ${c}"></span><span>${names[c]}</span><small>${total.players}</small><strong>${money(total.amount)}</strong></div>${own?.color===c?`<div class="roll-total-own"><span>Bạn · ${esc(statuses[own.status])}</span><b>${money(own.amount)}</b></div>`:`<p class="roll-total-empty">${total.players?'Đã có lượt gửi trong vòng':'Chưa có lượt gửi'}</p>`}</div>`;}).join('');
     const bet=ownBet();
     $('roll-own-bet').textContent=bet?`Bạn gửi ${money(bet.amount)} vào ${names[bet.color]} · ${statuses[bet.status]}`:'Bạn chưa gửi vòng này.';

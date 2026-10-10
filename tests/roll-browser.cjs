@@ -66,13 +66,16 @@ const server=http.createServer((req,res)=>{
         document.getElementById('roll-submit').click();
         return {redQuote:red,greenQuote:green,demoChoice:document.getElementById('roll-feedback').textContent.includes('Lúa'),menu:!!document.querySelector('a[href="roll.html"]'),tiles:document.querySelectorAll('.roll-tile').length===120,overflow:document.documentElement.scrollWidth>innerWidth};
       })()`,returnByValue:true});
-      const spin=snapshot();spin.round.closesAt=Date.now()-500;spin.round.endsAt=Date.now()+6000;spin.round.phase='spinning';fixtures['/api/roll/state']=spin;
+      const spin=snapshot();spin.round.closesAt=Date.now()-500;spin.round.endsAt=Date.now()+6000;spin.round.phase='betting';fixtures['/api/roll/state']=spin;
       await pause(2400);
       const motion=await call('Runtime.evaluate',{expression:"document.querySelector('.roll-arena').classList.contains('is-spinning') && document.getElementById('roll-track').getAnimations().length===1 && document.getElementById('roll-submit').disabled",returnByValue:true});
       if(!motion.result.value)throw Error('Spin animation or closed-round controls failed');
       const next=snapshot();next.round.id=124;next.history.unshift({id:123,result:0,color:'green',seed:'test123',commitment:'abc123'});fixtures['/api/roll/state']=next;
       await pause(2400);
       const check=await call('Runtime.evaluate',{expression:"({result:document.getElementById('roll-result').textContent.includes('123'),proof:!document.getElementById('roll-proof-data')&&!document.querySelector('.roll-proof'),demoWon:document.getElementById('roll-feedback').textContent.includes('đúng màu'),alerts:document.querySelectorAll('[role=alert]').length})",returnByValue:true});
+      await pause(5200);
+      const centered=await call('Runtime.evaluate',{expression:"(()=>{const marker=document.querySelector('.roll-marker').getBoundingClientRect(),mid=(marker.left+marker.right)/2;const tile=[...document.querySelectorAll('.roll-tile')].find(x=>{const b=x.getBoundingClientRect();return b.left<=mid&&b.right>=mid});return tile?.textContent==='0'&&Math.abs((tile.getBoundingClientRect().left+tile.getBoundingClientRect().right)/2-mid)<1})()",returnByValue:true});
+      if(!centered.result.value)throw Error('Reel does not stop centered on the declared result');
       const shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});fs.writeFileSync(path.join(__dirname,'roll-'+width+'.png'),Buffer.from(shot.data,'base64'));
       const record={width,exercise:exercise.result.value,checks:check.result.value,errors};results.push(record);console.log(JSON.stringify(record));
     }
