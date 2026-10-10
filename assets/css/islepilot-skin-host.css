@@ -24,6 +24,9 @@ body{overflow-wrap:anywhere}
 .skin-species-card:hover img{filter:saturate(1);transform:translateY(-2px)}
 .skin-species-card[aria-pressed=true]{border-color:#f6ab45;background:#2b2115;color:#ffc16a;box-shadow:inset 0 0 0 1px #f6ab4525}
 .skin-species-card[aria-pressed=true] img{filter:saturate(1)}
+.skin-species-card[data-species=Hypsilophodon]{overflow:hidden}
+.skin-species-card[data-species=Hypsilophodon] img{width:94px;max-width:none;height:62px;object-fit:fill;clip-path:inset(8.35% 12% 17.75% 5.93%);margin-top:-5px;margin-bottom:-11px}
+@media(max-width:760px){.skin-species-card[data-species=Hypsilophodon] img{width:78px;height:52px;margin-top:-4px;margin-bottom:-10px}}
 .skin-workspace{display:grid;grid-template-columns:260px minmax(0,1fr) 280px;gap:16px;align-items:stretch}
 .skin-workspace>*{min-width:0}
 .skin-panel[data-slot=card]{gap:12px;padding:12px;border:1px solid #303034;border-radius:12px;background:#141517;box-shadow:none}

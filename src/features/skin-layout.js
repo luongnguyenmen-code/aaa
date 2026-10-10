@@ -15,7 +15,7 @@ window.ST25SkinLayout=function createSkinLayout(React){
       h('div',{className:'skin-species-grid'},choices.map(choice=>{
         const name=choice.props.value;
         return h('button',{key:name,type:'button',className:'skin-species-card', 'aria-pressed':chosen===name, 'data-species':name,onClick:()=>select.props.onValueChange(name)},
-          h('img',{src:'/assets/imges/thumbs/'+(name==='Troodon'?'troodon':name)+'.png',alt:'',width:120,height:64,decoding:'async'}),
+          h('img',{src:'/assets/imges/thumbs/'+(name==='Troodon'?'troodon':name)+'.png'+(name==='Hypsilophodon'?'?v=20261010-hypsi1':''),alt:'',width:120,height:64,decoding:'async'}),
           h('span',null,name));
       })));
     const [colourTitle,colourList]=colours.props.children;
