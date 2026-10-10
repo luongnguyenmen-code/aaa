@@ -26,7 +26,7 @@ const input=(roundId,color='red',amount=10)=>({roundId,color,amount,requestId:cr
   assert.equal(rules.slots.filter(c=>c==='red').length,7);assert.equal(rules.slots.filter(c=>c==='green').length,1);
   const round=engine.makeRound(now,'proof-fixture');assert.equal(round.result,engine.draw(round.seed));
   assert.equal(round.commitment,crypto.createHash('sha256').update(round.seed).digest('hex'));
-  assert(!('seed' in engine.publicRound(round,round.closesAt)));assert(!('result' in engine.publicRound(round,round.closesAt)));
+  assert(!('seed' in engine.publicRound(round,round.closesAt)));assert(!('result' in engine.publicRound(round,round.closesAt-1)));assert.equal(engine.publicRound(round,round.closesAt).result,round.result);assert.equal(round.closesAt-round.startsAt,15000);assert.equal(round.endsAt-round.closesAt,3000);
   assert.equal(engine.publicRound(round,round.endsAt).result,round.result);
   for(const body of [input(-1),input(round.id,'purple'),input(round.id,'red',0),input(round.id,'red',1001),input(round.id,'red',1.5),{...input(round.id),requestId:'invalid'}])assert.throws(()=>engine.validateBet(body));
   const f=fixture();await f.store.database();

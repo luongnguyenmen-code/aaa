@@ -29,9 +29,10 @@ module.exports=function createRollService(bank,store=defaultStore){
       }
     }else{for(let i=1;i<=12;i++)history.push(engine.publicRound(await current(now-i*rules.roundMs),now));}
     if(steamId)try{balance=await bank.balance(steamId);}catch{}
-    return {serverTime:now,ready:ready(),demo:!ready(),authenticated:!!steamId,balance,
+    const responseTime=Date.now();
+    return {serverTime:responseTime,ready:ready(),demo:!ready(),authenticated:!!steamId,balance,
       message:ready()?'Gửi và trả thưởng bằng ví Lúa IslePilot.':'Đang mở chế độ thử miễn phí. Gửi Lúa sẽ mở sau khi kết nối dữ liệu.',
-      round:engine.publicRound(round,now),history,bets,totals,pendingCount,
+      round:engine.publicRound(round,responseTime),history,bets,totals,pendingCount,
       rules:{minBet:rules.minBet,maxBet:rules.maxBet,payouts:rules.payouts,probabilities:{red:7/15,black:7/15,green:1/15},roundMs:rules.roundMs,betMs:rules.betMs}};
   }
   async function bet(steamId,input){

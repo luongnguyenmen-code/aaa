@@ -20,7 +20,7 @@ if(process.env.ST25_3D_GUEST) fixtures['/api/player/me']={linked:false,isLoggedI
 const fallback={success:true,items:[],data:[],players:[],quests:[],trades:[],incomingTrades:[],outgoingTrades:[],listings:[],marketListings:[],inventory:[],garage:[],dinos:[],skins:[],ownedSkins:[],crates:[],tickets:[],types:[],locations:[],rules:[],leaderboard:[],referrals:[],balance:202,coins:202,lua:202};
 const server=http.createServer((req,res)=>{
   const url=new URL(req.url,'http://localhost');
-  if(url.pathname.startsWith('/api/')){res.setHeader('Content-Type','application/json');if(req.method!=='GET'){res.writeHead(403);return res.end(JSON.stringify({error:'Offline fixture blocks live actions'}));}return res.end(JSON.stringify(fixtures[url.pathname]||fallback));}
+  if(url.pathname.startsWith('/api/')){res.setHeader('Content-Type','application/json');if(req.method!=='GET'){res.writeHead(403);return res.end(JSON.stringify({error:'Offline fixture blocks live actions'}));}return res.end(JSON.stringify(url.pathname==='/api/roll/state'?{...fixtures[url.pathname],serverTime:Date.now()}:fixtures[url.pathname]||fallback));}
   const requested=path.resolve(root,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));
   if(!requested.startsWith(root+path.sep)||!/(?:\.html|\.css|\.js|\.mjs|\.png|\.jpg|\.webp|\.ico|\.ttf|\.json)$/.test(requested)){res.writeHead(404);return res.end();}
   const types={'.html':'text/html','.css':'text/css','.js':'text/javascript','.mjs':'text/javascript','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.ttf':'font/ttf','.json':'application/json'};
@@ -58,7 +58,7 @@ const server=http.createServer((req,res)=>{
       errors=[];fixtures['/api/roll/state']=snapshot();
       await call('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:width<600});
       await call('Page.navigate',{url:origin+'/roll.html'});
-      for(let attempt=0;attempt<60;attempt++){await pause(100);const ready=await call('Runtime.evaluate',{expression:"document.getElementById('roll-notice')?.textContent==='FREE PREVIEW' && App.authResolved && !document.getElementById('roll-submit').disabled",returnByValue:true});if(ready.result.value)break;}
+      for(let attempt=0;attempt<60;attempt++){await pause(100);const ready=await call('Runtime.evaluate',{expression:"document.getElementById('roll-notice')?.textContent==='FREE PREVIEW' && App.authResolved && !document.getElementById('roll-submit').disabled && document.getElementById('roll-phase').hidden && document.getElementById('roll-clock').hidden",returnByValue:true});if(ready.result.value)break;}
       const exercise=await call('Runtime.evaluate',{expression:`(()=>{
         const amount=document.getElementById('roll-amount');amount.value='50';amount.dispatchEvent(new Event('input'));
         const red=document.getElementById('roll-quote').textContent.includes('100');
@@ -67,14 +67,16 @@ const server=http.createServer((req,res)=>{
         document.getElementById('roll-submit').click();
         return {redQuote:red,greenQuote:green,demoChoice:document.getElementById('roll-feedback').textContent.includes('Lúa'),menu:!!document.querySelector('a[href="roll.html"]'),tiles:document.querySelectorAll('.roll-tile').length===120,overflow:document.documentElement.scrollWidth>innerWidth};
       })()`,returnByValue:true});
-      const spin=snapshot();spin.round.closesAt=Date.now()-500;spin.round.endsAt=Date.now()+6000;spin.round.phase='betting';fixtures['/api/roll/state']=spin;
+      const spin=snapshot();spin.round.closesAt=Date.now()-20;spin.round.endsAt=spin.round.closesAt+3000;spin.round.result=0;spin.round.color='green';spin.round.phase='spinning';fixtures['/api/roll/state']=spin;
       await pause(2400);
       const motion=await call('Runtime.evaluate',{expression:"document.querySelector('.roll-arena').classList.contains('is-spinning') && document.getElementById('roll-track').getAnimations().length===1 && document.getElementById('roll-submit').disabled",returnByValue:true});
       if(!motion.result.value)throw Error('Spin animation or closed-round controls failed');
       const reelBefore=await call('Runtime.evaluate',{expression:"getComputedStyle(document.getElementById('roll-track')).transform",returnByValue:true});
       await pause(3400);
       const reelAfter=await call('Runtime.evaluate',{expression:"getComputedStyle(document.getElementById('roll-track')).transform",returnByValue:true});
-      if(reelBefore.result.value===reelAfter.result.value)throw Error('Reel stopped instead of continuing its spin');
+      if(reelBefore.result.value===reelAfter.result.value)throw Error('Reel failed to decelerate to its result');
+      const stopped=await call('Runtime.evaluate',{expression:"document.getElementById('roll-track').getAnimations().length===0",returnByValue:true});
+      if(!stopped.result.value)throw Error('Reel did not finish within the three-second deadline');
       const next=snapshot();next.round.id=124;next.history.unshift({id:123,result:0,color:'green',seed:'test123',commitment:'abc123'});fixtures['/api/roll/state']=next;
       await pause(2400);
       const check=await call('Runtime.evaluate',{expression:"({result:document.getElementById('roll-result').textContent.includes('123'),proof:!document.getElementById('roll-proof-data')&&!document.querySelector('.roll-proof'),demoWon:document.getElementById('roll-feedback').textContent.includes('đúng màu'),alerts:document.querySelectorAll('[role=alert]').length})",returnByValue:true});

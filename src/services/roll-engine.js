@@ -15,7 +15,8 @@ function publicRound(round,now=Date.now()){
   const revealed=now>=round.endsAt;
   return {id:round.id,startsAt:round.startsAt,closesAt:round.closesAt,endsAt:round.endsAt,
     commitment:round.commitment,phase:now<round.closesAt?'betting':revealed?'finished':'spinning',
-    ...(revealed?{result:round.result,color:rules.slots[round.result],seed:round.seed}: {})};
+    ...(now>=round.closesAt?{result:round.result,color:rules.slots[round.result]}:{}),
+    ...(revealed?{seed:round.seed}: {})};
 }
 function validateBet(body){
   if(!Number.isSafeInteger(body?.roundId)||body.roundId<0||!Object.hasOwn(rules.payouts,body?.color||'')||

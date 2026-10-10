@@ -2,7 +2,7 @@
 
 Trang: `/roll.html`, mục **Kinh Tế & Chợ → Lên Voi hoặc Đi Ngủ** trên máy tính và điện thoại.
 
-Tỷ lệ đã được chủ web chọn: 15 ô, đỏ 7/15, đen 7/15, xanh 1/15. Đỏ/đen trả tổng x2, xanh trả tổng x14, đã bao gồm tiền gửi. Vòng chung 30 giây; nhận gửi 20 giây đầu. Mỗi tài khoản một mức gửi mỗi vòng; có thể đổi màu trong thời gian nhận gửi. Không dùng tỷ lệ 30% thắng của các trò sòng bạc cũ. Bản này không có jackpot Triple Green của trang tham khảo.
+Tỷ lệ đã được chủ web chọn: 15 ô, đỏ 7/15, đen 7/15, xanh 1/15. Đỏ/đen trả tổng x2, xanh trả tổng x14, đã bao gồm tiền gửi. Vòng chung 18 giây; nhận gửi 15 giây đầu. Mỗi tài khoản một mức gửi mỗi vòng; có thể đổi màu trong thời gian nhận gửi. Không dùng tỷ lệ 30% thắng của các trò sòng bạc cũ. Bản này không có jackpot Triple Green của trang tham khảo.
 
 ## Tạo PostgreSQL và bật gửi Lúa
 
