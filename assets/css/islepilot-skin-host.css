@@ -1,14 +1,32 @@
-html,body{margin:0;background:#090b0d;color:#ededed;font-family:Arial,sans-serif}
+html.dark{--background:#0c0d0f;--foreground:#ededed;--card:#161719;--card-foreground:#ededed;--popover:#18191b;--popover-foreground:#ededed;--primary:#f6ab45;--primary-foreground:#17100a;--secondary:#222225;--secondary-foreground:#ededed;--muted:#212124;--muted-foreground:#b0afb4;--accent:#302416;--accent-foreground:#ffc16a;--border:#363538;--input:#3a3733;--ring:#f6ab45;color-scheme:dark}
+html,body{margin:0;background:#0c0d0f;color:#ededed;font-family:Arial,sans-serif}
 body{overflow-wrap:anywhere}
-.st25-editor{padding:8px}
+.st25-editor{padding:0}
 .st25-editor :is(input,select,textarea){min-width:0;max-width:100%}
 .st25-editor .grid>*{min-width:0}
 .st25-editor button{max-width:100%}
 .st25-editor [role=alert]{overflow-wrap:anywhere}
-.st25-editor>div>div:first-child{height:560px!important;min-height:360px!important}
-.st25-editor>div>div:nth-child(2){max-height:none!important;overflow:visible!important}
+.st25-editor>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,400px);grid-template-areas:"viewer options" "viewer colors" "actions presets";align-items:stretch;gap:14px}
+.st25-editor>div>div:first-child{grid-area:viewer;height:auto!important;min-height:420px!important;position:relative!important;top:auto!important;border-color:#4a3923;background:#111214}
+.st25-editor>div>div:nth-child(2){display:contents;max-height:none!important;overflow:visible!important}
+.st25-editor>div>div:nth-child(2)>[data-slot=card]{gap:0;padding:14px}
+.st25-editor>div>div:nth-child(2)>div:nth-child(1){grid-area:options}
+.st25-editor>div>div:nth-child(2)>div:nth-child(2){grid-area:colors}
+.st25-editor>div>div:nth-child(2)>div:nth-child(3){grid-area:actions;display:flex;flex-direction:column;justify-content:center}
+.st25-editor>div>div:nth-child(2)>div:nth-child(4){grid-area:presets}
+.st25-editor h3{color:#ffc16a}
+.st25-editor button.bg-background{background:#f6ab45;color:#17100a}
+.st25-editor .grid-cols-2>button{padding-inline:8px;font-size:13px}
+.st25-editor input[type=range]{accent-color:#f6ab45}
+.st25-editor :is(input,textarea,button,[role=combobox]){transition:background-color .15s,border-color .15s}
+.st25-editor button:focus-visible{outline:2px solid #f6ab45;outline-offset:2px}
+.st25-apply-fee{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #996126;border-radius:9px;padding:8px 12px;background:#302215;color:#e6d8c3;font-size:13px}
+.st25-apply-fee strong{font-size:19px;color:#ffc16a;white-space:nowrap}
+.st25-editor .st25-apply-button{background:#f6ab45;color:#17100a;font-weight:700;min-height:42px}
+.st25-editor .st25-apply-button:hover:not(:disabled){background:#ffc16a}
+.st25-editor .st25-apply-button:disabled{opacity:.6}
 #skin-client-status{padding:16px;color:#b7c4d0}
-@media(max-width:700px){.st25-editor>div>div:first-child{height:400px!important}}
+@media(max-width:900px){.st25-editor>div{grid-template-columns:minmax(0,1fr);grid-template-areas:"viewer" "options" "colors" "actions" "presets"}.st25-editor>div>div:first-child{height:clamp(300px,52vw,440px)!important;min-height:300px!important}}
 @media(max-width:480px){
   .st25-editor .flex:has(>input[aria-label$=" X"]){display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
   .st25-editor .flex:has(>input[aria-label$=" X"])>span{grid-column:1/-1;width:auto}

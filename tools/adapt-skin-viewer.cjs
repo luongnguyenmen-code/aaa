@@ -1,0 +1,9 @@
+// Host rendering budget; animation, geometry and colour shader stay unchanged.
+module.exports=function adaptSkinViewer(source){
+  const patches=[['s=[1,2]','s=[1,1.25]'],['"shadow-mapSize-width":2048','"shadow-mapSize-width":1024'],['"shadow-mapSize-height":2048','"shadow-mapSize-height":1024'],['barStyles:{background:"#9db5ff"}','barStyles:{background:"#f6ab45"}']];
+  for(const [before,after] of patches){if(!source.includes(before))throw Error('Viewer source changed: '+before);source=source.replace(before,after);}
+  const camera=/function G\(e\)\{.*?\}function H\(e\)/;
+  if(!camera.test(source))throw Error('Viewer camera source changed');
+  source=source.replace(camera,'function G(e){let camera=(0,s.useThree)(H),size=(0,s.useThree)(state=>state.size),start=(0,c.useRef)(null);(0,c.useEffect)(()=>{if(!start.current)start.current=camera.position.clone();camera.position.copy(start.current).multiplyScalar(e.factor*Math.max(1,1.6/(size.width/size.height)));camera.updateProjectionMatrix();},[camera,e.factor,size.width,size.height]);return null}function H(e)');
+  return source;
+};

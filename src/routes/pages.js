@@ -9,7 +9,7 @@ module.exports = function registerPages(app, {getConfig}) {
   app.get('/assets/js/api/endpoints.js', (req, res) => res.sendFile(path.join(Core.root, 'src/api/endpoints.js')));
   app.use('/assets/js/features', express.static(Core.featuresDir, {dotfiles:'deny', index:false}));
   app.use('/assets', express.static(Core.assetsDir, {dotfiles:'deny', index:false}));
-  app.use('/cdn/skinviewer', express.static(path.join(Core.assetsDir,'vendor/islepilot-skin/cdn/skinviewer'), {dotfiles:'deny',index:false}));
+  app.use('/cdn/skinviewer', express.static(path.join(Core.assetsDir,'vendor/islepilot-skin/cdn/skinviewer'), {dotfiles:'deny',index:false,maxAge:'7d'}));
   app.get(['/', '/:page', '/pages/:page'], (req, res, next) => {
     const page = req.params.page || 'index.html';
     if (!/^[a-zA-Z0-9_-]+\.html$/.test(page)) return next();

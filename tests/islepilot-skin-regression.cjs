@@ -30,6 +30,12 @@ for(const entry of manifest){
   }
 }
 assert.ok(models>=20);
+const optimized=JSON.parse(fs.readFileSync(path.join(assetDirectory,'optimized-textures.json'),'utf8'));
+assert.ok(optimized.after<optimized.before*.7);
+for(const entry of Object.values(optimized.textures)){
+  const bytes=fs.readFileSync(path.join(assetDirectory,entry.url.slice(1)));
+  assert.equal(bytes.length,entry.bytes);assert.equal(bytes.toString('ascii',0,4),'RIFF');assert.equal(bytes.toString('ascii',8,12),'WEBP');
+}
 const page=fs.readFileSync(path.join(root,'src/pages/skin.html'),'utf8');
 assert.match(page,/islepilot-skin-frame/);assert.doesNotMatch(page,/skin-illustrations|skin-3d|skin-editor-ui|assets\/js\/skin\.js/);
 console.log(`PASS imported editor: 10 channels, original linear export/import, invalid payload rejection, ${models} GLB models, ${manifest.length} complete assets`);

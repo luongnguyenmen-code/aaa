@@ -10,6 +10,6 @@
     if(event.data?.type==='st25-skin-editor-ready'){if(App.authResolved)sendUser(App.user);return;}
     if(event.data?.type!=='st25-skin-editor-height')return;
     const height=Number(event.data.height);
-    if(Number.isFinite(height))frame.style.height=Math.max(650,Math.min(6000,height+8))+'px';
+    if(Number.isFinite(height))frame.style.height=Math.max(360,Math.min(6000,height+2))+'px';
   });
 })();

@@ -28,4 +28,12 @@ The regression checks validate all asset sizes, GLB headers/buffer bounds, origi
 
 The private original HTML and saved resources remain in reference/ (Git ignored). Re-import with node tools/import-islepilot-skin.cjs and fetch referenced public model/texture assets with node tools/download-islepilot-skin.cjs.
 
-Node serves /cdn/skinviewer through Express. Vercel builds that directory as static files and excludes it from the Node function because the model/texture collection is about 253 MB. Deploy all imported files along with src/, assets/, server.js and vercel.json. Live production deployment has not been performed or verified.
+Node serves /cdn/skinviewer through Express. Vercel builds that directory as static files and excludes it from the Node function because the model/texture collection is about 253 MB. Deploy all imported files along with src/, assets/, server.js and vercel.json. The original import was deployed and verified on www.st25.io.vn on 2026-10-10; live game mutations were not tested.
+
+# Orange/black host update — 2026-10-10
+
+Viewer/options/colours share a responsive grid; apply/presets form the bottom row. The fee is highlighted both above the editor and beside the original apply action. Iframe height follows content instead of retaining the initial viewport height.
+
+140 PNG textures have pixel-verified lossless WebP alternatives, preserving RGBA (including transparent RGB) with sharp `lossless:true, exact:true`. Their total bytes drop from 105,889,363 to 57,568,534 (45.6% smaller). Originals remain available as fallback. The editor rewrites texture URLs with Three's loading manager and starts selected-model textures in parallel with geometry. Geometry and animation are unchanged. Rendering DPR is capped at 1.25 and shadow maps at 1024; camera distance fits narrower preview panels. CDN resources cache for 7 days.
+
+To regenerate textures: install sharp into `.build-cache/skin-tools`, then run `node tools/optimize-skin-textures.cjs`. `tools/import-islepilot-skin.cjs` now applies the guarded viewer adaptation in `tools/adapt-skin-viewer.cjs`.

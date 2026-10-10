@@ -23,6 +23,7 @@ for(const chunk of context.TURBOPACK){
   }
 }
 if(!factories.has(2492)||!factories.has(497890))throw Error('Incomplete SkinEditor/ReactDOM client');
+factories.set(221208,require('./adapt-skin-viewer.cjs')(factories.get(221208)));
 const output=path.join(root,'assets/vendor/islepilot-skin');
 fs.mkdirSync(output,{recursive:true});
 fs.writeFileSync(path.join(output,'client.js'),'/* Client modules imported from the supplied IslePilot page. */\nwindow.ST25PilotFactories={\n'+[...factories].map(([id,code])=>JSON.stringify(id)+':'+code).join(',\n')+'\n};\n');

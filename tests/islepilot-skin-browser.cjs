@@ -85,6 +85,12 @@ const server=http.createServer((req,res)=>{
         result.guestBlocked=button('Áp dụng trong game').disabled;
         App.user=user;App.publishUser();await pause(250);
         result.sessionRestored=!button('Áp dụng trong game').disabled;
+        result.orange=w.getComputedStyle(d.documentElement).getPropertyValue('--primary').trim()==='#f6ab45';
+        result.fee=d.querySelector('.st25-apply-fee')?.textContent.includes('10 Lúa')&&button('Áp dụng trong game').classList.contains('st25-apply-button');
+        result.optimizedTextures=w.performance.getEntriesByType('resource').some(x=>x.name.includes('.preview.webp'));
+        const grid=d.querySelector('.st25-editor>div'),viewer=grid.children[0].getBoundingClientRect(),cards=grid.children[1].children;
+        result.evenFrames=w.innerWidth<=900||(Math.abs(viewer.bottom-cards[1].getBoundingClientRect().bottom)<2&&Math.abs(cards[2].getBoundingClientRect().bottom-cards[3].getBoundingClientRect().bottom)<2);
+        result.compactFrame=Math.abs(frame.clientHeight-d.getElementById('islepilot-skin-root').getBoundingClientRect().bottom-2)<4;
         return result;
       })()`,awaitPromise:true,returnByValue:true});
       const result=await call('Runtime.evaluate',{expression:`(()=>{const frame=document.getElementById('islepilot-skin-frame'),w=frame?.contentWindow,d=w?.document;return {ready:!!w?.ST25OriginalSkin?.ready,canvas:d?.querySelectorAll('canvas').length,colors:d?.querySelectorAll('input[type=color]').length,scroll:document.documentElement.scrollWidth,innerScroll:d?.documentElement.scrollWidth,status:d?.getElementById('skin-client-status').textContent,alerts:[...d?.querySelectorAll('[role=alert]')||[]].map(x=>x.textContent),text:d?.body.innerText.slice(0,1300)}})()`,returnByValue:true});

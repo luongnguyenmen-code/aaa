@@ -4,9 +4,29 @@
   try{
     const pilot=window.ST25Pilot;
     const React=pilot.require(52647),ReactDOM=pilot.require(497890);
+    const viewer=pilot.require(221208),catalog=pilot.require(204081),three=pilot.require(436910);
+    const [strings,optimized]=await Promise.all([
+      fetch('/assets/vendor/islepilot-skin/strings.vi.json').then(response=>{if(!response.ok)throw Error('Không tải được ngôn ngữ');return response.json();}),
+      fetch('/assets/vendor/islepilot-skin/optimized-textures.json').then(response=>response.ok?response.json():null).catch(()=>null)
+    ]);
+    const textureURL=url=>{const parsed=new URL(url,location.href);const match=optimized?.textures?.[parsed.pathname];return match?match.url+'?v='+optimized.version:url;};
+    three.DefaultLoadingManager.setURLModifier(textureURL);
+    const warmed=new Set();
+    function warmModel(species,pattern=1){
+      const model=catalog.resolveDino(species);if(!model)return;
+      const images=[model.patterns[pattern]||model.patterns[1],model.normalMap,model.racMap,model.juvenilePattern,model.maskMap,model.patternMasks?.[pattern]||model.tmcMap,...Object.values(catalog.SKIN3D_SHARED).filter(x=>typeof x==='string'&&/\.(png|webp)$/.test(x))];
+      for(const original of images.filter(Boolean)){const url=textureURL(original);if(warmed.has(url))continue;warmed.add(url);const image=new Image();image.src=url;}
+      for(const url of [model.glbModel+'?v=12','/cdn/skinviewer/shared/empty_warehouse_01_1k.hdr']){
+        if(warmed.has(url))continue;warmed.add(url);
+        const link=document.createElement('link');link.rel='preload';link.as='fetch';link.crossOrigin='anonymous';link.href=url;document.head.append(link);
+      }
+    }
+    pilot.override(221208,{...viewer,SkinViewer3D:props=>{
+      React.useMemo(()=>warmModel(props.species,props.patternIndex||1),[props.species,props.patternIndex]);
+      return React.createElement(viewer.SkinViewer3D,props);
+    }});
     const {SkinEditor}=pilot.require(2492),{PublicStringsProvider}=pilot.require(849551);
     const {Toaster}=pilot.require(360112);
-    const strings=await fetch('/assets/vendor/islepilot-skin/strings.vi.json').then(response=>{if(!response.ok)throw Error('Không tải được ngôn ngữ');return response.json();});
     const species=['Allosaurus','Beipiaosaurus','Carnotaurus','Ceratosaurus','Deinosuchus','Diabloceratops','Dilophosaurus','Dryosaurus','Gallimimus','Herrerasaurus','Hypsilophodon','Maiasaura','Omniraptor','Pachycephalosaurus','Pteranodon','Stegosaurus','Tenontosaurus','Triceratops','Troodon','Tyrannosaurus'];
     const originalFetch=window.fetch.bind(window);
     // Keep the original client contract; the API key remains exclusively on the server.
@@ -47,8 +67,22 @@
       render(me?.user||me);
     }
     window.ST25OriginalSkin={ready:true,exports:pilot.require(110149),defaults:pilot.require(70454)};
-    function reportHeight(){if(parent!==window)parent.postMessage({type:'st25-skin-editor-height',height:Math.ceil(document.body.scrollHeight)},location.origin);}
-    const resize=new ResizeObserver(reportHeight);resize.observe(document.body);
-    window.addEventListener('pagehide',()=>resize.disconnect(),{once:true});
+    const editor=document.getElementById('islepilot-skin-root');
+    function reportHeight(){if(parent!==window)parent.postMessage({type:'st25-skin-editor-height',height:Math.ceil(editor.getBoundingClientRect().bottom)},location.origin);}
+    const resize=new ResizeObserver(reportHeight);resize.observe(editor);
+    // Keep the fee beside the real apply action through guest/account re-renders.
+    function decorateAction(){
+      const button=[...editor.querySelectorAll('button')].find(x=>x.textContent.trim()===strings['skin.applyInGame']||x.textContent.trim()===strings['skin.applying']);
+      if(!button)return;
+      button.classList.add('st25-apply-button');
+      const card=button.closest('.space-y-3');
+      if(card&&!card.querySelector('.st25-apply-fee')){
+        const fee=document.createElement('div');fee.className='st25-apply-fee';
+        const label=document.createElement('span');label.textContent='Phí mỗi lần áp dụng';
+        const price=document.createElement('strong');price.textContent='10 Lúa';fee.append(label,price);card.prepend(fee);
+      }
+    }
+    const observer=new MutationObserver(decorateAction);observer.observe(editor,{childList:true,subtree:true});decorateAction();
+    window.addEventListener('pagehide',()=>{resize.disconnect();observer.disconnect();},{once:true});
   }catch(error){status.textContent='Không tải được trình chỉnh Skin: '+error.message;status.setAttribute('role','alert');console.error(error);}
 })();
