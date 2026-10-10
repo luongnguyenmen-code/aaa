@@ -11,11 +11,12 @@
     ]);
     const textureURL=url=>{const parsed=new URL(url,location.href);const match=optimized?.textures?.[parsed.pathname];return match?match.url+'?v='+optimized.version:url;};
     three.DefaultLoadingManager.setURLModifier(textureURL);
+    for(const background of catalog.SKIN3D_BACKGROUNDS)background.image=textureURL(background.image);
     const warmed=new Set();
     function warmModel(species,pattern=1){
       const model=catalog.resolveDino(species);if(!model)return;
       const images=[model.patterns[pattern]||model.patterns[1],model.normalMap,model.racMap,model.juvenilePattern,model.maskMap,model.patternMasks?.[pattern]||model.tmcMap,...Object.values(catalog.SKIN3D_SHARED).filter(x=>typeof x==='string'&&/\.(png|webp)$/.test(x))];
-      for(const original of images.filter(Boolean)){const url=textureURL(original);if(warmed.has(url))continue;warmed.add(url);const image=new Image();image.src=url;}
+      for(const original of images.filter(Boolean)){const url=textureURL(original);if(warmed.has(url))continue;warmed.add(url);const image=new Image();image.crossOrigin='anonymous';image.src=url;}
       for(const url of [model.glbModel+'?v=12','/cdn/skinviewer/shared/empty_warehouse_01_1k.hdr']){
         if(warmed.has(url))continue;warmed.add(url);
         const link=document.createElement('link');link.rel='preload';link.as='fetch';link.crossOrigin='anonymous';link.href=url;document.head.append(link);
