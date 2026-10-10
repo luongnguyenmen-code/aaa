@@ -1,6 +1,6 @@
 (() => {
   const $=id=>document.getElementById(id),names={red:'Đỏ',black:'Đen',green:'Xanh'},multipliers={red:2,black:2,green:14};
-  const statuses={debit_pending:'Đang đối soát tiền cược',placed:'Đã cược',credit_pending:'Đang đối soát tiền trả',settled:'Đã kết thúc',review:'Cần đối soát — liên hệ hỗ trợ'};
+  const statuses={debit_pending:'Đang đối soát tiền gửi',placed:'Đã gửi',credit_pending:'Đang đối soát tiền trả',settled:'Đã kết thúc',review:'Cần đối soát — liên hệ hỗ trợ'};
   let data,busy=false,reading=false,settling=false,timer,clock,offset=0,animation,animationKey='',lastHistory='',demoBet,disposed=false,lastAccount,lastOwnSignature;
   const esc=value=>App.escapeHTML(value),amount=()=>$('roll-amount'),color=()=>document.querySelector('input[name=color]:checked').value;
   const money=value=>Number(value).toLocaleString('vi-VN')+' Lúa';
@@ -13,10 +13,10 @@
   function updateClock(){
     if(!data)return;
     const now=Date.now()+offset,open=now<data.round.closesAt,seconds=Math.max(0,Math.ceil(((open?data.round.closesAt:data.round.endsAt)-now)/1000));
-    $('roll-clock').textContent=seconds+'s';$('roll-phase').textContent=open?'ĐANG NHẬN CƯỢC':'ĐANG QUAY';
+    $('roll-clock').textContent=seconds+'s';$('roll-phase').textContent=open?'ĐANG NHẬN GỬI':'ĐANG QUAY';
     const bet=ownBet(),locked=bet&&bet.status!=='placed';
     $('roll-submit').disabled=busy||!open||(!data.demo&&(!data.authenticated||locked));
-    $('roll-submit').textContent=busy?'Đang xử lý…':!open?'Chờ vòng tiếp theo':data.demo?'Thử Roll miễn phí':!data.authenticated?'Liên kết Steam để cược':bet?'Đổi màu cược':'Đặt cược bằng Lúa';
+    $('roll-submit').textContent=busy?'Đang xử lý…':!open?'Chờ vòng tiếp theo':data.demo?'Thử Roll miễn phí':!data.authenticated?'Liên kết Steam để gửi':bet?'Đổi màu gửi':'Gửi bằng Lúa';
     amount().disabled=busy||!!bet;
     document.querySelectorAll('[data-amount]').forEach(b=>b.disabled=busy||!!bet);
   }
@@ -43,10 +43,10 @@
     if(data.round.phase==='spinning')animate(45,Math.max(200,data.round.endsAt-Date.now()-offset),'spin:'+data.round.id);
     $('roll-totals').innerHTML=['red','black','green'].map(c=>{const total=data.totals.find(x=>x.color===c)||{amount:0,players:0};return `<div class="roll-total"><span class="roll-dot ${c}">${multipliers[c]}x</span><div>${names[c]}<small>${total.players} người chơi</small></div><strong>${money(total.amount)}</strong></div>`;}).join('');
     const bet=ownBet();
-    $('roll-own-bet').textContent=bet?`Bạn cược ${money(bet.amount)} vào ${names[bet.color]} · ${statuses[bet.status]}`:'Bạn chưa đặt cược vòng này.';
+    $('roll-own-bet').textContent=bet?`Bạn gửi ${money(bet.amount)} vào ${names[bet.color]} · ${statuses[bet.status]}`:'Bạn chưa gửi vòng này.';
     const signature=bet?JSON.stringify([bet.id,bet.amount,bet.color]):'';
     if(bet&&signature!==lastOwnSignature){amount().value=bet.amount;document.querySelector(`input[name=color][value=${bet.color}]`).checked=true;}lastOwnSignature=signature;
-    $('roll-my-history').innerHTML=data.bets.length?data.bets.map(b=>`<tr><td>${Number(b.round_id)}</td><td>${names[b.color]||'—'}</td><td>${money(b.amount)}</td><td>${b.status==='settled'?money(b.payout):'—'}</td><td>${esc(statuses[b.status]||b.status)}</td></tr>`).join(''):`<tr><td colspan="5">${data.authenticated?'Chưa có cược bằng Lúa.':'Liên kết Steam để xem lịch sử cược.'}</td></tr>`;
+    $('roll-my-history').innerHTML=data.bets.length?data.bets.map(b=>`<tr><td>${Number(b.round_id)}</td><td>${names[b.color]||'—'}</td><td>${money(b.amount)}</td><td>${b.status==='settled'?money(b.payout):'—'}</td><td>${esc(statuses[b.status]||b.status)}</td></tr>`).join(''):`<tr><td colspan="5">${data.authenticated?'Chưa có gửi bằng Lúa.':'Liên kết Steam để xem lịch sử gửi.'}</td></tr>`;
     quote();updateClock();
   }
   async function post(url,body){
@@ -54,7 +54,7 @@
     try{
       const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller.signal});
       const result=await response.json();if(!response.ok)throw Error(result.error||'Không xử lý được yêu cầu.');return result;
-    }catch(error){if(error.name==='AbortError')throw Error('Chưa nhận được xác nhận. Kiểm tra lịch sử cược trước khi gửi lại.');throw error;}
+    }catch(error){if(error.name==='AbortError')throw Error('Chưa nhận được xác nhận. Kiểm tra lịch sử gửi trước khi gửi lại.');throw error;}
     finally{clearTimeout(timeout);}
   }
   async function refresh(){
@@ -74,13 +74,13 @@
     if(!amount().checkValidity()){amount().reportValidity();return;}
     if(data.demo){demoBet={roundId:data.round.id,color:color()};feedback('Đã chọn '+names[color()]+' cho vòng thử miễn phí. Không sử dụng Lúa.');return;}
     if(!data.authenticated){location.href='lien-ket-steam.html';return;}
-    busy=true;updateClock();feedback('Đang gửi cược…');
+    busy=true;updateClock();feedback('Đang gửi gửi…');
     const account=App.user?.steam_id||App.user?.steamId||null;
     try{
       const response=await post(ST25API.routes.rollBet,{roundId:data.round.id,color:color(),amount:Number(amount().value),requestId:crypto.randomUUID()});
       if(!data||account!==(App.user?.steam_id||App.user?.steamId||null))return;
       data.bets=[response.bet,...data.bets.filter(b=>b.id!==response.bet.id)];if(Number.isFinite(response.balance))data.balance=response.balance;
-      feedback(response.replayed?'Cược trước đã được ghi nhận.':'Đã ghi nhận cược bằng Lúa.');render();
+      feedback(response.replayed?'Gửi trước đã được ghi nhận.':'Đã ghi nhận gửi bằng Lúa.');render();
     }catch(e){feedback(e.message);}finally{busy=false;updateClock();refresh();}
   });
   amount().addEventListener('input',quote);document.querySelectorAll('input[name=color]').forEach(x=>x.addEventListener('change',quote));

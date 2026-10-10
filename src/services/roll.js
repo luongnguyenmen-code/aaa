@@ -12,7 +12,7 @@ module.exports=function createRollService(bank,store=defaultStore){
     try{response=await bank.change(bet.steam_id,amount,'st25_roll_'+kind+'_'+bet.id);}catch{}
     if(!response?.ok||!Number.isFinite(response.balance)||response.applied===false){
       await client.query("UPDATE st25_roll_bets SET status='review',updated_at=$2 WHERE id=$1",[bet.id,Date.now()]);
-      throw error('IslePilot chưa xác nhận giao dịch. Cược được giữ để đối soát; không bấm gửi lại.',503);
+      throw error('IslePilot chưa xác nhận giao dịch. Gửi được giữ để đối soát; không bấm gửi lại.',503);
     }
     return response.balance;
   }
@@ -30,26 +30,26 @@ module.exports=function createRollService(bank,store=defaultStore){
     }else{for(let i=1;i<=12;i++)history.push(engine.publicRound(await current(now-i*rules.roundMs),now));}
     if(steamId)try{balance=await bank.balance(steamId);}catch{}
     return {serverTime:now,ready:ready(),demo:!ready(),authenticated:!!steamId,balance,
-      message:ready()?'Cược và trả thưởng bằng ví Lúa IslePilot.':'Đang mở chế độ thử miễn phí. Cược Lúa sẽ mở sau khi kết nối dữ liệu.',
+      message:ready()?'Gửi và trả thưởng bằng ví Lúa IslePilot.':'Đang mở chế độ thử miễn phí. Gửi Lúa sẽ mở sau khi kết nối dữ liệu.',
       round:engine.publicRound(round,now),history,bets,totals,pendingCount,
       rules:{minBet:rules.minBet,maxBet:rules.maxBet,payouts:rules.payouts,probabilities:{red:7/15,black:7/15,green:1/15},roundMs:rules.roundMs,betMs:rules.betMs}};
   }
   async function bet(steamId,input){
-    if(!steamId)throw error('Vui lòng liên kết Steam trước khi cược.',401);
-    if(!ready())throw error('Roll chưa mở cược Lúa.',503);
+    if(!steamId)throw error('Vui lòng liên kết Steam trước khi gửi.',401);
+    if(!ready())throw error('Roll chưa mở gửi Lúa.',503);
     engine.validateBet(input);
     return store.withPlayer(steamId,async client=>{
       const replay=await client.query('SELECT b.* FROM st25_roll_commands c JOIN st25_roll_bets b ON b.id=c.bet_id WHERE c.steam_id=$1 AND c.request_id=$2',[steamId,input.requestId]);
       if(replay.rows[0])return {bet:replay.rows[0],replayed:true};
       const now=Date.now(),round=await current(now,client);
-      if(input.roundId!==round.id||now>=round.closesAt)throw error('Vòng cược đã đóng. Chờ vòng tiếp theo.',409);
+      if(input.roundId!==round.id||now>=round.closesAt)throw error('Vòng gửi đã đóng. Chờ vòng tiếp theo.',409);
       const existing=(await client.query('SELECT * FROM st25_roll_bets WHERE steam_id=$1 AND round_id=$2',[steamId,round.id])).rows[0];
       if(existing){
-        if(existing.status!=='placed')throw error('Cược đang xử lý hoặc cần đối soát.',409);
-        if(existing.amount!==input.amount)throw error('Mỗi vòng một mức cược. Bạn chỉ có thể đổi màu trước khi đóng cược.',409);
+        if(existing.status!=='placed')throw error('Gửi đang xử lý hoặc cần đối soát.',409);
+        if(existing.amount!==input.amount)throw error('Mỗi vòng một mức gửi. Bạn chỉ có thể đổi màu trước khi đóng gửi.',409);
         await client.query('BEGIN');
         try{
-          if(Date.now()>=round.closesAt)throw error('Vòng cược đã đóng.',409);
+          if(Date.now()>=round.closesAt)throw error('Vòng gửi đã đóng.',409);
           const changed=(await client.query("UPDATE st25_roll_bets SET color=$2,updated_at=$3 WHERE id=$1 RETURNING *",[existing.id,input.color,Date.now()])).rows[0];
           await client.query('INSERT INTO st25_roll_commands(steam_id,request_id,bet_id) VALUES($1,$2,$3)',[steamId,input.requestId,existing.id]);
           await client.query('COMMIT');return {bet:changed};
@@ -57,7 +57,7 @@ module.exports=function createRollService(bank,store=defaultStore){
       }
       const balance=await bank.balance(steamId);
       if(!Number.isFinite(balance)||balance<input.amount)throw error('Không đủ Lúa trong ví game.',400);
-      if(Date.now()>=round.closesAt)throw error('Vòng cược đã đóng.',409);
+      if(Date.now()>=round.closesAt)throw error('Vòng gửi đã đóng.',409);
       const id=crypto.randomUUID();
       const row=(await client.query("INSERT INTO st25_roll_bets(id,steam_id,round_id,request_id,color,amount,status,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,'debit_pending',$7,$7) RETURNING *",[id,steamId,round.id,input.requestId,input.color,input.amount,Date.now()])).rows[0];
       // The unique request on the bet is also durable if the response is lost before command insertion.
