@@ -56,9 +56,13 @@
     }
     const root=ReactDOM.createRoot(document.getElementById('islepilot-skin-root'));
     let currentSpecies='Tyrannosaurus';
+    let lastRender;
     function render(user){
       if(species.includes(user?.dino?.species))currentSpecies=user.dino.species;
       const identity=user?.steamId||user?.steam_id||'guest';
+      const signature=JSON.stringify([identity,currentSpecies,identity!=='guest'&&user?.isLoggedIn!==false]);
+      if(signature===lastRender)return;
+      lastRender=signature;
       root.render(React.createElement(Boundary,null,React.createElement(PublicStringsProvider,{dict:strings},React.createElement(React.Fragment,null,React.createElement(SkinEditor,{key:identity,speciesOptions:species,currentSpecies,canSetSkin:identity!=='guest'&&user?.isLoggedIn!==false,isAdmin:false,serverId:'cmufraiwk7fnooa01vpdzdhm4',slug:'st25',glitchEnabled:false,variant:'embedded'}),React.createElement(Toaster,{theme:'dark',richColors:true})))));
       status.hidden=true;
     }
@@ -74,21 +78,9 @@
     }
     window.ST25OriginalSkin={ready:true,exports:pilot.require(110149),defaults:pilot.require(70454)};
     const editor=document.getElementById('islepilot-skin-root');
-    function reportHeight(){if(parent!==window)parent.postMessage({type:'st25-skin-editor-height',height:Math.ceil(editor.getBoundingClientRect().bottom)},location.origin);}
+    let lastHeight;
+    function reportHeight(){const height=Math.ceil(editor.getBoundingClientRect().bottom);if(parent!==window&&height!==lastHeight){lastHeight=height;parent.postMessage({type:'st25-skin-editor-height',height},location.origin);}}
     const resize=new ResizeObserver(reportHeight);resize.observe(editor);
-    // Keep the fee beside the real apply action through guest/account re-renders.
-    function decorateAction(){
-      const button=[...editor.querySelectorAll('button')].find(x=>x.textContent.trim()===strings['skin.applyInGame']||x.textContent.trim()===strings['skin.applying']);
-      if(!button)return;
-      button.classList.add('st25-apply-button');
-      const card=button.closest('.skin-actions');
-      if(card&&!card.querySelector('.st25-apply-fee')){
-        const fee=document.createElement('div');fee.className='st25-apply-fee';
-        const label=document.createElement('span');label.textContent='Phí mỗi lần áp dụng';
-        const price=document.createElement('strong');price.textContent='10 Lúa';fee.append(label,price);card.prepend(fee);
-      }
-    }
-    const observer=new MutationObserver(decorateAction);observer.observe(editor,{childList:true,subtree:true});decorateAction();
-    window.addEventListener('pagehide',()=>{resize.disconnect();observer.disconnect();},{once:true});
+    window.addEventListener('pagehide',()=>resize.disconnect(),{once:true});
   }catch(error){status.textContent='Không tải được trình chỉnh Skin: '+error.message;status.setAttribute('role','alert');console.error(error);}
 })();

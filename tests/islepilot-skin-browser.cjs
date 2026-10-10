@@ -100,6 +100,24 @@ const server=http.createServer((req,res)=>{
         Object.getOwnPropertyDescriptor(w.HTMLInputElement.prototype,'value').set.call(patternInput,'1');patternInput.dispatchEvent(new w.Event('input',{bubbles:true}));await pause(200);
         result.pattern=await waitFor(async()=>{button('Sao chép JSON').click();await pause(50);return JSON.parse(copied).pattern===1;});
         d.querySelector('[data-species="Tyrannosaurus"]').click();await waitFor(()=>d.querySelector('[data-species="Tyrannosaurus"]').getAttribute('aria-pressed')==='true');await pause(600);
+        result.visibilityPause=true;
+        if(${width}===1440){
+          const canvas=d.querySelector('canvas');
+          const proto=w.WebGL2RenderingContext.prototype,original=proto.drawElements;
+          let draws=0;proto.drawElements=function(...args){draws++;return original.apply(this,args);};
+          const spacer=document.createElement('div');spacer.style.height='2000px';document.body.append(spacer);
+          const reveal=()=>window.scrollTo(0,frame.getBoundingClientRect().top+window.scrollY+canvas.getBoundingClientRect().top-150);
+          try{
+            reveal();await waitFor(()=>canvas.dataset.renderMode==='always');await pause(600);const visible=draws;
+            window.scrollTo(0,document.body.scrollHeight);
+            const paused=await waitFor(()=>canvas.dataset.renderMode==='never');
+            await pause(100);draws=0;await pause(600);const hidden=draws;
+            reveal();const resumed=await waitFor(()=>canvas.dataset.renderMode==='always');
+            draws=0;await pause(600);const restored=draws;
+            w.ST25SkinRenderAudit={visible,hidden,restored};
+            result.visibilityPause=paused&&resumed&&visible>0&&hidden===0&&restored>0;
+          }finally{proto.drawElements=original;spacer.remove();window.scrollTo(0,0);}
+        }
         result.compactFrame=Math.abs(frame.clientHeight-d.getElementById('islepilot-skin-root').getBoundingClientRect().bottom-2)<4;
         return result;
       })()`,awaitPromise:true,returnByValue:true});

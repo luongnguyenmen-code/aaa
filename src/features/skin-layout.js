@@ -2,6 +2,13 @@
 window.ST25SkinLayout=function createSkinLayout(React){
   const h=React.createElement;
   const clone=(element,className,children)=>React.cloneElement(element,{className},...(children===undefined?[element.props.children]:children));
+  function decorateAction(element){
+    if(!React.isValidElement(element))return element;
+    const props={};
+    if(element.props.className==='w-full'&&element.props.onClick)props.className='w-full st25-apply-button';
+    if(element.props.children!==undefined)props.children=React.Children.map(element.props.children,decorateAction);
+    return React.cloneElement(element,props);
+  }
   return function layout(tree){
     const [preview,controls]=tree.props.children;
     const [settings,colours,actions,presets]=controls.props.children;
@@ -41,7 +48,10 @@ window.ST25SkinLayout=function createSkinLayout(React){
           h('p',{className:'skin-preview-hint'},'Kéo để xoay · Cuộn để thu / phóng')),
         h('aside',{className:'skin-sidebar','aria-label':'Áp dụng và lưu skin'},
           settingsPanel,
-          clone(actions,'skin-panel skin-actions'),
+          clone(actions,'skin-panel skin-actions',[
+            h('div',{key:'fee',className:'st25-apply-fee'},h('span',null,'Phí mỗi lần áp dụng'),h('strong',null,'10 Lúa')),
+            ...React.Children.toArray(actions.props.children).map(decorateAction)
+          ]),
           clone(presets,'skin-panel skin-presets'))));
   };
 };

@@ -8,7 +8,7 @@
     "innerScroll": 1369,
     "status": "Đang tải trình chỉnh Skin…",
     "alerts": [],
-    "text": "THIẾT KẾ SKIN\nGLITCH · ĐÃ KHÓA\nCHỌN LOÀI KHỦNG LONG\n20 loài\nAllosaurus\nBeipiaosaurus\nCarnotaurus\nCeratosaurus\nDeinosuchus\nDiabloceratops\nDilophosaurus\nDryosaurus\nGallimimus\nHerrerasaurus\nHypsilophodon\nMaiasaura\nOmniraptor\nPachycephalosaurus\nPteranodon\nStegosaurus\nTenontosaurus\nTriceratops\nTroodon\nTyrannosaurus\nBiến thể\nHọa tiết (0-4)\nMàu sắc\nThân\nHoa văn\nHông\nBụng dưới\nChi tiết\nDisplay\nMắt\nRăng\nMiệng\nMóng vuốt\nXEM TRƯỚC 3D\nTYRANNOSAURUS\nNền: tắt\nĐầm phá thác nước\nLối mòn rừng rậm\nBờ sông hoàng hôn\nHẻm núi ven sông\nĐầm lầy sương mù\nĐộ trưởng thành\n100%\n\nKéo để xoay · Cuộn để thu / phóng\n\nThông số skin\nGiới tính\nCái\nĐực\nChủ đề\nNhập mã skin trong game\nNhập\n\nGlitch đã khóa\n\nPhí mỗi lần áp dụng\n10 Lúa\nÁp dụng trong game\nSao chép JSON\nTải xuống\nPreset đã lưu\nLưu\n\nQA preset 1440\n\nTyrannosaurus · cái · V0 · P0\n\nTải\nĐã sao chép JSON.\nĐã sao chép JSON.\nĐã lưu “QA preset 1440”.",
+    "text": "THIẾT KẾ SKIN\nGLITCH · ĐÃ KHÓA\nCHỌN LOÀI KHỦNG LONG\n20 loài\nAllosaurus\nBeipiaosaurus\nCarnotaurus\nCeratosaurus\nDeinosuchus\nDiabloceratops\nDilophosaurus\nDryosaurus\nGallimimus\nHerrerasaurus\nHypsilophodon\nMaiasaura\nOmniraptor\nPachycephalosaurus\nPteranodon\nStegosaurus\nTenontosaurus\nTriceratops\nTroodon\nTyrannosaurus\nBiến thể\nHọa tiết (0-4)\nMàu sắc\nThân\nHoa văn\nHông\nBụng dưới\nChi tiết\nDisplay\nMắt\nRăng\nMiệng\nMóng vuốt\nXEM TRƯỚC 3D\nTYRANNOSAURUS\nNền: tắt\nĐầm phá thác nước\nLối mòn rừng rậm\nBờ sông hoàng hôn\nHẻm núi ven sông\nĐầm lầy sương mù\nĐộ trưởng thành\n100%\n\nKéo để xoay · Cuộn để thu / phóng\n\nThông số skin\nGiới tính\nCái\nĐực\nChủ đề\nNhập mã skin trong game\nNhập\n\nGlitch đã khóa\n\nPhí mỗi lần áp dụng\n10 Lúa\nÁp dụng trong game\nSao chép JSON\nTải xuống\nPreset đã lưu\nLưu\n\nQA preset 1440\n\nTyrannosaurus · cái · V0 · P0\n\nTải\nĐã sao chép JSON.",
     "exercise": {
       "color": true,
       "preset": true,
@@ -25,6 +25,7 @@
       "speciesImages": true,
       "speciesSelection": true,
       "pattern": true,
+      "visibilityPause": true,
       "compactFrame": true
     },
     "errors": []
@@ -55,6 +56,7 @@
       "speciesImages": true,
       "speciesSelection": true,
       "pattern": true,
+      "visibilityPause": true,
       "compactFrame": true
     },
     "errors": []
@@ -85,6 +87,7 @@
       "speciesImages": true,
       "speciesSelection": true,
       "pattern": true,
+      "visibilityPause": true,
       "compactFrame": true
     },
     "errors": []
@@ -115,6 +118,7 @@
       "speciesImages": true,
       "speciesSelection": true,
       "pattern": true,
+      "visibilityPause": true,
       "compactFrame": true
     },
     "errors": []
@@ -145,6 +149,7 @@
       "speciesImages": true,
       "speciesSelection": true,
       "pattern": true,
+      "visibilityPause": true,
       "compactFrame": true
     },
     "errors": []

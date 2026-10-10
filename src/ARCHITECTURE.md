@@ -58,3 +58,5 @@ Chạy `npm test` để kiểm tra cú pháp, route, layout, asset, quyền truy
 Model/texture nằm trong `assets/vendor/islepilot-skin/cdn/skinviewer/`, phục vụ qua `/cdn/skinviewer/`. Vercel phục vụ các file này như tài nguyên static, tách khỏi function máy chủ. Máy Node thông thường phục vụ bằng Express. `api/skin-payload.js` kiểm tra payload trước khi chuyển nguyên các kênh màu linear đến IslePilot; token vẫn ở máy chủ.
 
 Kiểm tra trình duyệt: `node tests/islepilot-skin-browser.cjs`. Xem [hướng dẫn Skin](../tests/SKIN_PREVIEW.md).
+
+Viewer dùng `IntersectionObserver` và `visibilitychange` để chuyển render loop sang `never` khi canvas nằm ngoài màn hình hoặc tab bị ẩn; khi hiển thị lại, loop trở về `always`. Patch nằm trong `tools/adapt-skin-viewer.cjs`, tái tạo bằng `node tools/import-islepilot-skin.cjs`; chất lượng texture, model, DPR và shader không thay đổi trong tối ưu này. Browser audit đếm lệnh vẽ WebGL để xác nhận dừng và tiếp tục sau khi cuộn trang. Adapter dựng phí áp dụng bằng React thay vì quét DOM qua MutationObserver. Các thông báo người dùng và chiều cao trùng lặp không gây render/cập nhật iframe lại.
