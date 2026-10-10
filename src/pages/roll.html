@@ -4,7 +4,7 @@
 <title>Lên Voi hoặc Đi Ngủ — Roll ST25</title>
 <meta name="description" content="Roll ST25: chọn đỏ, đen hoặc xanh trong vòng chơi chung. Gửi và trả thưởng bằng Lúa qua IslePilot.">
 <link rel="icon" href="assets/imges/st25-favicon.png">
-<link rel="stylesheet" href="assets/css/style.css"><link rel="stylesheet" href="assets/css/redesign.css"><link rel="stylesheet" href="assets/css/buttons.css"><link rel="stylesheet" href="assets/css/fonts.css"><link rel="stylesheet" href="assets/css/motion.css"><link rel="stylesheet" href="assets/css/portal-layout.css"><link rel="stylesheet" href="assets/css/logo.css"><link rel="stylesheet" href="assets/css/roll.css?v=20261010-roll16">
+<link rel="stylesheet" href="assets/css/style.css"><link rel="stylesheet" href="assets/css/redesign.css"><link rel="stylesheet" href="assets/css/buttons.css"><link rel="stylesheet" href="assets/css/fonts.css"><link rel="stylesheet" href="assets/css/motion.css"><link rel="stylesheet" href="assets/css/portal-layout.css"><link rel="stylesheet" href="assets/css/logo.css"><link rel="stylesheet" href="assets/css/roll.css?v=20261011-roll17">
 <script src="assets/js/core.js"></script><script src="assets/js/api/endpoints.js"></script><script src="assets/js/ui.js" defer></script><script src="assets/js/motion.js" defer></script>
 </head><body class="st25-portal portal-roll">
 <!-- include:header -->
@@ -20,8 +20,8 @@
   </section>
   <div class="roll-workspace">
     <section class="roll-panel roll-send"><h2>GỬI LÚA</h2>
-      <form id="roll-form"><div class="roll-amount-row"><div class="roll-amount-field"><label for="roll-amount">Số Lúa</label><input id="roll-amount" type="number" min="1" max="100" step="1" value="10" inputmode="numeric" required><span>LÚA</span></div>
-      <div class="roll-amount-tools"><button type="button" data-amount="10">10</button><button type="button" data-amount="50">50</button><button type="button" data-amount="100">100</button><button type="button" data-amount="half">½</button><button type="button" data-amount="double">2×</button><button type="button" data-amount="max">MAX</button></div></div><p class="roll-limits">Gửi từ 1 đến 500 Lúa mỗi vòng. Trả tổng tối đa 7.000 Lúa khi trúng xanh. Bấm màu để gửi.</p>
+      <form id="roll-form"><div class="roll-amount-row"><div class="roll-amount-field"><label for="roll-amount">Số Lúa</label><input id="roll-amount" type="number" min="1" max="500" step="1" value="10" inputmode="numeric" required><span>LÚA</span></div>
+      <div class="roll-amount-tools"><button type="button" data-amount="10">10</button><button type="button" data-amount="50">50</button><button type="button" data-amount="100">100</button><button type="button" data-amount="250">250</button><button type="button" data-amount="500">500</button><button type="button" data-amount="half">½</button><button type="button" data-amount="double">2×</button><button type="button" data-amount="max">MAX</button></div></div><p class="roll-limits">Gửi từ 1 đến 500 Lúa mỗi vòng. Trả tối đa 1.000 Lúa khi trúng ô xanh (x14). Bấm màu để gửi.</p>
       <fieldset class="roll-colors"><legend>Chọn màu</legend>
         <label class="roll-choice red"><input type="radio" name="color" value="red" checked><span>Đỏ <strong>x2</strong><small>46,67%</small></span></label>
         <label class="roll-choice green"><input type="radio" name="color" value="green"><span>Xanh <strong>x14</strong><small>6,67%</small></span></label>
@@ -33,12 +33,12 @@
       <p class="roll-muted">Mỗi vòng một mức gửi. Có thể đổi màu trước khi đóng gửi. Tiền trả đã bao gồm tiền gửi.</p>
     </section>
     <section class="roll-panel roll-active"><h2>LƯỢT GỬI ĐANG HOẠT ĐỘNG</h2><div id="roll-totals" class="roll-totals"></div><p id="roll-own-bet" class="roll-muted">Bạn chưa gửi vòng này.</p>
-      <details class="roll-rules"><summary>Luật chơi và xác suất</summary><p>15 ô: xanh số 0, đỏ số 1–7, đen số 8–14. Đỏ/đen trả tổng x2; xanh trả tổng x14. Thua mất số Lúa đã gửi. Tỷ lệ này áp dụng độc lập cho từng vòng.</p><p>Lợi thế nhà cái theo mức trả thưởng: 6,67%. Không có jackpot hoặc phí phụ.</p><p>Thử miễn phí không trừ hoặc cộng Lúa. Kết quả thử chỉ minh họa vòng quay.</p></details>
+      <details class="roll-rules"><summary>Luật chơi và xác suất</summary><p>15 ô: xanh số 0, đỏ số 1–7, đen số 8–14. Đỏ/đen trả tổng x2; xanh trả tổng x14 (tối đa 1.000 Lúa). Cược từ 1 đến 500 Lúa mỗi vòng. Thua mất số Lúa đã gửi. Tỷ lệ này áp dụng độc lập cho từng vòng.</p><p>Lợi thế nhà cái theo mức trả thưởng: 6,67%. Không có jackpot hoặc phí phụ.</p><p>Thử miễn phí không trừ hoặc cộng Lúa. Kết quả thử chỉ minh họa vòng quay.</p></details>
     </section>
   </div>
   <details class="roll-panel roll-personal"><summary>Lịch sử gửi của bạn</summary><div class="roll-table-scroll"><table class="roll-table"><thead><tr><th>Vòng</th><th>Màu</th><th>Gửi</th><th>Tiền trả</th><th>Trạng thái</th></tr></thead><tbody id="roll-my-history"><tr><td colspan="5">Liên kết Steam để xem lịch sử gửi.</td></tr></tbody></table></div></details>
   </div>
 </main>
 <!-- include:footer -->
-<script src="assets/js/app.js?v=20261010-roll1"></script><script src="assets/js/features/roll.js?v=20261010-roll16"></script>
+<script src="assets/js/app.js?v=20261010-roll1"></script><script src="assets/js/features/roll.js?v=20261011-roll17"></script>
 </body></html>

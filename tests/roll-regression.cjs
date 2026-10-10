@@ -28,11 +28,11 @@ const input=(roundId,color='red',amount=10)=>({roundId,color,amount,requestId:cr
   assert.equal(round.commitment,crypto.createHash('sha256').update(round.seed).digest('hex'));
   assert(!('seed' in engine.publicRound(round,round.closesAt)));assert(!('result' in engine.publicRound(round,round.closesAt-1)));assert.equal(engine.publicRound(round,round.closesAt).result,round.result);assert.equal(round.closesAt-round.startsAt,15000);assert.equal(round.endsAt-round.closesAt,8000);
   assert.equal(engine.publicRound(round,round.endsAt).result,round.result);
-  for(const body of [input(-1),input(round.id,'purple'),input(round.id,'red',0),input(round.id,'red',101),input(round.id,'red',1.5),{...input(round.id),requestId:'invalid'},{...input(round.id),requestId:'-'.repeat(36)},input(round.id,{toString:()=> 'red'})])assert.throws(()=>engine.validateBet(body));
-  assert.equal(rules.maxBet,100);assert.equal(engine.payout(100,'green',0),500);
-  assert.equal(engine.payout(35,'green',0),490);assert.equal(engine.payout(36,'green',0),500);
-  assert.equal(engine.payout(100,'red',1),200);assert.equal(engine.payout(100,'black',8),200);
-  assert.doesNotThrow(()=>engine.validateBet(input(round.id,'green',100)));
+  for(const body of [input(-1),input(round.id,'purple'),input(round.id,'red',0),input(round.id,'red',501),input(round.id,'red',1.5),{...input(round.id),requestId:'invalid'},{...input(round.id),requestId:'-'.repeat(36)},input(round.id,{toString:()=> 'red'})])assert.throws(()=>engine.validateBet(body));
+  assert.equal(rules.maxBet,500);assert.equal(engine.payout(100,'green',0),1000);
+  assert.equal(engine.payout(71,'green',0),994);assert.equal(engine.payout(72,'green',0),1000);
+  assert.equal(engine.payout(500,'red',1),1000);assert.equal(engine.payout(500,'black',8),1000);
+  assert.doesNotThrow(()=>engine.validateBet(input(round.id,'green',500)));
   const f=fixture();await f.store.database();
   let seed='winning';while(engine.draw(seed)<1||engine.draw(seed)>7)seed+='x';
   const winningRound=await f.store.ensureRound(engine.makeRound(now,seed)),request=input(winningRound.id);
@@ -57,12 +57,12 @@ const input=(roundId,color='red',amount=10)=>({roundId,color,amount,requestId:cr
   const greenTime=now;now+=5000;
   const green=fixture();let greenSeed='green-cap';while(engine.draw(greenSeed)!==0)greenSeed+='x';
   const greenRound=await green.store.ensureRound(engine.makeRound(now,greenSeed));
-  await assert.rejects(green.service.bet(sid,input(greenRound.id,'green',101)),e=>e.status===400);
+  await assert.rejects(green.service.bet(sid,input(greenRound.id,'green',501)),e=>e.status===400);
   assert.equal(green.calls.length,0);
   await green.service.bet(sid,input(greenRound.id,'green',100));assert.equal(green.getBalance(),0);
-  const greenState=await green.service.state(sid);assert.equal(greenState.rules.maxBet,100);assert.equal(greenState.rules.maxGreenPayout,500);
+  const greenState=await green.service.state(sid);assert.equal(greenState.rules.maxBet,500);assert.equal(greenState.rules.maxGreenPayout,1000);
   now=greenRound.endsAt;const greenSettled=await green.service.settle(sid);
-  assert.equal(greenSettled.bets[0].payout,500);assert.equal(green.getBalance(),500);
+  assert.equal(greenSettled.bets[0].payout,1000);assert.equal(green.getBalance(),1000);
   await green.service.settle(sid);assert.equal(green.calls.length,2);now=greenTime;
   const payoutFailure=fixture();const payoutRound=await payoutFailure.store.ensureRound(engine.makeRound(now+5000,seed));
   now+=5000;await payoutFailure.service.bet(sid,input(payoutRound.id));payoutFailure.fail();now=payoutRound.endsAt;
@@ -105,7 +105,7 @@ const input=(roundId,color='red',amount=10)=>({roundId,color,amount,requestId:cr
   assert.equal(cold.history[0].number,5);
   now+=rules.roundMs;
   assert.equal((await createService(demoBank).state(null)).round.number,7);
-  console.log('PASS Roll: 15 slots, x2/x14 payouts with 500 green cap and 100 bet limit, hidden seed/result, input validation, PostgreSQL schema, duplicate requests, color change without double debit, closed rounds, private history, confirmed payout once, uncertain debit/payout review, distributed lock release and disabled mode; no live currency calls');
+  console.log('PASS Roll: 15 slots, x2/x14 payouts with 1000 green cap and 500 bet limit, hidden seed/result, input validation, PostgreSQL schema, duplicate requests, color change without double debit, closed rounds, private history, confirmed payout once, uncertain debit/payout review, distributed lock release and disabled mode; no live currency calls');
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>{
   Date.now=originalNow;
   for(const [key,value] of [['ROLL_DATABASE_URL',originalEnv.url],['ROLL_ENABLED',originalEnv.enabled],['SESSION_SECRET',originalEnv.secret]])if(value===undefined)delete process.env[key];else process.env[key]=value;

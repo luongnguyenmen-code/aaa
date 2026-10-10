@@ -2,7 +2,7 @@
 
 Trang: `/roll.html`, mục **Kinh Tế & Chợ → Lên Voi hoặc Đi Ngủ** trên máy tính và điện thoại.
 
-Tỷ lệ đã được chủ web chọn: 15 ô, đỏ 7/15, đen 7/15, xanh 1/15. Đỏ/đen trả tổng x2, xanh trả tổng x14, đã bao gồm tiền gửi. Gửi tối đa 500 Lúa/vòng: đỏ/đen trả tổng tối đa 1.000 Lúa, xanh tối đa 7.000 Lúa cho cược mới. Vòng chung 23 giây: nhận gửi 15 giây đầu, quay và dừng trong 8 giây tiếp theo. Mỗi tài khoản một mức gửi mỗi vòng; có thể đổi màu trong thời gian nhận gửi. Không điều chỉnh kết quả theo người chơi hoặc lịch sử thắng. Bản này không có jackpot Triple Green của trang tham khảo.
+Tỷ lệ đã được chủ web chọn: 15 ô, đỏ 7/15, đen 7/15, xanh 1/15. Đỏ/đen trả tổng x2, xanh trả tổng x14, đã bao gồm tiền gửi. Gửi tối đa 500 Lúa/vòng: đỏ/đen trả tổng tối đa 1.000 Lúa, xanh trả tối đa 1.000 Lúa khi trúng. Vòng chung 23 giây: nhận gửi 15 giây đầu, quay và dừng trong 8 giây tiếp theo. Mỗi tài khoản một mức gửi mỗi vòng; có thể đổi màu trong thời gian nhận gửi. Không điều chỉnh kết quả theo người chơi hoặc lịch sử thắng. Bản này không có jackpot Triple Green của trang tham khảo.
 
 ## Tạo PostgreSQL và bật gửi Lúa
 

@@ -10,7 +10,7 @@
   function reelMetrics(){const tiles=$('roll-track').children,width=tiles[0].getBoundingClientRect().width,step=tiles[1].getBoundingClientRect().left-tiles[0].getBoundingClientRect().left;return {half:width/2,step:step||76};}
   function feedback(text){$('roll-feedback').textContent=text;}
   function ownBet(){return data?.bets.find(b=>Number(b.round_id)===data.round.id);}
-  function quote(){const value=Number(amount().value),total=Math.min(value*(data?.rules?.payouts?.[color()]??multipliers[color()]),color()==='green'?(data?.rules?.maxGreenPayout??500):Infinity);$('roll-quote').textContent=`Thắng: nhận tổng ${money(total)} · Lãi ${money(total-value)}`;}
+  function quote(){const value=Math.max(0,Number(amount().value)||0),total=Math.min(value*(data?.rules?.payouts?.[color()]??multipliers[color()]),color()==='green'?(data?.rules?.maxGreenPayout??1000):Infinity);$('roll-quote').textContent=`Thắng: nhận tổng ${money(total)} · Lãi ${money(total-value)}`;}
   function updateClock(){
     if(!data)return;
     const now=Date.now()+offset,open=now<data.round.closesAt,seconds=Math.max(0,((open?data.round.closesAt:data.round.endsAt)-now)/1000);
@@ -109,7 +109,7 @@
   }
   function render(){
     $('roll-notice').textContent=data.message;$('roll-round').textContent=data.round.number??data.round.id;
-    amount().max=data.rules?.maxBet||100;
+    amount().max=data.rules?.maxBet||500;
     $('roll-login').hidden=data.authenticated;$('roll-balance').textContent=Number.isFinite(data.balance)?money(data.balance):'—';
     renderHistory();
     $('roll-totals').innerHTML=['red','green','black'].map(c=>{const total=data.totals.find(x=>x.color===c)||{amount:0,players:0},own=ownBet();return `<div class="roll-total ${c}"><div class="roll-total-head"><span class="roll-dot ${c}"></span><span>${names[c]}</span><small>${total.players}</small><strong>${money(total.amount)}</strong></div>${own?.color===c?`<div class="roll-total-own"><span>Bạn · ${esc(statuses[own.status])}</span><b>${money(own.amount)}</b></div>`:`<p class="roll-total-empty">${total.players?'Đã có lượt gửi trong vòng':'Chưa có lượt gửi'}</p>`}</div>`;}).join('');
@@ -145,7 +145,7 @@
     if(!amount().checkValidity()){amount().reportValidity();return;}
     if(data.demo){demoBet={roundId:data.round.id,color:color()};feedback('Đã chọn '+names[color()]+' cho vòng thử miễn phí. Không sử dụng Lúa.');return;}
     if(!data.authenticated){location.href='lien-ket-steam.html';return;}
-    busy=true;updateClock();feedback('Đang gửi gửi…');
+    busy=true;updateClock();feedback('Đang gửi…');
     const account=App.user?.steam_id||App.user?.steamId||null;
     try{
       const response=await post(ST25API.routes.rollBet,{roundId:data.round.id,color:color(),amount:Number(amount().value),requestId:crypto.randomUUID()});
@@ -154,11 +154,13 @@
       feedback(response.replayed?'Gửi trước đã được ghi nhận.':'Đã ghi nhận gửi bằng Lúa.');render();
     }catch(e){feedback(e.message);}finally{busy=false;updateClock();refresh();}
   });
-  amount().addEventListener('input',quote);document.querySelectorAll('input[name=color]').forEach(x=>x.addEventListener('change',quote));
-  document.querySelectorAll('.roll-choice').forEach(label=>label.addEventListener('click',()=>queueMicrotask(()=>{if(!$('roll-submit').disabled)$('roll-form').requestSubmit();})));
+  amount().addEventListener('input',()=>{const max=data?.rules?.maxBet||500;if(amount().value&&Number(amount().value)>max)amount().value=max;quote();});
+  amount().addEventListener('change',()=>{const max=data?.rules?.maxBet||500;let v=Math.floor(Number(amount().value));if(!Number.isFinite(v)||v<1)v=1;else if(v>max)v=max;amount().value=v;quote();});
+  document.querySelectorAll('input[name=color]').forEach(x=>x.addEventListener('change',quote));
+  document.querySelectorAll('.roll-choice').forEach(label=>label.addEventListener('click',e=>{if(e.target.tagName==='INPUT')return;queueMicrotask(()=>{if(!$('roll-submit').disabled)$('roll-form').requestSubmit();});}));
   document.querySelectorAll('[data-amount]').forEach(button=>button.addEventListener('click',()=>{
-    const value=Number(amount().value)||1,cap=Math.min(data?.rules?.maxBet||100,Math.max(1,Math.floor(data?.balance??100)));
-    amount().value=button.dataset.amount==='half'?Math.max(1,Math.floor(value/2)):button.dataset.amount==='double'?Math.min(cap,value*2):button.dataset.amount==='max'?cap:Number(button.dataset.amount);quote();
+    const value=Number(amount().value)||1,cap=Math.min(data?.rules?.maxBet||500,Math.max(1,Math.floor(data?.balance??500)));
+    amount().value=button.dataset.amount==='half'?Math.max(1,Math.floor(value/2)):button.dataset.amount==='double'?Math.min(cap,value*2):button.dataset.amount==='max'?cap:Math.min(cap,Number(button.dataset.amount));quote();
   }));
   const unsubscribe=App.subscribeUser(user=>{const account=user?.steam_id||user?.steamId||null;if(account!==lastAccount){lastAccount=account;data=null;$('roll-submit').disabled=true;refresh();}});
   function visibility(){clearTimeout(timer);clearInterval(clock);stopMotion();animationKey='';if(!document.hidden&&!disposed){clock=setInterval(updateClock,50);refresh();}}

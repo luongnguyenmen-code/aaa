@@ -116,4 +116,4 @@ URL truy c?p v?n l? `/gara.html`, `/skin.html`? Ch?y qua Node server ?? gh?p hea
 
 Roll nhận đặt Lúa từ người chơi đã liên kết Steam khi hosting có `ROLL_DATABASE_URL` (PostgreSQL trực tiếp), `SESSION_SECRET` dài ít nhất 32 ký tự và quyền cập nhật ví IslePilot. Roll mặc định mở khi đủ cấu hình; `ROLL_ENABLED=false` tạm dừng nhận cược mới. Khi mở chính thức, đặt `ROLL_ENABLED=true` trên hosting và redeploy nếu trước đó đang dùng `false`.
 
-Mỗi người đặt từ 1 đến 100 Lúa mỗi vòng. Đỏ/đen trả tổng x2; xanh trả tổng `min(số Lúa đặt × 14, 500)` Lúa, bao gồm vốn. Ví dụ: đặt xanh 10 nhận 140 Lúa; đặt xanh 100 nhận 500 Lúa nếu thắng. Giao diện và API cùng áp dụng giới hạn này.
+Mỗi người đặt từ 1 đến 500 Lúa mỗi vòng. Đỏ/đen trả tổng x2; xanh trả tổng `min(số Lúa đặt × 14, 1000)` Lúa, bao gồm vốn. Ví dụ: đặt xanh 50 nhận 700 Lúa; đặt xanh 100 hoặc 500 nhận 1.000 Lúa nếu thắng. Giao diện và API cùng áp dụng giới hạn này.
