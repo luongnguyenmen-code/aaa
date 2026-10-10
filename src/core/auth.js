@@ -1,13 +1,16 @@
 const crypto = require('node:crypto');
+require('./config');
 
-const secret = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
+const configured = typeof process.env.SESSION_SECRET === 'string' && process.env.SESSION_SECRET.length >= 32;
+const secret = configured ? process.env.SESSION_SECRET : crypto.randomBytes(32).toString('hex');
 const SESSION_MS = 30 * 24 * 3600 * 1000;
-const configured = !!process.env.SESSION_SECRET || !(process.env.VERCEL || process.env.NODE_ENV === 'production');
 function sign(data) {
+  if (!configured) throw Object.assign(new Error('Máy chủ cần SESSION_SECRET ít nhất 32 ký tự.'), {status:503});
   const payload = Buffer.from(JSON.stringify(data)).toString('base64url');
   return `${payload}.${crypto.createHmac('sha256', secret).update(payload).digest('base64url')}`;
 }
 function verify(token) {
+  if (!configured) return null;
   try {
     const [payload, signature, extra] = String(token || '').split('.');
     if (!payload || !signature || extra) return null;

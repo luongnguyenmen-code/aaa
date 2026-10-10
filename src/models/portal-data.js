@@ -1,6 +1,10 @@
 const fs = require('node:fs');
-const { DATA_FILE, TMP_DATA_FILE } = require('../core/config');
+const {dataFile: DATA_FILE, temporaryDataFile: TMP_DATA_FILE} = require('../core/config');
 let memoryPortalData = null;
+
+
+// ==================== NEW FEATURES BACKEND ==================== //
+
 function getPortalData() {
   if (memoryPortalData) return memoryPortalData;
 
@@ -65,6 +69,7 @@ function getPortalData() {
   return memoryPortalData;
 }
 
+
 function savePortalData(data) {
   memoryPortalData = data;
   try {
@@ -77,6 +82,4 @@ function savePortalData(data) {
   } catch (_) {}
   return true;
 }
-
-
-module.exports = { getPortalData, savePortalData };
+module.exports = {getPortalData, savePortalData};

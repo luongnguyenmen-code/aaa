@@ -1,8 +1,16 @@
 # ST25 Skin Studio 3D
 
+> Tài liệu lưu trữ của phiên bản cũ. Trang chỉnh skin hiện đã bỏ mô hình 3D và thanh độ trưởng thành. Xem [tài liệu hiện tại](SKIN_PREVIEW.md) để kiểm tra preview và phối màu.
+
 Phần chỉnh skin sử dụng 17 mô hình minh họa 3D được tạo bằng mã nguồn của dự án. Không sao chép mô hình hoặc texture của trang tham khảo hay của game. Đây là bản phối màu minh họa, không phải phép xem trước chính xác skin trong The Isle.
 
 ## Tính năng
+
+Ba trang gốc `triceratops.html`, `troodon.html`, `tyrannosaurus.html` từ thư mục `DINO HTML` được giữ tại `src/pages/illustrations/`. Đây là minh họa chuyển động từ ảnh bằng canvas 2D. Nút **Minh họa chuyển động** trong preview chọn đúng file theo loài; nút **Mô hình 3D** quay lại preview phối màu. Ảnh gốc giữ màu có sẵn. Loài chưa có file dùng preview 3D/2D hiện tại.
+
+Danh mục loài ở `assets/js/skin-illustrations-catalog.js`. Chỉ tải iframe khi chọn chế độ chuyển động và khung preview đang hiện. Hủy iframe khi chuyển chế độ/loài, sang Kho skin/Cửa hàng, cuộn ra ngoài hoặc ẩn tab; preview 3D dừng render trong chế độ chuyển động.
+
+Kiểm tra nhập minh họa: `$env:ST25_ILLUSTRATION_AUDIT='1'; node tests/redesign-browser-audit.cjs`. Audit kiểm tra ba loài ở năm kích thước, file/ảnh/hoạt ảnh đúng, dừng và khôi phục 3D, loài chưa có file, hủy iframe khi ẩn workspace. Kết quả tại `tests/skin-motion-results.json`.
 
 - Xoay bằng kéo chuột/cảm ứng, zoom bằng cuộn hoặc chụm hai ngón tay.
 - Phím mũi tên để xoay; cộng/trừ để zoom khi canvas được focus.
@@ -54,4 +62,4 @@ Kích thước kiểm tra: 1440, 1024, 768, 390 và 320px. Báo cáo trong `skin
 
 ## Triển khai
 
-Deploy `skin.html`, các file JS/CSS mới, thư mục `assets/vendor/three` và những file skin đã thay đổi. Express và cấu hình Vercel hiện tại phục vụ chúng từ `assets`. Không cần build frontend hoặc cài thư viện 3D ở runtime. Cấu hình đăng nhập Steam vẫn cần `SESSION_SECRET` trên hosting như hướng dẫn trong `AUDIT.md`.
+Deploy `server.js`, `vercel.json`, to?n b? `src/` v? `assets/`. Trang ngu?n ? `src/pages/skin.html`; Express gh?p header/footer khi ph?c v? URL `/skin.html`. Vercel ch?y c?ng ?ng d?ng Express. Kh?ng c?n build frontend ho?c c?i th? vi?n 3D ? runtime.

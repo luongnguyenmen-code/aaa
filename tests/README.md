@@ -34,8 +34,8 @@ The browser audit uses mock API data. It does not establish frame rate on a user
 
 ## 3D skin checks
 
+Roll: `node tests/roll-regression.cjs` verifies rules, hidden commitments, PostgreSQL schema and queries with pg-mem, unique requests, color changes, round deadlines, private history, single debit/payout, database locks and uncertain financial outcomes. `node tests/roll-browser.cjs` tests the free-preview UI at 1440, 768, 390 and 320 pixels, with all live mutations blocked. Real database connectivity and IslePilot permission checks require hosting configuration described in `HUONG_DAN_ROLL.md`.
+
+API concurrency checks: `node tests/api-concurrency-regression.cjs` (also included in `npm test`). Offline fixtures cover twelve simultaneous upstream GETs becoming one request, failed-read release, independent response bodies, HTTP error preservation, timeout and recovery, fresh transaction reads, cache invalidation while an old request is in flight, changed upstream credentials, separate POSTs and double-click protection for carcass orders. `redesign-browser-audit.cjs` includes the casino page; its disabled-state check shares the statistics request instead of loading an extra script in the document head.
+
 `node tests/skin-model-regression.cjs` validates all 17 procedural illustrations, geometry attributes, bounds, indices and triangle budgets. `ST25_3D_AUDIT=1 node tests/redesign-browser-audit.cjs` checks WebGL at five sizes, live palette changes, growth, patterns, keyboard controls, nonempty PNG output, idle/offscreen rendering, species resource disposal and context recovery on desktop. Set `ST25_3D_GUEST=1` for anonymous access; add `ST25_3D_FALLBACK=1` to explicitly disable WebGL and check the 2D fallback. See `SKIN_3D.md` for PowerShell commands. These use offline API fixtures and never execute real transactions.
-
-## Kiểm tra cấu trúc nguồn
-
-`node tests/structure-regression.cjs` kiểm tra các trang được ghép header/footer, menu hiện tại, đường dẫn script, registry API, URL script cũ và việc chặn truy cập cấu hình/mã nguồn máy chủ. JavaScript hiện nằm trong `src/features`, HTML nằm trong `src/pages`. Browser audit dùng controller ghép trang giống Express và API giả lập.

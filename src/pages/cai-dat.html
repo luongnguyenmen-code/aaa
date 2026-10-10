@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <script src="/src/core/web-config.js"></script>
-  <script src="/src/api/endpoints.js"></script>
   <meta charset="UTF-8">
+  <script src="assets/js/core.js"></script>
+  <script src="assets/js/api/endpoints.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bảng Quản Trị Cấp Role & Slot Gara — ST25 VIETNAM</title>
   <link rel="stylesheet" href="assets/css/style.css?v=20261009-stable1">
@@ -353,12 +353,12 @@
   <link rel="stylesheet" href="assets/css/buttons.css?v=20261009-stable1">
   <link rel="stylesheet" href="assets/css/fonts.css?v=20261009-audit">
   <link rel="stylesheet" href="assets/css/motion.css?v=20261009-stable1">
-  <script src="/src/features/shared/motion.js?v=20261009-stable1" defer></script>
+  <script src="assets/js/motion.js?v=20261009-stable1" defer></script>
   <link rel="stylesheet" href="assets/css/portal-layout.css?v=20261009-spacing1">
   <link rel="stylesheet" href="assets/css/logo.css?v=20261009-stable1">
   <link rel="icon" type="image/png" href="assets/imges/st25-favicon.png?v=20261009-stable1">
   <link rel="stylesheet" href="assets/css/redesign.css?v=20261009-ui1">
-  <script src="/src/features/shared/ui.js?v=20261009-ui1" defer></script>
+  <script src="assets/js/ui.js?v=20261009-ui1" defer></script>
 </head>
 <body class="st25-portal">
 
@@ -379,7 +379,7 @@
         <a href="index.html" class="btn btn-secondary" style="font-weight: 700;">
           Quay Về Trang Chủ
         </a>
-        <a href="/api/player/steam/login?redirect=/cai-dat.html" class="btn btn-primary" style="font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); border: none;">
+        <a href="{{api:playerSteamLogin}}?redirect=/cai-dat.html" class="btn btn-primary" style="font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); border: none;">
           🎮 Đăng Nhập Steam Chính Chủ
         </a>
       </div>
@@ -851,7 +851,7 @@
   <!-- Footer -->
   <!-- include:footer -->
 
-  <script src="/src/features/shared/app.js?v=20261009-ui1"></script>
-  <script src="/src/features/cai-dat/page-1.js"></script>
+  <script src="assets/js/app.js?v=20261010-roll1"></script>
+  <script src="assets/js/features/cai-dat.js"></script>
 </body>
 </html>

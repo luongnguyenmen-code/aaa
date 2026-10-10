@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <script src="/src/core/web-config.js"></script>
-  <script src="/src/api/endpoints.js"></script>
   <meta charset="UTF-8">
+  <script src="assets/js/core.js"></script>
+  <script src="assets/js/api/endpoints.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Liên Kết Steam & Quản Lý Đàn — ST25</title>
   <meta name="description" content="Liên kết tài khoản Steam với server ST25 The Isle Evrima. Đồng bộ dữ liệu khủng long, toạ độ GPS và danh sách thành viên trong đàn theo thời gian thực từ IslePilot.">
@@ -12,11 +12,11 @@
   <link rel="stylesheet" href="assets/css/buttons.css?v=20261009-stable1">
   <link rel="stylesheet" href="assets/css/fonts.css?v=20261009-audit">
   <link rel="stylesheet" href="assets/css/motion.css?v=20261009-stable1">
-  <script src="/src/features/shared/motion.js?v=20261009-stable1" defer></script>
+  <script src="assets/js/motion.js?v=20261009-stable1" defer></script>
   <link rel="stylesheet" href="assets/css/portal-layout.css?v=20261009-spacing1">
   <link rel="stylesheet" href="assets/css/logo.css?v=20261009-stable1">
   <link rel="stylesheet" href="assets/css/redesign.css?v=20261009-ui1">
-  <script src="/src/features/shared/ui.js?v=20261009-ui1" defer></script>
+  <script src="assets/js/ui.js?v=20261009-ui1" defer></script>
 </head>
 <body class="st25-portal">
 
@@ -67,7 +67,7 @@
           </p>
 
           <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 22px;">
-            <a href="/api/player/steam/login?redirect=/lien-ket-steam.html" class="btn-steam-big" id="btn-steam-login">
+            <a href="{{api:playerSteamLogin}}?redirect=/lien-ket-steam.html" class="btn-steam-big" id="btn-steam-login">
               <svg viewBox="0 0 24 24" style="width: 24px; height: 24px; fill: currentColor;">
                 <path d="M12 2a10 10 0 0 0-10 10c0 4.7 3.25 8.64 7.64 9.69l3.12-4.52a3.02 3.02 0 0 1-.76-.17l-3.3 2.27A7.99 7.99 0 0 1 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8c0 3.96-2.88 7.24-6.67 7.89l-2.22-3.21c.2-.29.35-.61.44-.96l3.66.72a4 4 0 0 0 .16-.89 4 4 0 0 0-4-4c-1.66 0-3.08 1.01-3.67 2.45l-4.14-.82A7.96 7.96 0 0 1 12 4c4.41 0 8 3.59 8 8 0 4.41-3.59 8-8 8-1.07 0-2.09-.21-3.03-.6l3.32-4.81c.22.04.45.06.68.06a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-2.94 2.37l-3.5-.69A5.002 5.002 0 0 1 12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5z"/>
               </svg>
@@ -159,7 +159,7 @@
   <!-- Footer -->
   <!-- include:footer -->
 
-  <script src="/src/features/shared/app.js?v=20261009-ui1"></script>
-  <script src="/src/features/lien-ket-steam/page-1.js"></script>
+  <script src="assets/js/app.js?v=20261010-roll1"></script>
+  <script src="assets/js/features/lien-ket-steam.js"></script>
 </body>
 </html>

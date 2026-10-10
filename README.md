@@ -32,7 +32,7 @@ Hệ thống Website Cổng Thông Tin toàn diện cho cộng đồng game **Th
 * Hướng dẫn 3 bước cài đặt và khắc phục lỗi Windows SmartScreen.
 
 ### 5. ⚙️ Tích Hợp IslePilot API (`https://islepilot.eu/dashboard`)
-* Do `https://islepilot.eu/dashboard` là trang quản trị bảo mật riêng (yêu cầu đăng nhập Steam/Admin của bạn), website cung cấp trang **Cấu hình API (`cai-dat.html`)** và file `src/core/server-config.json`.
+* Do `https://islepilot.eu/dashboard` là trang quản trị bảo mật riêng (yêu cầu đăng nhập Steam/Admin của bạn), website cung cấp trang **Cấu hình API (`cai-dat.html`)** và file `server-config.json`.
 * Bạn chỉ cần dán **IslePilot API Token** từ Dashboard vào để website tự động đồng bộ dữ liệu thời gian thực.
 * Có sẵn **Mock Data thông minh** để toàn bộ tính năng hoạt động mượt mà ngay cả khi chạy offline hoặc thử nghiệm!
 
@@ -83,8 +83,31 @@ the-isle-portal/
 ## Rà soát và kiểm tra
 
 Chạy `npm test` để kiểm tra mã nguồn, backend và frontend. Xem [kết quả và cấu hình triển khai](tests/AUDIT.md), đặc biệt `SESSION_SECRET` khi triển khai production/Vercel.
-## Skin Studio 3D
+## Skin Studio
 
-Trình chỉnh skin có mô hình 3D minh họa cho 17 loài, xoay/zoom, đồng bộ bảng màu, camera tự căn và xuất ảnh PNG. Có thể thiết kế khi chưa đăng nhập; thao tác áp dụng vào game vẫn cần Steam.
+Trình chỉnh skin dùng component IslePilot gốc từ bản trang người dùng cung cấp, với model/texture và phân vùng màu gốc. Có chọn loài, màu, giới tính, họa tiết, Glitch, nhập/xuất JSON và preset lưu trên trình duyệt. Đăng nhập Steam và áp dụng skin đi qua API máy chủ ST25.
 
-Xem [tính năng, tối ưu và cách kiểm tra](tests/SKIN_3D.md).
+Xem [tính năng và cách kiểm tra](tests/SKIN_PREVIEW.md).
+## ?? C?U TR?C TH? M?C
+
+```text
+src/
+??? app.js                 # Gh?p ?ng d?ng Express
+??? core/                  # C?u h?nh web/server v? x?c th?c
+??? api/                   # URL API portal, URL/client IslePilot
+??? models/                # L?u tr? c?u h?nh v? d? li?u
+??? controllers/           # Backend theo ch?c n?ng
+??? middleware/            # X?c th?c, kh?a thao t?c, x? l? y?u c?u
+??? routes/                # ??ng k? URL trang v? API
+??? pages/                 # To?n b? trang HTML
+??? views/partials/        # Header/footer d?ng chung
+??? features/              # JavaScript ch?c n?ng t?ch t? HTML
+assets/                    # CSS, ?nh, th? vi?n, JavaScript d?ng chung
+server.js                  # Entry point Node/Vercel
+```
+
+Xem [h??ng d?n c?u tr?c, th?m trang/API v? tri?n khai](src/ARCHITECTURE.md).
+S?a giao di?n t?i `src/pages/`; c?u h?nh m?y ch? t?i `src/core/server-config.json`.
+URL truy c?p v?n l? `/gara.html`, `/skin.html`? Ch?y qua Node server ?? gh?p header/footer.
+
+

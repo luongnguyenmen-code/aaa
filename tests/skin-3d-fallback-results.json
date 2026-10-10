@@ -9,6 +9,11 @@
       "dock": true,
       "hud": false,
       "brokenImages": [],
+      "threeD": {
+        "fallback": true,
+        "colors": true,
+        "retry": true
+      },
       "errors": []
     },
     {
@@ -19,6 +24,11 @@
       "dock": true,
       "hud": false,
       "brokenImages": [],
+      "threeD": {
+        "fallback": true,
+        "colors": true,
+        "retry": true
+      },
       "errors": []
     },
     {
@@ -29,6 +39,11 @@
       "dock": true,
       "hud": false,
       "brokenImages": [],
+      "threeD": {
+        "fallback": true,
+        "colors": true,
+        "retry": true
+      },
       "errors": []
     },
     {
@@ -39,6 +54,11 @@
       "dock": true,
       "hud": false,
       "brokenImages": [],
+      "threeD": {
+        "fallback": true,
+        "colors": true,
+        "retry": true
+      },
       "errors": []
     },
     {
@@ -49,6 +69,11 @@
       "dock": true,
       "hud": false,
       "brokenImages": [],
+      "threeD": {
+        "fallback": true,
+        "colors": true,
+        "retry": true
+      },
       "errors": []
     }
   ]

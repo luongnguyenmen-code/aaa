@@ -6,6 +6,7 @@ const App = {
   pollingTimer: null,
   nextWeatherUpdate: 0,
   readRequests: new Map(),
+  responseRequests: new Map(),
   userListeners: new Set(),
 
   subscribeUser(listener) {
@@ -22,11 +23,28 @@ const App = {
   },
 
   // Coalesce identical reads and bound their lifetime; mutations are never retried here.
+  readResponse(url, options = {}) {
+    if (options.method && options.method.toUpperCase() !== 'GET') throw new Error('readResponse only accepts GET');
+    const key = url + JSON.stringify(options);
+    let request = this.responseRequests.get(key);
+    if (!request) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), ST25Core.readTimeoutMs);
+      request = fetch(url, { ...options, signal: controller.signal }).then(async response => {
+        // Buffer once so every caller can consume its own body, including HTTP errors.
+        const body = await response.arrayBuffer();
+        return new Response([204,205,304].includes(response.status) ? null : body, { status: response.status, statusText: response.statusText, headers: response.headers });
+      }).finally(() => { clearTimeout(timeout); this.responseRequests.delete(key); });
+      this.responseRequests.set(key, request);
+    }
+    return request.then(response => response.clone());
+  },
+
   readJSON(url, options = {}) {
     const key = url + JSON.stringify(options);
     if (this.readRequests.has(key)) return this.readRequests.get(key);
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const timeout = setTimeout(() => controller.abort(), ST25Core.readTimeoutMs);
     const request = fetch(url, { ...options, signal: controller.signal })
       .then(async response => {
         if (!response.ok) {
@@ -95,7 +113,7 @@ const App = {
 
   async loadEnvironment() {
     try {
-      this.renderWeatherWidget(await this.readJSON('/api/server/environment'));
+      this.renderWeatherWidget(await this.readJSON(ST25API.routes.serverEnvironment));
     } catch (e) {
       // offline fallback
     }
@@ -156,7 +174,7 @@ const App = {
 
   async loadConfig() {
     try {
-      this.config = await this.readJSON('/api/server/status');
+      this.config = await this.readJSON(ST25API.routes.serverStatus);
       this.updateServerStatusBadge();
     } catch (e) {
       console.warn('API offline, running in standalone mode');
@@ -166,7 +184,7 @@ const App = {
   async checkAuth() {
     let error = null;
     try {
-      const u = await this.readJSON('/api/player/me');
+      const u = await this.readJSON(ST25API.routes.playerMe);
         if (u && u.linked && u.steam_id) {
           this.user = u;
           this.notifications = Array.isArray(u.notifications) ? u.notifications : [];
@@ -195,7 +213,7 @@ const App = {
 
   async checkAuthSilently() {
     try {
-      const u = await this.readJSON('/api/player/me');
+      const u = await this.readJSON(ST25API.routes.playerMe);
       const wasAdmin = !!this.user?.isAdmin;
       this.user = u && u.linked && u.steam_id ? u : null;
       this.authResolved = true;
@@ -232,7 +250,7 @@ const App = {
     this.navSignature = navSignature;
 
     const isSurvivalActive = ['bando.html', 'gara.html', 'tha-xac.html', 'skin.html'].includes(currentFile);
-    const isEconomyActive = ['nhiem-vu.html', 'giao-dich.html', 'hom-qua.html'].includes(currentFile);
+    const isEconomyActive = ['nhiem-vu.html', 'giao-dich.html', 'hom-qua.html', 'roll.html'].includes(currentFile);
     const isCommunityActive = ['bxh.html', 'moi-ban.html', 'ho-tro.html', 'noi-quy.html', 'cai-dat.html'].includes(currentFile);
 
     navUl.innerHTML = `
@@ -277,6 +295,9 @@ const App = {
           </a>
           <a href="hom-qua.html" class="nav-dropdown-item ${currentFile === 'hom-qua.html' ? 'active' : ''}">
             🎁 Mở Hòm May Mắn
+          </a>
+          <a href="roll.html" class="nav-dropdown-item ${currentFile === 'roll.html' ? 'active' : ''}">
+            🎲 Lên Voi hoặc Đi Ngủ
           </a>
           <!-- [TẮT TẠM THỜI] Bỏ comment dòng dưới khi muốn bật lại Sòng Bạc:
           <a href="song-bac.html" class="nav-dropdown-item ${currentFile === 'song-bac.html' ? 'active' : ''}">
@@ -521,6 +542,7 @@ const App = {
         <a href="nhiem-vu.html" class="nav-dropdown-item">🌾 Kho Lúa & Nhiệm Vụ</a>
         <a href="giao-dich.html" class="nav-dropdown-item">⚖️ Chợ Giao Dịch P2P</a>
         <a href="hom-qua.html" class="nav-dropdown-item">🎁 Mở Hòm May Mắn</a>
+        <a href="roll.html" class="nav-dropdown-item">🎲 Lên Voi hoặc Đi Ngủ</a>
         <!-- [TẮT TẠM THỜI] Bỏ comment dòng dưới khi muốn bật lại: <a href="song-bac.html" class="nav-dropdown-item">🎲 Sòng Bạc ST25</a> -->
       </div>
 
@@ -583,7 +605,7 @@ const App = {
     this.user = null;
     localStorage.removeItem('the_isle_demo_user');
     localStorage.removeItem('st25_steam_user');
-    fetch('/api/player/logout', { method: 'POST' }).catch(() => {});
+    fetch(ST25API.routes.playerLogout, { method: 'POST' }).catch(() => {});
     this.updateUI();
     this.showToast('Đã đăng xuất tài khoản.', 'info');
     setTimeout(() => window.location.reload(), 500);
