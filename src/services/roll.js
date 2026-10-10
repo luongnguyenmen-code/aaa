@@ -55,7 +55,7 @@ module.exports=function createRollService(bank,store=defaultStore){
     if(steamId)try{balance=await bank.balance(steamId);}catch{}
     const responseTime=Date.now();
     return {serverTime:responseTime,ready:ready(),demo:!ready(),authenticated:!!steamId,balance,
-      message:ready()?'Gửi và trả thưởng bằng ví Lúa IslePilot trực tiếp. Đặt là trừ Lúa, thắng là cộng ngay.':'Đang mở chế độ thử miễn phí. Gửi Lúa sẽ mở sau khi kết nối dữ liệu.',
+      message:ready()?'Gửi và trả thưởng bằng ví Lúa IslePilot trực tiếp. Đặt là trừ Lúa, thắng là cộng ngay.':'Chức năng Roll đang tạm đóng bảo trì. Vui lòng quay lại sau.',
       round:{...engine.publicRound(round,responseTime),number:roundNumber(round.id)},
       history:history.map(item=>({...item,number:roundNumber(item.id)})),
       bets:bets.map(item=>({...item,round_number:roundNumber(item.round_id)})),totals,activeBets,pendingCount,
@@ -63,7 +63,7 @@ module.exports=function createRollService(bank,store=defaultStore){
   }
   async function bet(steamId,input){
     if(!steamId)throw error('Vui lòng liên kết Steam trước khi gửi.',401);
-    if(!ready())throw error('Roll chưa mở gửi Lúa.',503);
+    if(!ready())throw error('Chức năng Roll đang tạm đóng bảo trì.',503);
     engine.validateBet(input);
     return store.withPlayer(steamId,async client=>{
       const replay=await client.query('SELECT b.* FROM st25_roll_commands c JOIN st25_roll_bets b ON b.id=c.bet_id WHERE c.steam_id=$1 AND c.request_id=$2',[steamId,input.requestId]);

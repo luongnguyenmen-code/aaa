@@ -22,8 +22,8 @@
       else{animate(75,900,'spin:'+data.round.id);if(!reading&&!busy&&closeRequested!==data.round.id){closeRequested=data.round.id;clearTimeout(timer);refresh();}}
     }
     const bet=ownBet(),locked=bet&&bet.status!=='placed';
-    $('roll-submit').disabled=busy||!open||(!data.demo&&(!data.authenticated||locked));
-    $('roll-submit').textContent=busy?'Đang xử lý…':!open?'Chờ vòng tiếp theo':!data.authenticated?'Liên kết Steam để cược':bet?'Đổi màu cược':data.demo?'Thử Roll miễn phí':'Đặt cược bằng Lúa';
+    $('roll-submit').disabled=busy||!open||(!data.demo&&(!data.ready||!data.authenticated||locked));
+    $('roll-submit').textContent=busy?'Đang xử lý…':!open?'Chờ vòng tiếp theo':(!data.ready&&!data.demo)?'Tạm đóng bảo trì':!data.authenticated?'Liên kết Steam để cược':bet?'Đổi màu cược':data.demo?'Thử Roll miễn phí':'Đặt cược bằng Lúa';
     amount().disabled=busy||!!bet;
     document.querySelectorAll('[data-amount]').forEach(b=>b.disabled=busy||!!bet);
     document.querySelectorAll('input[name=color]').forEach(x=>x.disabled=busy||!open||!!locked);
