@@ -1,7 +1,7 @@
 (() => {
   const $=id=>document.getElementById(id),names={red:'Đỏ',black:'Đen',green:'Xanh'},multipliers={red:2,black:2,green:14};
   const statuses={debit_pending:'Đang đối soát tiền gửi',placed:'Đã gửi',credit_pending:'Đang đối soát tiền trả',settled:'Đã kết thúc',review:'Cần đối soát — liên hệ hỗ trợ'};
-  let data,busy=false,reading=false,settling=false,timer,clock,offset=0,animation,animationKey='',motion,trackPosition=15,lastHistory='',demoBet,disposed=false,lastAccount,lastOwnSignature,closeRequested;
+  let data,busy=false,reading=false,settling=false,timer,clock,offset=0,animation,animationKey='',trackPosition=15,lastHistory='',demoBet,disposed=false,lastAccount,lastOwnSignature,closeRequested;
   const esc=value=>App.escapeHTML(value),amount=()=>$('roll-amount'),color=()=>document.querySelector('input[name=color]:checked').value;
   const money=value=>Number(value).toLocaleString('vi-VN')+' Lúa';
   const order=[1,8,2,9,3,10,4,0,11,5,12,6,13,7,14];
@@ -28,73 +28,59 @@
     document.querySelectorAll('[data-amount]').forEach(b=>b.disabled=busy||!!bet);
     document.querySelectorAll('input[name=color]').forEach(x=>x.disabled=busy||!open||!!locked);
   }
-  // Tile-space motion is rebased by full cycles without changing the visible slot.
-  const cycle=value=>15+((value%15)+15)%15,cruiseSpeed=9;
+  const cycle=value=>15+((value%15)+15)%15;
+  const rollEasing='cubic-bezier(0.1, 0.8, 0.1, 1)';
   const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
-  function sampleMotion(now){
-    if(!motion)return {position:trackPosition,velocity:0};
-    const elapsed=Math.max(0,(now-motion.started)/1000);
-    if(motion.spinning)return {position:motion.from+cruiseSpeed*elapsed,velocity:cruiseSpeed};
-    if(motion.cruise!==undefined){
-      if(elapsed<motion.cruise)return {position:motion.from+cruiseSpeed*elapsed,velocity:cruiseSpeed};
-      const u=Math.min(1,(elapsed-motion.cruise)/motion.brake),p=motion.power;
-      return {position:motion.from+cruiseSpeed*motion.cruise+cruiseSpeed*motion.brake*(u-Math.pow(u,p+1)/(p+1)),
-        velocity:u===1?0:cruiseSpeed*(1-Math.pow(u,p))};
-    }
-    const u=Math.min(1,elapsed/motion.seconds),d=motion.target-motion.from,m=motion.velocity*motion.seconds;
-    // Hermite curve preserves entry velocity and reaches zero velocity at the deadline.
-    return {position:motion.from+m*u+(3*d-2*m)*u*u+(m-2*d)*u*u*u,
-      velocity:u===1?0:(m+2*(3*d-2*m)*u+3*(m-2*d)*u*u)/motion.seconds};
+  let winnerTimer;
+  function clearWinner(){
+    clearTimeout(winnerTimer);
+    $('roll-track').querySelectorAll('.winner').forEach(tile=>tile.classList.remove('winner'));
+  }
+  function highlightWinner(){
+    clearWinner();
+    $('roll-track').children[Math.round(trackPosition)]?.classList.add('winner');
   }
   function paint(position){
     const {half,step}=reelMetrics();
-    $('roll-track').style.transform='translateX('+(-half-cycle(position)*step)+'px)';
+    $('roll-track').style.transform='translateX('+(-half-position*step)+'px)';
   }
   function stopMotion(){
-    cancelAnimationFrame(animation);animation=undefined;
-    if(motion)trackPosition=cycle(sampleMotion(performance.now()).position);
-    motion=null;document.querySelector('.roll-arena').classList.remove('is-revealing');paint(trackPosition);
+    clearWinner();
+    const track=$('roll-track'),{half,step}=reelMetrics();
+    if(animation){
+      const transform=getComputedStyle(track).transform;
+      if(transform!=='none')trackPosition=cycle((-half-new DOMMatrixReadOnly(transform).m41)/step);
+      animation.cancel();animation=undefined;
+    }
+    document.querySelector('.roll-arena').classList.remove('is-revealing');paint(trackPosition);
   }
   function animate(target,duration,key,timed=false){
     if(animationKey===key)return;
-    const now=performance.now(),current=sampleMotion(now),spinning=key.startsWith('spin:'),first=!animationKey;
-    animationKey=key;cancelAnimationFrame(animation);
-    const from=cycle(current.position),arena=document.querySelector('.roll-arena');
-    arena.classList.remove('is-revealing');
-    if(spinning){motion={spinning:true,from,started:now};}
-    else{
-      const slot=target%15,seconds=Math.max(0,duration/1000);
-      if(!seconds||document.hidden||reducedMotion.matches||(first&&!timed)){
-        trackPosition=15+slot;motion=null;paint(trackPosition);return;
+    animationKey=key;stopMotion();
+    // Wait for the authoritative result rather than changing speed between two curves.
+    if(key.startsWith('spin:'))return;
+    const slot=target%15,from=cycle(trackPosition),arena=document.querySelector('.roll-arena');
+    if(!duration||document.hidden||reducedMotion.matches){
+      trackPosition=15+slot;paint(trackPosition);
+      if(!document.hidden){
+        if(duration)winnerTimer=setTimeout(()=>{if(animationKey===key)highlightWinner();},duration);
+        else highlightWinner();
       }
-      // v*T/3 bounds entry velocity to keep the stop monotone with late results.
-      const cruise=Math.max(0,seconds-4),brake=seconds-cruise;
-      const brakeFrom=from+cruiseSpeed*cruise;
-      const plannedTarget=Math.ceil((brakeFrom+cruiseSpeed*brake/2-slot)/15)*15+slot;
-      const brakeDistance=plannedTarget-brakeFrom;
-      if(brakeDistance<cruiseSpeed*brake){
-        // Integral of 9*(1-u^p): exact target with continuous, decreasing velocity.
-        const power=brakeDistance/(cruiseSpeed*brake-brakeDistance);
-        motion={from,target:plannedTarget,seconds,cruise,brake,power,started:now};
-      }else{
-      // A very late server result may leave too little distance for a 9-tile/s stop.
-      const distance=Math.max(1,current.velocity*seconds/3);
-      target=Math.ceil((from+distance-slot)/15)*15+slot;
-      const velocity=current.velocity||3*(target-from)/seconds;
-      motion={spinning:false,from,target,seconds,velocity,started:now};
-      }
-      arena.classList.add('is-revealing');
+      return;
     }
-    function frame(time){
-      if(disposed||document.hidden)return;
-      paint(sampleMotion(time).position);
-      if(!motion.spinning&&time>=motion.started+motion.seconds*1000){
-        trackPosition=cycle(motion.target);motion=null;animation=undefined;
-        arena.classList.remove('is-revealing');paint(trackPosition);return;
-      }
-      animation=requestAnimationFrame(frame);
-    }
-    animation=requestAnimationFrame(frame);
+    target=Math.ceil((from+60-slot)/15)*15+slot;
+    const {half,step}=reelMetrics();
+    const transform=position=>'translateX('+(-half-position*step)+'px)';
+    paint(from);trackPosition=target;paint(target);
+    const running=$('roll-track').animate([{transform:transform(from)},{transform:transform(target)}],
+      {duration,easing:rollEasing,fill:'none'});
+    animation=running;arena.classList.add('is-revealing');
+    running.finished.then(()=>{
+      if(animation!==running)return;
+      animation=undefined;trackPosition=cycle(target);paint(trackPosition);
+      arena.classList.remove('is-revealing');
+      highlightWinner();
+    }).catch(()=>{});
   }
   function render(){
     $('roll-notice').textContent=data.message;$('roll-round').textContent=data.round.number??data.round.id;

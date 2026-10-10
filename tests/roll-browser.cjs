@@ -69,7 +69,7 @@ const server=http.createServer((req,res)=>{
       })()`,returnByValue:true});
       const spin=snapshot();spin.round.closesAt=Date.now()-20;spin.round.endsAt=spin.round.closesAt+8000;spin.round.result=0;spin.round.color='green';spin.round.phase='spinning';fixtures['/api/roll/state']=spin;
       await pause(2400);
-      const motion=await call('Runtime.evaluate',{expression:"document.querySelector('.roll-arena').classList.contains('is-spinning') && document.querySelector('.roll-arena').classList.contains('is-revealing') && document.getElementById('roll-submit').disabled",returnByValue:true});
+      const motion=await call('Runtime.evaluate',{expression:"document.querySelectorAll('.roll-tile.winner').length===0 && document.querySelector('.roll-arena').classList.contains('is-spinning') && document.querySelector('.roll-arena').classList.contains('is-revealing') && document.getElementById('roll-submit').disabled",returnByValue:true});
       if(!motion.result.value)throw Error('Spin animation or closed-round controls failed');
       const reelBefore=await call('Runtime.evaluate',{expression:"getComputedStyle(document.getElementById('roll-track')).transform",returnByValue:true});
       await pause(8400);
@@ -81,7 +81,7 @@ const server=http.createServer((req,res)=>{
       await pause(2400);
       const check=await call('Runtime.evaluate',{expression:"({result:document.getElementById('roll-result').textContent.includes('123'),proof:!document.getElementById('roll-proof-data')&&!document.querySelector('.roll-proof'),demoWon:document.getElementById('roll-feedback').textContent.includes('đúng màu'),alerts:document.querySelectorAll('[role=alert]').length})",returnByValue:true});
       await pause(6700);
-      const centered=await call('Runtime.evaluate',{expression:"(()=>{const marker=document.querySelector('.roll-marker').getBoundingClientRect(),mid=(marker.left+marker.right)/2;const tile=[...document.querySelectorAll('.roll-tile')].find(x=>{const b=x.getBoundingClientRect();return b.left<=mid&&b.right>=mid});return tile?.textContent==='0'&&Math.abs((tile.getBoundingClientRect().left+tile.getBoundingClientRect().right)/2-mid)<1})()",returnByValue:true});
+      const centered=await call('Runtime.evaluate',{expression:"(()=>{const marker=document.querySelector('.roll-marker').getBoundingClientRect(),mid=(marker.left+marker.right)/2;const tile=[...document.querySelectorAll('.roll-tile')].find(x=>{const b=x.getBoundingClientRect();return b.left<=mid&&b.right>=mid});return document.querySelectorAll('.roll-tile.winner').length===1&&tile?.classList.contains('winner')&&tile?.textContent==='0'&&Math.abs((tile.getBoundingClientRect().left+tile.getBoundingClientRect().right)/2-mid)<1})()",returnByValue:true});
       if(!centered.result.value)throw Error('Reel does not stop centered on the declared result');
       const shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});fs.writeFileSync(path.join(__dirname,'roll-'+width+'.png'),Buffer.from(shot.data,'base64'));
       const record={width,exercise:exercise.result.value,checks:check.result.value,errors};results.push(record);console.log(JSON.stringify(record));

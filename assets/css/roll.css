@@ -8,3 +8,15 @@
 .portal-roll .roll-panel h2{font-size:10px!important;line-height:1.4!important;letter-spacing:1.5px}.portal-roll .roll-heading h1{font-size:28px!important;line-height:1.2!important}.portal-roll .roll-heading .roll-eyebrow{color:#f6ab45}.portal-roll .roll-send #roll-submit{background:#211b13!important;color:#f6ab45!important}.roll-history-heading span i{display:inline-block;margin-right:4px}@media(max-width:500px){.portal-roll .roll-heading h1{font-size:24px!important}}
 .roll-arena.is-revealing .roll-round-meta:before{opacity:0;backdrop-filter:none}.roll-arena.is-revealing .roll-round-meta{justify-content:flex-start;padding-top:7px}.roll-arena.is-revealing .roll-clock{font-size:16px;color:#f6ab45}
 .portal-roll .roll-choice.red span{font-family:Arial,"Segoe UI",sans-serif!important}
+
+/* The centered result lights up only after the reel finishes. */
+.roll-tile{--winner-glow:#ffca70}
+.roll-tile.red{--winner-glow:#ff6860}
+.roll-tile.green{--winner-glow:#47e7a5}
+.roll-tile.black{--winner-glow:#d5deff}
+.roll-tile.winner{position:relative;z-index:1;border-color:#ffe1a1;box-shadow:0 0 16px var(--winner-glow),inset 0 0 8px #ffffff35;animation:roll-win-glow 1.5s ease-in-out infinite alternate}
+@keyframes roll-win-glow{
+  from{transform:scale(1);filter:brightness(1.12);border-color:#ffe1a1;box-shadow:0 0 12px var(--winner-glow),inset 0 0 6px #ffffff20}
+  to{transform:scale(1.08);filter:brightness(1.4);border-color:#fff;box-shadow:0 0 28px var(--winner-glow),0 0 8px #fff,inset 0 0 10px #ffffff45}
+}
+@media(prefers-reduced-motion:reduce){.roll-tile.winner{animation:none;transform:none;filter:brightness(1.15)}}

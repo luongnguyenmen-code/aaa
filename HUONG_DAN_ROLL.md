@@ -47,6 +47,8 @@ ORDER BY updated_at DESC;
 
 Số vòng hiển thị bắt đầu từ 1 khi bản mới nhận yêu cầu trạng thái đầu tiên. Mốc đánh số được lưu trong PostgreSQL và dùng chung cho người chơi, giữ nguyên khi khởi động lại máy chủ. Mã vòng nội bộ và giao dịch cũ vẫn được giữ; các vòng trước mốc dùng mã cũ để đối soát. Chế độ thử không có database bắt đầu từ 1 theo phiên máy chủ.
 
-Dải 15 ô dùng requestAnimationFrame: 4 giây đầu quay đều 9 ô/giây, 4 giây sau giảm tốc liên tục về 0 và dừng đúng tâm ô kết quả của máy chủ. Quỹ đạo giảm tốc được tính theo ô đích; vận tốc tại điểm nối vẫn là 9 ô/giây. Khi trở lại tab, trang đọc lại trạng thái; chế độ giảm chuyển động hiển thị trực tiếp ô kết quả.
+Dải 15 ô dùng Web Animations API với easing `cubic-bezier(0.1, 0.8, 0.1, 1)`: chạy nhanh ở đầu rồi giảm tốc về 0 trong pha quay 8 giây. Đây là animation transform do trình duyệt chạy, dùng cùng hàm timing với CSS transition. Mỗi lần đi qua 60–75 ô và dừng đúng tâm ô kết quả của máy chủ. Trang chờ kết quả máy chủ trước khi bắt đầu; nếu mạng chậm, dùng thời gian còn lại đến hạn kết thúc. Khi trở lại tab, trang đọc lại trạng thái; chế độ giảm chuyển động hiển thị trực tiếp ô kết quả.
 
-`node tests/roll-motion-regression.cjs` kiểm tra đủ 15 ô và kết quả đến muộn. `node tests/roll-browser.cjs` kiểm tra Chrome ở 1440, 768, 390 và 320 px bằng dữ liệu giả lập, chặn các giao dịch thật.
+`node tests/roll-motion-regression.cjs` kiểm tra easing, thời lượng 8 giây, đủ 15 ô và không khởi động lại animation khi polling. `node tests/roll-browser.cjs` kiểm tra Chrome ở 1440, 768, 390 và 320 px bằng dữ liệu giả lập, chặn các giao dịch thật.
+
+Khi animation kết thúc, ô nằm đúng tâm vạch được gắn class `winner`: nhịp sáng 1,5 giây, co giãn nhẹ, hào quang theo màu ô và viền sáng. Hiệu ứng được xóa khi bắt đầu vòng quay mới. Chế độ giảm chuyển động chỉ dùng viền và ánh sáng tĩnh; vẫn chờ kết thúc vòng trước khi nhấn sáng kết quả.
