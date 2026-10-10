@@ -10,6 +10,8 @@ File gốc nằm trong `src/pages/illustrations/`. Renderer `src/views/illustrat
 
 ## Kiểm tra
 
+Phiên bản phân vùng `regions3` dùng đường bao riêng cho hông/bụng từng loài, hoa văn cong theo thân và dải chi tiết trên lưng. Ranh giới được pha mềm, giữ độ sáng và alpha ảnh gốc. Audit thử độc lập cả 10 kênh màu trên ba loài có ảnh.
+
 `npm test` kiểm tra API, các route ảnh, script nhúng, cấu trúc, preset và chức năng có sẵn.
 
 ```powershell

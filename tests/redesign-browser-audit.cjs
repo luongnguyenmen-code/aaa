@@ -77,6 +77,13 @@ const server=http.createServer((req,res)=>{
             const bodyOnly=f?.dataset.checksum;onHexInputChange('eyes','#00ffff');
             for(let i=0;i<40&&f?.dataset.checksum===bodyOnly;i++)await pause(100);
             results[species+'EyeColor']=f?.dataset.checksum!==bodyOnly;
+            for(const channel of CHANNELS){
+              resetAllColors();await pause(150);
+              const original=f?.dataset.checksum,revision=f?.dataset.revision;
+              onHexInputChange(channel.id,'#00ff88');
+              for(let i=0;i<50&&f?.dataset.revision===revision;i++)await pause(100);
+              results[species+'Region_'+channel.id]=!!original&&f?.dataset.checksum!==original&&Number(f?.dataset.changedPixels)>0;
+            }
           }
           changeSpecies('Carnotaurus');await pause(200);
           results.fallback=window.ST25SkinIllustrations.mode==='2d'&&!document.getElementById('skin-motion-frame')&&!document.getElementById('dino-svg-wrapper').hidden;

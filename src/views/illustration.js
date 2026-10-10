@@ -30,6 +30,6 @@ function renderIllustration(file, embedded = false) {
   </script>`;
   return source.replace('</style>', '</style>'+styles)
     .replaceAll('ctx.drawImage(fallback,0,0)','ctx.drawImage(window.ST25PaletteSource||fallback,0,0)')
-    .replace('</html>', '<script src="/assets/js/skin-illustration-palette.js?v=20261010-palette2"></script>'+reducedMotion+'</html>');
+    .replace('</html>', '<script src="/assets/js/skin-illustration-palette.js?v=20261010-regions3"></script>'+reducedMotion+'</html>');
 }
 module.exports = {renderIllustration};
