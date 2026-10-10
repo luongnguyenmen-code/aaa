@@ -94,7 +94,6 @@
           } catch (appErr) {
             // App.readJSON ném lỗi nếu status không 2xx (ví dụ 503 IslePilot offline)
             console.warn('App.readJSON /api/player/me thất bại:', appErr);
-            throw appErr;
           }
         }
 

@@ -40,6 +40,8 @@ function safeRedirect(value) {
     ? value : '/lien-ket-steam.html';
 }
 function cookieOptions(req, maxAge = SESSION_MS) {
-  return { maxAge, path: '/', httpOnly: true, sameSite: 'lax', secure: req.secure || process.env.NODE_ENV === 'production' || !!process.env.VERCEL };
+  const forwardedProto = String(req?.headers?.['x-forwarded-proto'] || '').split(',')[0].trim().toLowerCase();
+  const isHttps = !!(req?.secure || forwardedProto === 'https' || (process.env.PUBLIC_ORIGIN && process.env.PUBLIC_ORIGIN.toLowerCase().startsWith('https:')));
+  return { maxAge, path: '/', httpOnly: true, sameSite: 'lax', secure: isHttps };
 }
 module.exports = { sign, verify, parseCookies, getRequestSteamId, safeRedirect, cookieOptions, SESSION_MS, configured };

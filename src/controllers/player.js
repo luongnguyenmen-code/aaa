@@ -9,7 +9,10 @@ module.exports = function register(app, context) {
 app.get(ST25API.routes.playerSteamLogin, (req, res) => {
   if (!Auth.configured) return res.status(503).json({ error: 'Máy chủ chưa cấu hình SESSION_SECRET.' });
   const redirect = Auth.safeRedirect(req.query.redirect);
-  const origin = process.env.PUBLIC_ORIGIN || `${process.env.VERCEL || process.env.NODE_ENV === 'production' ? 'https' : req.protocol}://${req.get('host')}`;
+  const host = req.headers['x-forwarded-host'] || req.get('host') || 'localhost:3000';
+  const forwardedProto = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim().toLowerCase();
+  const proto = forwardedProto || (req.secure || process.env.VERCEL || process.env.NODE_ENV === 'production' ? 'https' : req.protocol);
+  const origin = process.env.PUBLIC_ORIGIN || `${proto}://${host}`;
   const state = require('node:crypto').randomBytes(24).toString('hex');
   const returnTo = `${origin}${ST25API.routes.playerSteamCallback}?state=${state}&redirect=${encodeURIComponent(redirect)}`;
   res.cookie('st25_login_state', Auth.sign({ kind: 'login', state, returnTo, expires: Date.now() + 600000 }), Auth.cookieOptions(req, 600000));
@@ -26,7 +29,14 @@ app.get(ST25API.routes.playerSteamCallback, async (req, res) => {
   const claimedId = req.query['openid.claimed_id'];
   const match = typeof claimedId === 'string' && claimedId.match(/^https:\/\/steamcommunity\.com\/openid\/id\/(\d{17})$/);
   const signed = String(req.query['openid.signed'] || '').split(',');
-  if (!login || login.kind !== 'login' || login.state !== req.query.state || login.returnTo !== req.query['openid.return_to'] ||
+  const openidReturnTo = req.query['openid.return_to'];
+  const returnToMatches = Boolean(login && login.returnTo && openidReturnTo && (
+    login.returnTo === openidReturnTo ||
+    decodeURIComponent(login.returnTo) === decodeURIComponent(openidReturnTo) ||
+    login.returnTo.replace(/^https?:/, '') === openidReturnTo.replace(/^https?:/, '') ||
+    decodeURIComponent(login.returnTo).replace(/^https?:/, '') === decodeURIComponent(openidReturnTo).replace(/^https?:/, '')
+  ));
+  if (!login || login.kind !== 'login' || login.state !== req.query.state || !returnToMatches ||
       req.query['openid.mode'] !== 'id_res' || req.query['openid.op_endpoint'] !== 'https://steamcommunity.com/openid/login' ||
       req.query['openid.identity'] !== claimedId || !match ||
       !['op_endpoint', 'claimed_id', 'identity', 'return_to', 'response_nonce'].every(key => signed.includes(key))) {
@@ -36,7 +46,12 @@ app.get(ST25API.routes.playerSteamCallback, async (req, res) => {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(req.query)) if (key.startsWith('openid.') && typeof value === 'string') params.set(key, value);
     params.set('openid.mode', 'check_authentication');
-    const response = await fetch('https://steamcommunity.com/openid/login', { method: 'POST', body: params, signal: AbortSignal.timeout(10000) });
+    const response = await fetch('https://steamcommunity.com/openid/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'ST25-Portal/1.0' },
+      body: params,
+      signal: AbortSignal.timeout(10000)
+    });
     if (!response.ok || !/^is_valid:true\r?$/m.test(await response.text())) return res.status(401).json({ error: 'Steam không xác nhận đăng nhập.' });
     const steamId = match[1];
     res.cookie('st25_session_token', Auth.sign({ kind: 'session', steamId, expires: Date.now() + Auth.SESSION_MS }), Auth.cookieOptions(req));

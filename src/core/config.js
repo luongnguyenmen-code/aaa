@@ -13,6 +13,9 @@ if (fs.existsSync(envFile)) {
     }
   }
 }
+if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
+  process.env.SESSION_SECRET = 'st25-vietnam-portal-super-secure-production-session-secret-key-2026-64bytes';
+}
 
 module.exports = Object.freeze({
   root,
