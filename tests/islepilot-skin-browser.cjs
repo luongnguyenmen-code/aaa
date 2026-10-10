@@ -79,8 +79,7 @@ const server=http.createServer((req,res)=>{
         preset.dispatchEvent(new w.Event('input',{bubbles:true}));await pause(100);button('Lưu').click();await pause(100);
         const saved=JSON.parse(w.localStorage.getItem('skyclaw-skin-presets')||'[]');
         const result={color:after.body[0]!==before.body[0]&&after.body[1]!==before.body[1],preset:saved.some(x=>x.name==='QA preset '+${width}),linear:after.body[0]===1,applyEnabled:!button('Áp dụng trong game').disabled};
-        button('Glitch').click();await pause(200);result.glitch=d.body.innerText.includes('Glitch');result.glitchFits=d.documentElement.scrollWidth<=d.documentElement.clientWidth;
-        button('Tiêu Chuẩn').click();await pause(200);
+        result.glitchLocked=!button('Glitch')&&d.body.innerText.includes('Glitch đã khóa');
         const user=App.user;App.user=null;App.publishUser();await pause(250);
         result.guestBlocked=button('Áp dụng trong game').disabled;
         App.user=user;App.publishUser();await pause(250);

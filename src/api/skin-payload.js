@@ -9,6 +9,7 @@ function validateSkinPayload(input){
   for(const key of channels){
     const color=input[key];
     if(!Array.isArray(color)||color.length!==4||color.some(value=>typeof value!=='number'||!Number.isFinite(value)||Math.abs(value)>1e12))throw Error(`Kênh màu ${key} không hợp lệ.`);
+    if(color.some(value=>value<0||value>1))throw Error('Glitch đã khóa. Chỉ được áp dụng màu skin tiêu chuẩn.');
     payload[key]=color.slice();
   }
   if(input.gore!==undefined){if(typeof input.gore!=='number'||!Number.isFinite(input.gore)||input.gore<0||input.gore>1)throw Error('Giá trị gore không hợp lệ.');payload.gore=input.gore;}

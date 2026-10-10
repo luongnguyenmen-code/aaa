@@ -54,7 +54,7 @@
     function render(user){
       if(species.includes(user?.dino?.species))currentSpecies=user.dino.species;
       const identity=user?.steamId||user?.steam_id||'guest';
-      root.render(React.createElement(Boundary,null,React.createElement(PublicStringsProvider,{dict:strings},React.createElement(React.Fragment,null,React.createElement(SkinEditor,{key:identity,speciesOptions:species,currentSpecies,canSetSkin:identity!=='guest'&&user?.isLoggedIn!==false,isAdmin:false,serverId:'cmufraiwk7fnooa01vpdzdhm4',slug:'st25',glitchEnabled:true,variant:'embedded'}),React.createElement(Toaster,{theme:'dark',richColors:true})))));
+      root.render(React.createElement(Boundary,null,React.createElement(PublicStringsProvider,{dict:strings},React.createElement(React.Fragment,null,React.createElement(SkinEditor,{key:identity,speciesOptions:species,currentSpecies,canSetSkin:identity!=='guest'&&user?.isLoggedIn!==false,isAdmin:false,serverId:'cmufraiwk7fnooa01vpdzdhm4',slug:'st25',glitchEnabled:false,variant:'embedded'}),React.createElement(Toaster,{theme:'dark',richColors:true})))));
       status.hidden=true;
     }
     render(null);
@@ -73,6 +73,10 @@
     const resize=new ResizeObserver(reportHeight);resize.observe(editor);
     // Keep the fee beside the real apply action through guest/account re-renders.
     function decorateAction(){
+      const options=editor.querySelector(':scope>div>div:nth-child(2)>div:first-child');
+      if(options&&!options.querySelector('.st25-glitch-locked')){
+        const notice=document.createElement('p');notice.className='st25-glitch-locked';notice.textContent='Glitch đã khóa';options.append(notice);
+      }
       const button=[...editor.querySelectorAll('button')].find(x=>x.textContent.trim()===strings['skin.applyInGame']||x.textContent.trim()===strings['skin.applying']);
       if(!button)return;
       button.classList.add('st25-apply-button');

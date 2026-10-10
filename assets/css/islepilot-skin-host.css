@@ -15,6 +15,7 @@ body{overflow-wrap:anywhere}
 .st25-editor>div>div:nth-child(2)>div:nth-child(3){grid-area:actions;display:flex;flex-direction:column;justify-content:center}
 .st25-editor>div>div:nth-child(2)>div:nth-child(4){grid-area:presets}
 .st25-editor h3{color:#ffc16a}
+.st25-glitch-locked{margin:0;color:#b0afb4;font-size:12px;border-top:1px solid #363538;padding-top:10px}
 .st25-editor button.bg-background{background:#f6ab45;color:#17100a}
 .st25-editor .grid-cols-2>button{padding-inline:8px;font-size:13px}
 .st25-editor input[type=range]{accent-color:#f6ab45}

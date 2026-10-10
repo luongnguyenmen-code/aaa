@@ -14,7 +14,7 @@ assert.throws(()=>validateSkinPayload({...payload,body:[null,0,0,1]}));
 assert.throws(()=>validateSkinPayload({...payload,body:[Infinity,0,0,1]}));
 assert.throws(()=>validateSkinPayload({...payload,class:'../../secret'}));
 assert.throws(()=>validateSkinPayload({...payload,pattern:-1}));
-const glitch={...payload,body:[999e9,-999e9,0,1]};assert.deepEqual(validateSkinPayload(glitch).body,glitch.body);
+const glitch={...payload,body:[999e9,-999e9,0,1]};assert.throws(()=>validateSkinPayload(glitch),/Glitch/);
 const assetDirectory=path.join(root,'assets/vendor/islepilot-skin');
 const manifest=JSON.parse(fs.readFileSync(path.join(assetDirectory,'assets.json'),'utf8'));
 let models=0;
@@ -54,5 +54,7 @@ require('../src/controllers/skin')({get(){},post:(route,handler)=>handlers.set(r
   assert.deepEqual(calls.find(call=>call.method==='POST').body,{payload});
   const before=calls.length;await handler({body:{payload:{...payload,eyes:[NaN,0,0,1]}}},response);
   assert.equal(response.code,400);assert.equal(calls.length,before);
+  await handler({body:{payload:glitch}},response);
+  assert.equal(response.code,400);assert.match(response.data.error,/Glitch/);assert.equal(calls.length,before);
   console.log('PASS skin API: original payload forwarded unchanged; invalid input makes no upstream call; no live mutations');
 })().catch(error=>{console.error(error);process.exitCode=1;});
