@@ -22,4 +22,10 @@ async function withPlayer(steamId,task){
     return await task(client);
   }finally{let broken=false;if(locked)try{await client.query("SELECT pg_advisory_unlock(hashtext('st25-roll'),hashtext($1))",[steamId]);}catch{broken=true;}client.release(broken);}
 }
-module.exports={database,ensureRound,mapRound,withPlayer};
+async function numberingOrigin(roundId){
+  const db=await database();
+  await db.query("INSERT INTO st25_roll_settings(key,value) VALUES('numbering_origin_v1',$1) ON CONFLICT(key) DO NOTHING",[roundId]);
+  const result=await db.query("SELECT value FROM st25_roll_settings WHERE key='numbering_origin_v1'");
+  return Number(result.rows[0].value);
+}
+module.exports={database,ensureRound,mapRound,withPlayer,numberingOrigin};

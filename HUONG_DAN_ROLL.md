@@ -45,6 +45,8 @@ ORDER BY updated_at DESC;
 
 ## Chuyển động vòng quay
 
+Số vòng hiển thị bắt đầu từ 1 khi bản mới nhận yêu cầu trạng thái đầu tiên. Mốc đánh số được lưu trong PostgreSQL và dùng chung cho người chơi, giữ nguyên khi khởi động lại máy chủ. Mã vòng nội bộ và giao dịch cũ vẫn được giữ; các vòng trước mốc dùng mã cũ để đối soát. Chế độ thử không có database bắt đầu từ 1 theo phiên máy chủ.
+
 Dải 15 ô dùng requestAnimationFrame: 4 giây đầu quay đều 9 ô/giây, 4 giây sau giảm tốc liên tục về 0 và dừng đúng tâm ô kết quả của máy chủ. Quỹ đạo giảm tốc được tính theo ô đích; vận tốc tại điểm nối vẫn là 9 ô/giây. Khi trở lại tab, trang đọc lại trạng thái; chế độ giảm chuyển động hiển thị trực tiếp ô kết quả.
 
 `node tests/roll-motion-regression.cjs` kiểm tra đủ 15 ô và kết quả đến muộn. `node tests/roll-browser.cjs` kiểm tra Chrome ở 1440, 768, 390 và 320 px bằng dữ liệu giả lập, chặn các giao dịch thật.

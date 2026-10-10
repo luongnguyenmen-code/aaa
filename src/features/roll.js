@@ -97,15 +97,15 @@
     animation=requestAnimationFrame(frame);
   }
   function render(){
-    $('roll-notice').textContent=data.message;$('roll-round').textContent=data.round.id;
+    $('roll-notice').textContent=data.message;$('roll-round').textContent=data.round.number??data.round.id;
     $('roll-login').hidden=data.authenticated;$('roll-balance').textContent=Number.isFinite(data.balance)?money(data.balance):'—';
     const historyKey=JSON.stringify(data.history.map(x=>[x.id,x.result]));
     if(historyKey!==lastHistory){
       lastHistory=historyKey;
-      $('roll-history').innerHTML=data.history.map(x=>`<span class="roll-dot ${x.color}" title="Vòng ${x.id}: ${names[x.color]} ${x.result}">${x.result}</span>`).join('');
+      $('roll-history').innerHTML=data.history.map(x=>`<span class="roll-dot ${x.color}" title="Vòng ${x.number??x.id}: ${names[x.color]} ${x.result}">${x.result}</span>`).join('');
       $('roll-counts').innerHTML=['red','black','green'].map(c=>`<span><i class="roll-dot ${c}" style="width:6px;height:6px"></i>${data.history.filter(x=>x.color===c).length}</span>`).join('');
       const last=data.history[0];if(last){
-        $('roll-result').textContent=`Vòng ${last.id}: ${names[last.color]} · Số ${last.result}`;
+        $('roll-result').textContent=`Vòng ${last.number??last.id}: ${names[last.color]} · Số ${last.result}`;
         if(Date.now()+offset<data.round.closesAt)animate(90+order.indexOf(last.result),0,'result:'+last.id,true);
       }
       if(demoBet&&last?.id===demoBet.roundId){const won=last.color===demoBet.color;feedback(won?'Thử miễn phí: bạn chọn đúng màu! Không cộng Lúa.':'Thử miễn phí: chưa trúng màu. Không trừ Lúa.');demoBet=null;}
@@ -115,7 +115,7 @@
     $('roll-own-bet').textContent=bet?`Bạn gửi ${money(bet.amount)} vào ${names[bet.color]} · ${statuses[bet.status]}`:'Bạn chưa gửi vòng này.';
     const signature=bet?JSON.stringify([bet.id,bet.amount,bet.color]):'';
     if(bet&&signature!==lastOwnSignature){amount().value=bet.amount;document.querySelector(`input[name=color][value=${bet.color}]`).checked=true;}lastOwnSignature=signature;
-    $('roll-my-history').innerHTML=data.bets.length?data.bets.map(b=>`<tr><td>${Number(b.round_id)}</td><td>${names[b.color]||'—'}</td><td>${money(b.amount)}</td><td>${b.status==='settled'?money(b.payout):'—'}</td><td>${esc(statuses[b.status]||b.status)}</td></tr>`).join(''):`<tr><td colspan="5">${data.authenticated?'Chưa có gửi bằng Lúa.':'Liên kết Steam để xem lịch sử gửi.'}</td></tr>`;
+    $('roll-my-history').innerHTML=data.bets.length?data.bets.map(b=>`<tr><td>${b.round_number??Number(b.round_id)}</td><td>${names[b.color]||'—'}</td><td>${money(b.amount)}</td><td>${b.status==='settled'?money(b.payout):'—'}</td><td>${esc(statuses[b.status]||b.status)}</td></tr>`).join(''):`<tr><td colspan="5">${data.authenticated?'Chưa có gửi bằng Lúa.':'Liên kết Steam để xem lịch sử gửi.'}</td></tr>`;
     quote();updateClock();
   }
   async function post(url,body){

@@ -38,6 +38,14 @@ const input=(roundId,color='red',amount=10)=>({roundId,color,amount,requestId:cr
   const switched=await f.service.bet(sid,input(winningRound.id,'black'));assert.equal(switched.bet.color,'black');assert.equal(f.calls.length,1);
   await f.service.bet(sid,input(winningRound.id,'red'));
   const state=await f.service.state(sid);assert.equal(state.bets.length,1);assert.equal(state.totals[0].players,1);assert.equal(state.balance,90);
+  assert.equal(state.round.number,1);assert.equal(state.bets[0].round_number,1);
+  assert.equal(await f.store.numberingOrigin(winningRound.id+1),winningRound.id);
+  const numberingTime=now;now=winningRound.endsAt;
+  const restarted=createService({balance:async()=>90},f.store);
+  const numbered=await restarted.state(sid);
+  assert.equal(numbered.round.number,2);assert.equal(numbered.bets[0].round_number,1);
+  assert.equal(numbered.history.find(item=>item.id===winningRound.id).number,1);
+  now=numberingTime;
   assert.equal((await f.service.state(other)).bets.length,0);
   now=winningRound.closesAt;await assert.rejects(f.service.bet(other,input(winningRound.id)),e=>e.status===409);
   now=winningRound.endsAt;const settled=await f.service.settle(sid);assert.equal(settled.bets[0].payout,20);assert.equal(f.getBalance(),110);

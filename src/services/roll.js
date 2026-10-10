@@ -1,6 +1,7 @@
 const crypto=require('node:crypto'),engine=require('./roll-engine'),rules=require('../core/roll'),defaultStore=require('../models/roll-store');
 const error=(message,status=400)=>Object.assign(Error(message),{status});
 module.exports=function createRollService(bank,store=defaultStore){
+  let demoOrigin;
   const ready=()=>rules.enabled()&&!!process.env.ROLL_DATABASE_URL;
   async function current(now=Date.now(),client){
     const round=engine.makeRound(now);
@@ -18,6 +19,8 @@ module.exports=function createRollService(bank,store=defaultStore){
   }
   async function state(steamId){
     const now=Date.now(),round=await current(now);
+    const origin=process.env.ROLL_DATABASE_URL?await store.numberingOrigin(round.id):(demoOrigin??=round.id);
+    const roundNumber=id=>Number(id)>=origin?Number(id)-origin+1:null;
     let history=[],bets=[],totals=[],balance=null,pendingCount=0;
     if(process.env.ROLL_DATABASE_URL){
       const db=await store.database();
@@ -32,7 +35,9 @@ module.exports=function createRollService(bank,store=defaultStore){
     const responseTime=Date.now();
     return {serverTime:responseTime,ready:ready(),demo:!ready(),authenticated:!!steamId,balance,
       message:ready()?'Gửi và trả thưởng bằng ví Lúa IslePilot.':'Đang mở chế độ thử miễn phí. Gửi Lúa sẽ mở sau khi kết nối dữ liệu.',
-      round:engine.publicRound(round,responseTime),history,bets,totals,pendingCount,
+      round:{...engine.publicRound(round,responseTime),number:roundNumber(round.id)},
+      history:history.map(item=>({...item,number:roundNumber(item.id)})),
+      bets:bets.map(item=>({...item,round_number:roundNumber(item.round_id)})),totals,pendingCount,
       rules:{minBet:rules.minBet,maxBet:rules.maxBet,payouts:rules.payouts,probabilities:{red:7/15,black:7/15,green:1/15},roundMs:rules.roundMs,betMs:rules.betMs}};
   }
   async function bet(steamId,input){

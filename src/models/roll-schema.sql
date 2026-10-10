@@ -1,3 +1,6 @@
+CREATE TABLE IF NOT EXISTS st25_roll_settings (
+ key text PRIMARY KEY, value bigint NOT NULL
+);
 CREATE TABLE IF NOT EXISTS st25_roll_rounds (
  id bigint PRIMARY KEY, starts_at bigint NOT NULL, closes_at bigint NOT NULL,
  ends_at bigint NOT NULL, seed text NOT NULL, commitment text NOT NULL, result integer NOT NULL CHECK(result BETWEEN 0 AND 14)
