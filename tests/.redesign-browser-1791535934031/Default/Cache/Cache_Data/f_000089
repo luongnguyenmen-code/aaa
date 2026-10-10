@@ -1,0 +1,1115 @@
+{
+  "source": "https://laislanublar.net/skin-editor",
+  "fetchedAt": "2026-10-09T08:39:56.049Z",
+  "note": "Public reference assets, downloaded without authentication. No redistribution license inferred.",
+  "species": [
+    {
+      "species": "Allosaurus",
+      "patterns": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 1401164,
+          "sha256": "20cef6afc7c865650d90049e553697af72885f83a7b7e45235d4873f43fefb67"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 408110,
+          "sha256": "69580cb366ac4fd58a731c66b15716391a1c1149c8fd1fa264bcdf8a45c93365"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 339202,
+          "sha256": "d794b6240fed17e386bc24ee3c5f631d725ad85888e93ba7eee58886a87ab289"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 275060,
+          "sha256": "245e1ea176942eb0f122a1873e901b8b1ce8c44d698b6c4e0be4c8a4c89adfeb"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 272474,
+          "sha256": "1eae6be60fde945b8fa4f15c3f04bc82e50d899743f0388bef72ced18b5900ad"
+        },
+        {
+          "file": "pattern_3.webp",
+          "bytes": 719616,
+          "sha256": "f5b1bdc8a296a712b11c7c4ead767e8af68e196a8bd6b597e87753037d1c8526"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 11072,
+          "sha256": "c4d8e012bbc0823608bc5e368406a423fafdab773930738a696ab04c9bf2e4f6"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Austroraptor",
+      "patterns": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 2744780,
+          "sha256": "bc75a0eca12532cad0a39fe9caa5ec54f7a09219b499de731996259e4c5d7148"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 246680,
+          "sha256": "2b154f04f278e9731fb61f54dc796cc6f94ab6824237f8405c471afc4995ef32"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 248472,
+          "sha256": "b804413f7d02288f33c74c0bdd217453c77984a5c44a0d2ac7dea7763f818872"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 200342,
+          "sha256": "98da076cff4145d44cf8e72f47cd55363f10ab0e3cf929379eb41d32614ae870"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 206072,
+          "sha256": "501354a5a86fad1f4b2afc7e5ee9e8cce84ffe605ceb668eb4e5d87e040bac1d"
+        },
+        {
+          "file": "pattern_3.webp",
+          "bytes": 371846,
+          "sha256": "4254d3642db5d919d8b8b6f92b3e18429ea726bf5fa8f6ea811b0a91f6d49b9e"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 37450,
+          "sha256": "4ba1347bd46980ffe090efb4356b0010803dff5558c7ec1191d6c235d877fed4"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Beipiaosaurus",
+      "patterns": [
+        0,
+        1,
+        2
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 865724,
+          "sha256": "8ca2e5179af3149579c48cbeb2fbf2d5691bf122fc9b7aee1c911fd99343ebfb"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 350032,
+          "sha256": "9d9c6f6e508c44875d4095f7523b214f86e81e7c4a3d076b95df0c8988b1a57e"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 148192,
+          "sha256": "3c2637dee3a6dca8e4de6dfcbeeeddf9d8739cc53d7e80fa4c027d9ea3bdc3d3"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 154606,
+          "sha256": "890c95621315f0eb90310691533b0eed1f283ebdcc860da941892e6c3f67f32f"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 147452,
+          "sha256": "d22a0a04dca3ba4971cf9fb7696dca963d5df1238ff8edff843e0551c43b7cd5"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 68802,
+          "sha256": "d680f5356d41e67251ad92eea04974bb625db1049e19b9f8470abac593fb8ea3"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Carnotaurus",
+      "patterns": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 1319836,
+          "sha256": "befbb5f121b354f9d3044c4c26dfa1cda9ecd832f98718f67d34b567733507d5"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 346472,
+          "sha256": "7b15479bf768edc21c5663a64f281bfea2ff0c1e836365cad6a4ab285067d145"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 291404,
+          "sha256": "4c2a478bf6d3f1c2e7d5bed096daaf878feeda29f96014d104db13eba38d9dc6"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 238046,
+          "sha256": "6de886b64ae20f3c753cba8f5e7d23f15b35ff8d783d853d2102e6decd671ca7"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 255748,
+          "sha256": "5a411d7722e3a6e7a2d7d50464f4a0047d4e6f05928c130018200086001b3f72"
+        },
+        {
+          "file": "pattern_3.webp",
+          "bytes": 437196,
+          "sha256": "3a336d9ff9cd9134c6d2c0881d358c2eed7e8ea9c89543ffa0a5baca3a6e5228"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 48822,
+          "sha256": "f273a9cda45ce1fc70bfa8f98bfed38f091ffa4f81f35b3727abaea2fb8b0a14"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Ceratosaurus",
+      "patterns": [
+        0,
+        1,
+        2
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 1372680,
+          "sha256": "c3a2e1e41d58aa2fb031163facaf12c6bb319d45193671d3adb748f694791e00"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 331076,
+          "sha256": "9dfe196d20a510ab0eb3d1bd2396a266459954790c7222f24be17be54297dd61"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 269742,
+          "sha256": "538978db33c4a7ee087853d04b604513c1aa28a3f27cb1310807be197ea5103e"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 228774,
+          "sha256": "eae4cabcde42bc9f62d444b6b62d392484bc5770cbeac21a564a8565e5ed8ff8"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 201578,
+          "sha256": "9f06f030e0f4bb3057ebeda8cbe60ed4cd514e1169ed85b1b25c98b27e177471"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 42256,
+          "sha256": "9441a0c4a6d2706edd47f2813a24edf37e38f9d5519a8dfedd61b2d9b1de1e0b"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Deinosuchus",
+      "patterns": [
+        0,
+        1,
+        2
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 1202864,
+          "sha256": "999cd570d320c948c3ae4e5f720808ebd6cc19f78e0a9628a3a8fd944999c3a5"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 256828,
+          "sha256": "b24780df7854659f3632d3092352c3fb656d63692c8327cc81022e44fa340e08"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 332068,
+          "sha256": "04270014586bf278940b07d42dae291d8f606446e7f997d763abeec7a8e9957d"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 251782,
+          "sha256": "21b45a675d2e8079a5fdd962d31d8877dadf1d57b43951322ae6e7281607bd16"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 228994,
+          "sha256": "58639a19687dc2905cd82b431d852d8bf0fbc31ec73248f44a6b5ee53a35ddcc"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 10016,
+          "sha256": "d6f8f0320da53f9033c48eda7a8de5295b696b4ed12bae5df65d2c63500c120e"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Diabloceratops",
+      "patterns": [
+        0,
+        1,
+        2
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 686200,
+          "sha256": "d34dde85f5327caa60170b3787f98c23faa1d1ac59b5e76ebe5deeeedc06425f"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 449158,
+          "sha256": "2bc7443f05f9691b4416613658c418f6c8045bd0a01e2ccb74bf8104e9f524ef"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 297340,
+          "sha256": "412b916add59a6441e24f1154db583e03e25b6ae59c1d92bff7c7cbe791db1ff"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 180580,
+          "sha256": "04cc19fade45d949d2f175c52f819482ee84bd9bcb57585ba38a0e29a9e5edc3"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 225670,
+          "sha256": "b1c2dc9192b69b4111b1f6810697134a97b9c0ed3da7da5da04267bab330b482"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 53464,
+          "sha256": "7d853e578eadeb4f46c8a39509f5c551b31d11a41185d88146eaa461f8830c38"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Dilophosaurus",
+      "patterns": [
+        0,
+        1,
+        2
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 1410380,
+          "sha256": "84485703f8e77152fb51f4f2f3bf100584a379b4405d7e62a99f9ab0a857bb3a"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 390694,
+          "sha256": "cf4aefd1f2b43428b0a12095e40c98db1d3aa19548f50134a7b97762929c3fe8"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 231314,
+          "sha256": "09a4eee9ec04d07feee97902f0cb00b848b91fdc19a9631938a08f4146056ad7"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 218990,
+          "sha256": "5815ab1abb9aaa4fbf8abf910216dad5a7b42cd202e9f9c0958c93a429e4230c"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 268720,
+          "sha256": "dbe236ab16983bf73db718dde2f3597689c546c32b5371ef9847a6b5c1f5b47c"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 23332,
+          "sha256": "51363d1b71c362cb74b752de98e2f0dac08f5406da84ba7f60fd2db4e3e29f94"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Dryosaurus",
+      "patterns": [
+        0,
+        1,
+        2
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 509152,
+          "sha256": "ec29bb05db6266d0e1e8f6bf126f8c9214c9abbe5c7b31a40164595a8c70fc79"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 432638,
+          "sha256": "daf6e8b605abcba07e97534db32f66167e56ca9bb85731d254f90ce889fbcccd"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 202264,
+          "sha256": "c7da7f0c23464dd0fd38ee6879ef47e63b2077b3ba464fa3fa7a2f75775130a1"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 193216,
+          "sha256": "63b6dd0206a8d174e64af78d9727093d0f198d0edca1c25dfff7588f9a26d302"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 189422,
+          "sha256": "f35ad5404247c28458194738a3521034b0ae9748ad2c5b51a5dd65cfb8495f99"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 8206,
+          "sha256": "e54919770537b2ac171b999120efa8a644730d8496d856f7b1f1d6c239597a8e"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Gallimimus",
+      "patterns": [
+        0,
+        1,
+        2
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 793788,
+          "sha256": "261da929b15c0d672cd25e084e1502389e96dea329a98be56502bc3b39f15fcf"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 183838,
+          "sha256": "1f7d69738535b626f0724f28e61d3e685a8afd2d52b928b2d52c223bea5fd395"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 274738,
+          "sha256": "c5c0f4f0b444a1861b26a2a0d26a463a61a6e6662e79e2f8a58a8e07c104d7f1"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 168334,
+          "sha256": "641458ba1ffccbf28fea60462d553e42829242cb28c3614dcd7cbdd95fdce904"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 236974,
+          "sha256": "8f40c4cda007e1051f55dfc9475e7b3481297099a6d8c863ba7e7dd63952adab"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 2030,
+          "sha256": "47d35877df44207e7170eb28d4cd385107c772f4acb9ae2e243bfc11316492e3"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Herrerasaurus",
+      "patterns": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 852916,
+          "sha256": "e09561143ef7c029002e78ba45b22c57935b3d58cfd1c70c72f31bfaef50a405"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 372204,
+          "sha256": "0bbe459c412798ba4e51d5c286bb0e9521ef54b8d9934627a98ee82937f46d6a"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 190844,
+          "sha256": "d631a02f3a2a0ad7bfefc52597858126bca9919a4fddaa613ca764cb3205283c"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 219668,
+          "sha256": "189676d86b724e6ffaef40601fa41774f5bda520214a738798e9ba1a4dc3a9f3"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 244128,
+          "sha256": "1375cea77d29750cbca432ba17ebd364be943a0c9cd8109e543804959a87f139"
+        },
+        {
+          "file": "pattern_3.webp",
+          "bytes": 220876,
+          "sha256": "49b0092712915ee58e416bfdd6b2a55e9ec38b073341c38219b799ce8bc5958d"
+        },
+        {
+          "file": "pattern_4.webp",
+          "bytes": 438974,
+          "sha256": "118fa0d3c317b5d1e3a8918f8b508afca7869fde750b34ecfdbd57fe1c238eae"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 11656,
+          "sha256": "b3d15904c840da38cdd17d06a3a0dec69e2b42e2ca7d1dd05bf79e58e5cacf75"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Hypsilophodon",
+      "patterns": [
+        0,
+        1,
+        2
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 999640,
+          "sha256": "23a2cc0dc732852eeba11481e3d9b70a686eaba690f25e7e2a3a6eb5edae9cd4"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 239444,
+          "sha256": "73457b2504ce3125a39e06a383089daff3bf14f787fa16c58351609d8dcd2301"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 130450,
+          "sha256": "8d65ad091d9fa1e2ebaa96f053c0f03075652cb32d917783bb42b8f6b5c90b66"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 133002,
+          "sha256": "33344c3e1dae2755947360d13d47c9a14a70f499d66bb866c78c6f33ec2b93fb"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 136190,
+          "sha256": "f951863ec885b3115cd635d38ab42abcfe4b2494549e3e69be68d75df6ada08d"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 56750,
+          "sha256": "7ee72184d95dc45a05d4972a24c7ea5b9a041fd49077b1c98a2aa84c09cad09b"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Kentrosaurus",
+      "patterns": [
+        0,
+        1,
+        2
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 1537528,
+          "sha256": "d1a4a9c214cfeea1bc0646b5203d87ac2858225ebbe9720cd8d227543f18024f"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 521228,
+          "sha256": "a0bbaf8c43c7847f8f0a6e1b556b7a19929ca518e0821ccbbe3a47e3be01392d"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 257132,
+          "sha256": "6cc3c694214a65e8858d2915c82cf3aa493dba7eec1bc3d5bca39cc6bec93ccd"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 191038,
+          "sha256": "e22ff4e903149f03ff4b41d380d10601e562187868075cde0d581ea45a135f3b"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 250698,
+          "sha256": "bbf3412a57677c763a1cf969b9e215f1c75a7247a472b34c0fa87a989b634032"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 3204,
+          "sha256": "d8b2fd97e7e81885a5803a93170c795cba00d8f664addd6fcdae0290b15b907d"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Maiasaura",
+      "patterns": [
+        0,
+        1,
+        2
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 781176,
+          "sha256": "48d51c3cd6b374145eff7faf807d628f4b63a9fb46f2df1a2f9ffbce507a0193"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 385456,
+          "sha256": "419b5aa958bf14faaacef6666b4ea1ae15874caf24b6bff8fc08df1bfa443b65"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 225856,
+          "sha256": "d232d137f252b545d118f42409bc5541f909146fa5312ea40cf01b3d45c18dfe"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 208086,
+          "sha256": "aa1d3fdde2ec6727569fa01df6ae3eb0334bb0fed5eb57a0eaf92078011bcf72"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 176816,
+          "sha256": "dff24d1b7ef6fc1646428c8b343f13557172157b157258db3d009640a427ca5d"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 2422,
+          "sha256": "7eb73869f8c630a6982c0cd42840c13f4043cb0ff5f7536accdfa25ca5fc9be1"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Omniraptor",
+      "patterns": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 1116216,
+          "sha256": "d1df17e2e3eaf16313d87ed602cd3201cf8c324e6f49d14dc4ee15aba1f62f05"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 281942,
+          "sha256": "e85f9f0453d18e7e659fa7795613a209e4d66ca083fc7cc6d7563010a05c8b16"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 270578,
+          "sha256": "3380e5cd77b9eb0e6d328769bea2ac35c1a18c8b3172661c645f415ea137cff0"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 271352,
+          "sha256": "8d3fe624022e6f12bf5252441e92a7a566e7782ed06f0856cf3e7159e1d11d7a"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 245522,
+          "sha256": "663cedb7b422b114212795775616c7f6cba91ca95438b66438a778fe4ef1c0e4"
+        },
+        {
+          "file": "pattern_3.webp",
+          "bytes": 712434,
+          "sha256": "d809912219d207e529bc3b7c8a4114ce150a8ec9d4c1dd38f4a1a1fdd4ba14d0"
+        },
+        {
+          "file": "pattern_4.webp",
+          "bytes": 360108,
+          "sha256": "35ccb62fbb50924d086ff7c788c9a574ebc9bbc87f8181c59bbf44e729a316a5"
+        },
+        {
+          "file": "pattern_5.webp",
+          "bytes": 353188,
+          "sha256": "b33409cf6584130c553973beeed82192fe77477adebd13b41aa0f1899e0ee324"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 53834,
+          "sha256": "eabe72c2375164ffc3ee6421921ba0fd5c641a574cea80c4769de72ca15c8f76"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Pachycephalosaurus",
+      "patterns": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 1422924,
+          "sha256": "74b233d75491735b17585c7027d8fe83623fec455cfa799623ec3d10d58cfa61"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 355102,
+          "sha256": "0b03495cc27b189ef3e487f5845722c54621d7fa899064d32f82cacd8ae1d0aa"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 315594,
+          "sha256": "6c0fa311754a95a890a4a359f71f82e9719291b6cbb9eeb1fb7df4e91ab2d819"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 298284,
+          "sha256": "71a7c9ed0bd3eb8fa33acb7f6ba4be180a5256063d9273cfa9808d916ea973a4"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 319946,
+          "sha256": "7c846d9cc2ea3e9a67266b366e4a58910bf9b41f494533e78135bcc8ba56041a"
+        },
+        {
+          "file": "pattern_3.webp",
+          "bytes": 295890,
+          "sha256": "4bb92d74b7b90559ffb1a896aac90f2066b8fc93ddb636beea7ab9dda13381b7"
+        },
+        {
+          "file": "pattern_4.webp",
+          "bytes": 191694,
+          "sha256": "98fc6b1524bc45a60cf6fb82478b44009169a341cdf9518ca51780657e361574"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 12110,
+          "sha256": "094228859fe7ffd933e742d105458b2a9f3cdd3f7bbd081eb27c3ecd36a48b6f"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Pteranodon",
+      "patterns": [
+        0,
+        1,
+        2
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 757208,
+          "sha256": "d70e913a445d6d5005e726b476107d67c1861c71088fbc105cfe92876170e12d"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 149724,
+          "sha256": "9aeec9293224016ec38ef1a3fdc29ff4067cf4a3d8e3fba9638cdc62d6bb03a9"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 239100,
+          "sha256": "a7c6462044e10e76754d670d8d2ea8e66050d3f417c1a125a05e60df7ac97023"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 204358,
+          "sha256": "4d6f63ffd7ec07ce84f3cdc0d9b7f077ba3383cc9994572b2a970972278b1381"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 155858,
+          "sha256": "07926b7c5c2f3538c5e3658fe250a089480ebc8475601c394a1852f1e4cc52e7"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 11912,
+          "sha256": "5eb8a812ff9813830f78c2c9fc526a87df49c31842b65ad028ea10c8bcd2d76f"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Stegosaurus",
+      "patterns": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 1211544,
+          "sha256": "63b51ff36bdee1c5d145442aa8a2838f36291b98f92443f836db8d44f0b438c0"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 350006,
+          "sha256": "0468bbd0584f332e20efbea802fd5d0855cd717830e36f324a57b501a3e69fa5"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 273874,
+          "sha256": "aca7394fedb257fbffe669be982b1cc81450ed3609d841cb7b99e533a439b2ab"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 223630,
+          "sha256": "1707139dd25d88bbbeff01ef3825cb2a9987ca1969d67a85877d551f4a8e5191"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 225678,
+          "sha256": "9d7f51e61fce1b99448d442a65d0e6f0471ae5dbe5547c45fe7d7b4179e67c56"
+        },
+        {
+          "file": "pattern_3.webp",
+          "bytes": 515630,
+          "sha256": "dc0384d0919f09e3374cc7b4d25d9f86cb5c2a2b418f4e47ec10d714be57c533"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 2578,
+          "sha256": "d5d09d1231302885fe09c91e76c38041f1fb4f475a9b707f9de3748e5959e172"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Tenontosaurus",
+      "patterns": [
+        0,
+        1,
+        2
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 1055760,
+          "sha256": "606f1bace6b3d18a7a8475ab7ea3ddc6830abdca6e33f841f6445b8991bf6c36"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 266734,
+          "sha256": "9f4f802e692be230377470a0282c31994b73d4b9300cfca838b43db16d3c4de9"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 200860,
+          "sha256": "8a332ec351933eaf5fde62d9ae8b419a275bdcffcc3d7d75879af67e795bde8e"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 205992,
+          "sha256": "5493e5d7d08b6f96742e374677a1d45ca284a197c634af108646affd0d8a9b22"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 267544,
+          "sha256": "2950a9e837eb4dc15653382a686dd701ca056773ff6674ec383314720906903c"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 3896,
+          "sha256": "720fb8358010dd7093f12c1f395ea5d40ccba3eb3bbebc1481ec8b8702dd44f9"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Triceratops",
+      "patterns": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 682848,
+          "sha256": "489c3964030b13fd77854cb2f43e6eab035c9c01e70839cc464fe85de414f346"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 376684,
+          "sha256": "91f0c00babd1b708e275f2faf89f1120992d82e858eaa9d12e8fa898c424e11b"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 237706,
+          "sha256": "2dbfcb1161837c2f4ae05c1ab0972ed958866d4d786e14b0023e0f6d33ab310a"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 230792,
+          "sha256": "17236453ed4b57739dd219f4f8118ccd8fdc67fba473c13d952167a3f190ff74"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 234560,
+          "sha256": "f1cbc1435c3de0305d30cd6e050d9fb540a986a5e0759ff27fade772bcac5664"
+        },
+        {
+          "file": "pattern_3.webp",
+          "bytes": 794126,
+          "sha256": "7bba3097c6eddabace4173a4a4c63da102613abd8e2636646a4e2829beb36196"
+        },
+        {
+          "file": "pattern_4.webp",
+          "bytes": 529082,
+          "sha256": "f4f648f69c968070f64d64dcbdb6c1bf4e85d28c1f45b0d35e3ce8cfe239a62d"
+        },
+        {
+          "file": "pattern_5.webp",
+          "bytes": 437362,
+          "sha256": "c1414a9d6ad9251b7725cd180823d4038850e933f70840cab2a21b31ca42f0c4"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 55288,
+          "sha256": "ec41b28b04a5abad50bead5ab81daa37ebae54f78880c30902cfe84d9c4f0e18"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Troodon",
+      "patterns": [
+        0,
+        1,
+        2
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 810032,
+          "sha256": "adab8142ff5aa0ddb9a6669aef7ec55f76bcc1165eb0887d994d0cad5a518255"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 246312,
+          "sha256": "c794c6b4189d1d0a2b0a57ca04e1893eb2ac2de4b5249540012d5776a6bc0775"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 213112,
+          "sha256": "b816a73c06543d7b5980d5c319e2d351bc8b30fed304de9a2140294509d3ce13"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 192420,
+          "sha256": "c59f1ab18e0c3a476913f61c41eb1044d72c09daae5b31231decd4e4cd2015a1"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 201922,
+          "sha256": "98c5d957c82df6b3c6a9d14c07dab43e6951603ba82eac56c44f1c7ac7dcf176"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 3970,
+          "sha256": "7c322047413e0d9c56f5eb4a31533d01d7b74339920d0fbaf238eccabfb2804c"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    },
+    {
+      "species": "Tyrannosaurus",
+      "patterns": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "files": [
+        {
+          "file": "mesh_idle.glb",
+          "bytes": 1634664,
+          "sha256": "7668d65a6290e820ce0a0df28e8412a9c8cf09b35a84dbd05774753bb8bc029c"
+        },
+        {
+          "file": "diffuse.webp",
+          "bytes": 355636,
+          "sha256": "a357185d0b5bbb5514a6ad7778163a52ef04588fa84be2d9f285a63ad8400c9c"
+        },
+        {
+          "file": "pattern_0.webp",
+          "bytes": 381546,
+          "sha256": "a4b815be055e6239887780f602b40a96ffc1b9ee938f4b6f2135c620bb5d4c47"
+        },
+        {
+          "file": "pattern_1.webp",
+          "bytes": 351600,
+          "sha256": "3ab18522b85e6cd7a1d9e6f605514d156e797e29b1ad353e917e378daa7dd383"
+        },
+        {
+          "file": "pattern_2.webp",
+          "bytes": 260634,
+          "sha256": "7f023760d06c248af0720f2f933fe2564cb0072e32de5ee6e928ebb8fd264067"
+        },
+        {
+          "file": "pattern_3.webp",
+          "bytes": 399932,
+          "sha256": "99cb21b79ae8dab62f6d33bd92e800d511dbed6c952a3929e65d648096b21342"
+        },
+        {
+          "file": "pattern_4.webp",
+          "bytes": 799180,
+          "sha256": "b862e4ce6939430a1b2246b27544456fb600ef8a584f5154cee4ee9b7f80f9ed"
+        },
+        {
+          "file": "tmc_mask.webp",
+          "bytes": 3360,
+          "sha256": "a036b17a1b77ca22d13b8eda4898895a4946276c327a0af51b8daf2a60c11921"
+        }
+      ],
+      "model": "mesh_idle.glb",
+      "utilMask": "tmc_mask.webp",
+      "animations": [
+        "idle"
+      ],
+      "extensions": []
+    }
+  ]
+}

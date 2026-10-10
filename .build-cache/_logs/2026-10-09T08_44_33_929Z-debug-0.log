@@ -1,0 +1,26 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.19.0
+2 info using node@v24.21.0
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:D:\ST25 WEB\aaa\.npmrc
+5 silly config load:file:C:\Users\S\.npmrc
+6 silly config load:file:C:\Users\S\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm exec esbuild assets/js/skin-viewer-source.js --bundle --minify --format=esm --alias:three=./assets/vendor/three/build/three.module.js --outfile=assets/js/skin-viewer.js
+8 verbose argv "exec" "--cache" ".build-cache" "--yes" "--" "esbuild" "assets/js/skin-viewer-source.js" "--bundle" "--minify" "--format=esm" "--alias:three=./assets/vendor/three/build/three.module.js" "--outfile=assets/js/skin-viewer.js"
+9 verbose logfile logs-max:10 dir:D:\ST25 WEB\aaa\.build-cache\_logs\2026-10-09T08_44_33_929Z-
+10 verbose logfile D:\ST25 WEB\aaa\.build-cache\_logs\2026-10-09T08_44_33_929Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+13 http fetch GET https://registry.npmjs.org/esbuild attempt 1 failed with ECONNREFUSED
+14 http fetch GET https://registry.npmjs.org/esbuild attempt 2 failed with ECONNREFUSED
+15 http fetch GET https://registry.npmjs.org/esbuild attempt 3 failed with ECONNREFUSED
+16 http fetch GET 200 https://registry.npmjs.org/esbuild 70048ms (cache stale)
+17 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+18 verbose Could not read global path C:\Users\S\AppData\Roaming\npm, ignoring
+19 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+20 verbose cwd D:\ST25 WEB\aaa
+21 verbose os Windows_NT 10.0.26200
+22 verbose node v24.21.0
+23 verbose npm  v11.19.0
+24 verbose exit 0
+25 info ok
