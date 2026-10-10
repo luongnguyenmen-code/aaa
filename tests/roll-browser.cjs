@@ -68,7 +68,7 @@ const server=http.createServer((req,res)=>{
       })()`,returnByValue:true});
       const next=snapshot();next.round.id=124;next.history.unshift({id:123,result:0,color:'green',seed:'test123',commitment:'abc123'});fixtures['/api/roll/state']=next;
       await pause(2400);
-      const check=await call('Runtime.evaluate',{expression:"({result:document.getElementById('roll-result').textContent.includes('123'),proof:document.getElementById('roll-proof-data').value.includes('test123'),demoWon:document.getElementById('roll-feedback').textContent.includes('đúng màu'),alerts:document.querySelectorAll('[role=alert]').length})",returnByValue:true});
+      const check=await call('Runtime.evaluate',{expression:"({result:document.getElementById('roll-result').textContent.includes('123'),proof:!document.getElementById('roll-proof-data')&&!document.querySelector('.roll-proof'),demoWon:document.getElementById('roll-feedback').textContent.includes('đúng màu'),alerts:document.querySelectorAll('[role=alert]').length})",returnByValue:true});
       const shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});fs.writeFileSync(path.join(__dirname,'roll-'+width+'.png'),Buffer.from(shot.data,'base64'));
       const record={width,exercise:exercise.result.value,checks:check.result.value,errors};results.push(record);console.log(JSON.stringify(record));
     }

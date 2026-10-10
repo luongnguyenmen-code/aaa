@@ -30,13 +30,11 @@
   function render(){
     $('roll-notice').textContent=data.message;$('roll-round').textContent=data.round.id;
     $('roll-login').hidden=data.authenticated;$('roll-balance').textContent=Number.isFinite(data.balance)?money(data.balance):'—';
-    $('roll-commitment').value=data.round.commitment;
     const historyKey=JSON.stringify(data.history.map(x=>[x.id,x.result]));
     if(historyKey!==lastHistory){
       lastHistory=historyKey;
       $('roll-history').innerHTML=data.history.map(x=>`<span class="roll-dot ${x.color}" title="Vòng ${x.id}: ${names[x.color]} ${x.result}">${x.result}</span>`).join('');
       const last=data.history[0];if(last){
-        $('roll-proof-data').value=JSON.stringify({roundId:last.id,seed:last.seed,commitment:last.commitment,result:last.result},null,2);
         $('roll-result').textContent=`Vòng ${last.id}: ${names[last.color]} · Số ${last.result}`;
         animate(30+order.indexOf(last.result),900,'result:'+last.id);
       }
