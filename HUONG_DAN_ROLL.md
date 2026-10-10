@@ -2,7 +2,7 @@
 
 Trang: `/roll.html`, mục **Kinh Tế & Chợ → Lên Voi hoặc Đi Ngủ** trên máy tính và điện thoại.
 
-Tỷ lệ đã được chủ web chọn: 15 ô, đỏ 7/15, đen 7/15, xanh 1/15. Đỏ/đen trả tổng x2, xanh trả tổng x14, đã bao gồm tiền gửi. Vòng chung 18 giây; nhận gửi 15 giây đầu. Mỗi tài khoản một mức gửi mỗi vòng; có thể đổi màu trong thời gian nhận gửi. Không dùng tỷ lệ 30% thắng của các trò sòng bạc cũ. Bản này không có jackpot Triple Green của trang tham khảo.
+Tỷ lệ đã được chủ web chọn: 15 ô, đỏ 7/15, đen 7/15, xanh 1/15. Đỏ/đen trả tổng x2, xanh trả tổng x14, đã bao gồm tiền gửi. Vòng chung 23 giây: nhận gửi 15 giây đầu, quay và dừng trong 8 giây tiếp theo. Mỗi tài khoản một mức gửi mỗi vòng; có thể đổi màu trong thời gian nhận gửi. Không dùng tỷ lệ 30% thắng của các trò sòng bạc cũ. Bản này không có jackpot Triple Green của trang tham khảo.
 
 ## Tạo PostgreSQL và bật gửi Lúa
 
@@ -42,3 +42,9 @@ ORDER BY updated_at DESC;
 ## Kiểm tra
 
 `npm test` bao gồm kiểm tra tỷ lệ/tiền trả, cam kết seed, SQL PostgreSQL giả lập, gửi trùng, đổi màu, đóng gửi, người chơi khác, trừ Lúa thất bại, không trả thưởng hai lần và trạng thái không rõ kết quả. Các kiểm tra này không dùng API hoặc Lúa thật. Kết nối PostgreSQL thật và quyền API được kiểm tra sau khi cấu hình hosting.
+
+## Chuyển động vòng quay
+
+Dải 15 ô dùng requestAnimationFrame: 4 giây đầu quay đều 9 ô/giây, 4 giây sau giảm tốc liên tục về 0 và dừng đúng tâm ô kết quả của máy chủ. Quỹ đạo giảm tốc được tính theo ô đích; vận tốc tại điểm nối vẫn là 9 ô/giây. Khi trở lại tab, trang đọc lại trạng thái; chế độ giảm chuyển động hiển thị trực tiếp ô kết quả.
+
+`node tests/roll-motion-regression.cjs` kiểm tra đủ 15 ô và kết quả đến muộn. `node tests/roll-browser.cjs` kiểm tra Chrome ở 1440, 768, 390 và 320 px bằng dữ liệu giả lập, chặn các giao dịch thật.

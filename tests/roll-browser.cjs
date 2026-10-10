@@ -49,7 +49,7 @@ const server=http.createServer((req,res)=>{
     socket.onmessage=event=>{const message=JSON.parse(event.data);if(message.method==='Runtime.exceptionThrown')errors.push(message.params.exceptionDetails.exception?.description||message.params.exceptionDetails.text);if(process.env.ST25_3D_AUDIT && message.method==='Runtime.consoleAPICalled' && message.params.type==='error' && !(process.env.ST25_3D_FALLBACK && message.params.args.some(arg=>/WebGL.*context|Error creating WebGL/.test(String(arg.value))))) errors.push(message.params.args.map(arg=>arg.value||arg.description||'').join(' '));const task=pending.get(message.id);if(task){pending.delete(message.id);message.error?task.reject(message.error):task.resolve(message.result);}};
     const call=(method,params={})=>new Promise((resolve,reject)=>{pending.set(++id,{resolve,reject});socket.send(JSON.stringify({id,method,params}));});
     await call('Runtime.enable');await call('Network.enable');
-    await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
+    await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
     await call('Network.setBlockedURLs',{urls:['*islepilot.eu*','*steamcommunity.com*','*api.steampowered.com*']});
 
     const results=[];
@@ -58,7 +58,7 @@ const server=http.createServer((req,res)=>{
       errors=[];fixtures['/api/roll/state']=snapshot();
       await call('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:width<600});
       await call('Page.navigate',{url:origin+'/roll.html'});
-      for(let attempt=0;attempt<60;attempt++){await pause(100);const ready=await call('Runtime.evaluate',{expression:"document.getElementById('roll-notice')?.textContent==='FREE PREVIEW' && App.authResolved && !document.getElementById('roll-submit').disabled && document.getElementById('roll-phase').hidden && document.getElementById('roll-clock').hidden",returnByValue:true});if(ready.result.value)break;}
+      for(let attempt=0;attempt<60;attempt++){await pause(100);const ready=await call('Runtime.evaluate',{expression:"document.getElementById('roll-notice')?.textContent==='FREE PREVIEW' && App.authResolved && !document.getElementById('roll-submit').disabled",returnByValue:true});if(ready.result.value)break;}
       const exercise=await call('Runtime.evaluate',{expression:`(()=>{
         const amount=document.getElementById('roll-amount');amount.value='50';amount.dispatchEvent(new Event('input'));
         const red=document.getElementById('roll-quote').textContent.includes('100');
@@ -67,16 +67,16 @@ const server=http.createServer((req,res)=>{
         document.getElementById('roll-submit').click();
         return {redQuote:red,greenQuote:green,demoChoice:document.getElementById('roll-feedback').textContent.includes('Lúa'),menu:!!document.querySelector('a[href="roll.html"]'),tiles:document.querySelectorAll('.roll-tile').length===120,overflow:document.documentElement.scrollWidth>innerWidth};
       })()`,returnByValue:true});
-      const spin=snapshot();spin.round.closesAt=Date.now()-20;spin.round.endsAt=spin.round.closesAt+3000;spin.round.result=0;spin.round.color='green';spin.round.phase='spinning';fixtures['/api/roll/state']=spin;
+      const spin=snapshot();spin.round.closesAt=Date.now()-20;spin.round.endsAt=spin.round.closesAt+8000;spin.round.result=0;spin.round.color='green';spin.round.phase='spinning';fixtures['/api/roll/state']=spin;
       await pause(2400);
-      const motion=await call('Runtime.evaluate',{expression:"document.querySelector('.roll-arena').classList.contains('is-spinning') && document.getElementById('roll-track').getAnimations().length===1 && document.getElementById('roll-submit').disabled",returnByValue:true});
+      const motion=await call('Runtime.evaluate',{expression:"document.querySelector('.roll-arena').classList.contains('is-spinning') && document.querySelector('.roll-arena').classList.contains('is-revealing') && document.getElementById('roll-submit').disabled",returnByValue:true});
       if(!motion.result.value)throw Error('Spin animation or closed-round controls failed');
       const reelBefore=await call('Runtime.evaluate',{expression:"getComputedStyle(document.getElementById('roll-track')).transform",returnByValue:true});
-      await pause(3400);
+      await pause(8400);
       const reelAfter=await call('Runtime.evaluate',{expression:"getComputedStyle(document.getElementById('roll-track')).transform",returnByValue:true});
       if(reelBefore.result.value===reelAfter.result.value)throw Error('Reel failed to decelerate to its result');
-      const stopped=await call('Runtime.evaluate',{expression:"document.getElementById('roll-track').getAnimations().length===0",returnByValue:true});
-      if(!stopped.result.value)throw Error('Reel did not finish within the three-second deadline');
+      const stopped=await call('Runtime.evaluate',{expression:"!document.querySelector('.roll-arena').classList.contains('is-revealing')",returnByValue:true});
+      if(!stopped.result.value)throw Error('Reel did not finish within the eight-second deadline');
       const next=snapshot();next.round.id=124;next.history.unshift({id:123,result:0,color:'green',seed:'test123',commitment:'abc123'});fixtures['/api/roll/state']=next;
       await pause(2400);
       const check=await call('Runtime.evaluate',{expression:"({result:document.getElementById('roll-result').textContent.includes('123'),proof:!document.getElementById('roll-proof-data')&&!document.querySelector('.roll-proof'),demoWon:document.getElementById('roll-feedback').textContent.includes('đúng màu'),alerts:document.querySelectorAll('[role=alert]').length})",returnByValue:true});
