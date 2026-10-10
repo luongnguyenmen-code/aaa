@@ -83,11 +83,12 @@ the-isle-portal/
 ## Rà soát và kiểm tra
 
 Chạy `npm test` để kiểm tra mã nguồn, backend và frontend. Xem [kết quả và cấu hình triển khai](tests/AUDIT.md), đặc biệt `SESSION_SECRET` khi triển khai production/Vercel.
-## Skin Studio 3D
+## Skin Studio
 
-Trình chỉnh skin có mô hình 3D minh họa cho 17 loài, xoay/zoom, đồng bộ bảng màu, camera tự căn và xuất ảnh PNG. Có thể thiết kế khi chưa đăng nhập; thao tác áp dụng vào game vẫn cần Steam.
+Trình chỉnh skin dùng ảnh chuyển động 2D cho Triceratops, Troodon và Tyrannosaurus, đồng bộ bảng màu theo vùng gần đúng trên ảnh. Các loài khác dùng minh họa SVG. Có thể thiết kế khi chưa đăng nhập; thao tác áp dụng vào game vẫn cần Steam.
 
-Xem [tính năng, tối ưu và cách kiểm tra](tests/SKIN_3D.md).## ?? C?U TR?C TH? M?C
+Xem [tính năng và cách kiểm tra](tests/SKIN_PREVIEW.md).
+## ?? C?U TR?C TH? M?C
 
 ```text
 src/

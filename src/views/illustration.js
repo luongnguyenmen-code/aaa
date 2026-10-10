@@ -28,6 +28,8 @@ function renderIllustration(file, embedded = false) {
     if(document.getElementById('fallback').complete) reportReady();
     else document.getElementById('fallback').addEventListener('load',reportReady,{once:true});
   </script>`;
-  return source.replace('</style>', '</style>'+styles).replace('</html>', reducedMotion+'</html>');
+  return source.replace('</style>', '</style>'+styles)
+    .replaceAll('ctx.drawImage(fallback,0,0)','ctx.drawImage(window.ST25PaletteSource||fallback,0,0)')
+    .replace('</html>', '<script src="/assets/js/skin-illustration-palette.js?v=20261010-palette2"></script>'+reducedMotion+'</html>');
 }
 module.exports = {renderIllustration};

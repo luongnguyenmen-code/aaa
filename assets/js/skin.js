@@ -204,11 +204,7 @@ let myLiveBalance = 0;
       const growthValEl = document.getElementById('growth-val');
       if (growthValEl) growthValEl.textContent = `${currentGrowth}%`;
 
-      const wrapper = document.getElementById('dino-svg-wrapper');
-      if (wrapper) {
-        const scale = 0.55 + 0.45 * (currentGrowth / 100);
-        wrapper.style.transform = `scale(${scale})`;
-      }
+
     }
 
     function setGender(gender) {
@@ -364,7 +360,8 @@ let myLiveBalance = 0;
           if (data.theme !== undefined) document.getElementById('skin-theme').value = data.theme;
           if (data.growth !== undefined) {
             const gVal = Math.round(data.growth * 100);
-            document.getElementById('growth-slider').value = gVal;
+            const growthSlider = document.getElementById('growth-slider');
+            if (growthSlider) growthSlider.value = gVal;
             updateGrowth(gVal);
           }
           renderColorChannels();
@@ -582,7 +579,7 @@ let myLiveBalance = 0;
           myLiveBalance = 0;
           document.getElementById('skin-balance-val').textContent = '—';
           document.getElementById('player-status-tag').textContent = 'Thiết kế tự do · Đăng nhập để áp dụng trong game';
-          document.getElementById('player-dino-status-text').textContent = 'Bạn có thể phối màu, xem 3D và lưu mẫu ngay trên thiết bị.';
+          document.getElementById('player-dino-status-text').textContent = 'Bạn có thể phối màu, xem minh họa và lưu mẫu ngay trên thiết bị.';
           renderOwnedSkins([]);
           document.getElementById('skin-shop-grid').textContent = 'Đăng nhập Steam để xem cửa hàng skin.';
           document.getElementById('shop-skin-count').textContent = 'Cần đăng nhập';

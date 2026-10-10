@@ -1,5 +1,7 @@
 # ST25 Skin Studio 3D
 
+> Tài liệu lưu trữ của phiên bản cũ. Trang chỉnh skin hiện đã bỏ mô hình 3D và thanh độ trưởng thành. Xem [tài liệu hiện tại](SKIN_PREVIEW.md) để kiểm tra preview và phối màu.
+
 Phần chỉnh skin sử dụng 17 mô hình minh họa 3D được tạo bằng mã nguồn của dự án. Không sao chép mô hình hoặc texture của trang tham khảo hay của game. Đây là bản phối màu minh họa, không phải phép xem trước chính xác skin trong The Isle.
 
 ## Tính năng

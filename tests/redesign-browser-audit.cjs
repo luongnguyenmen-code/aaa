@@ -64,79 +64,33 @@ const server=http.createServer((req,res)=>{
       if(process.env.ST25_ILLUSTRATION_AUDIT){
         const imported=await call('Runtime.evaluate',{expression:`(async()=>{
           const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-          const stage=document.getElementById('dino-stage');stage.scrollIntoView({block:'center'});
-          for(let i=0;i<60&&!window.ST25Skin3D.viewer;i++)await pause(100);
-          const viewer=window.ST25Skin3D.viewer;if(!viewer)return {viewer:false};
-          viewer.setAutoRotate(true);
-          const results={};
+          const stage=document.getElementById('dino-stage');stage.scrollIntoView({block:'center',behavior:'instant'});
+          const results={removed3D:!document.getElementById('skin-3d-host')&&!document.querySelector('[data-preview="3d"]'),removedGrowth:!document.getElementById('growth-slider')};
           for(const species of ['Triceratops','Troodon','Tyrannosaurus']){
-            changeSpecies(species);window.ST25SkinIllustrations.setMode('motion');
-            for(let i=0;i<60;i++){await pause(100);const f=document.getElementById('skin-motion-frame');if(f?.dataset.ready==='true'&&f?.dataset.rendered==='true')break;}
+            changeSpecies(species);resetAllColors();
+            for(let i=0;i<80;i++){await pause(100);const f=document.getElementById('skin-motion-frame');if(f?.dataset.ready==='true'&&f?.dataset.rendered==='true'&&f?.dataset.checksum)break;}
             const f=document.getElementById('skin-motion-frame');
-            results[species]=f?.dataset.ready==='true'&&f.dataset.rendered==='true'&&f.dataset.reportedSpecies===species&&f.src.includes(species.toLowerCase()+'.html')&&viewer.presentationPaused===true&&viewer.frame===0;
+            results[species]=f?.dataset.ready==='true'&&f.dataset.rendered==='true'&&f.dataset.reportedSpecies===species;
+            const before=f?.dataset.checksum;onHexInputChange('body','#ff3300');
+            for(let i=0;i<40&&f?.dataset.checksum===before;i++)await pause(100);
+            results[species+'BodyColor']=!!before&&f?.dataset.checksum!==before&&Number(f?.dataset.changedPixels)>0;
+            const bodyOnly=f?.dataset.checksum;onHexInputChange('eyes','#00ffff');
+            for(let i=0;i<40&&f?.dataset.checksum===bodyOnly;i++)await pause(100);
+            results[species+'EyeColor']=f?.dataset.checksum!==bodyOnly;
           }
-          changeSpecies('Carnotaurus');await pause(150);
-          results.unavailable=window.ST25SkinIllustrations.mode==='3d'&&!document.getElementById('skin-motion-frame')&&document.querySelector('[data-preview="motion"]').disabled;
+          changeSpecies('Carnotaurus');await pause(200);
+          results.fallback=window.ST25SkinIllustrations.mode==='2d'&&!document.getElementById('skin-motion-frame')&&!document.getElementById('dino-svg-wrapper').hidden;
           changeSpecies('Triceratops');await pause(300);
           document.getElementById('skin-workspace-tab-1').click();await pause(300);
           results.hidden=!document.getElementById('skin-motion-frame');
-          document.getElementById('skin-workspace-tab-0').click();stage.scrollIntoView({block:'center'});await pause(300);
-          window.ST25SkinIllustrations.setMode('3d');await pause(200);
-          results.resumed=!viewer.presentationPaused&&viewer.frame!==0&&!document.getElementById('skin-motion-frame');
-          viewer.setAutoRotate(false);
-          window.ST25SkinIllustrations.setMode('motion');
-          for(let i=0;i<40&&document.getElementById('skin-motion-frame')?.dataset.ready!=='true';i++)await pause(100);
+          document.getElementById('skin-workspace-tab-0').click();stage.scrollIntoView({block:'center',behavior:'instant'});
+          for(let i=0;i<60&&document.getElementById('skin-motion-frame')?.dataset.ready!=='true';i++)await pause(100);
+          results.restored=document.getElementById('skin-motion-frame')?.dataset.ready==='true';
           return results;
         })()`,awaitPromise:true,returnByValue:true});
         console.log(JSON.stringify({width,illustrations:imported.result.value}));
         if(!imported.result.value||Object.values(imported.result.value).some(value=>value!==true))errors.push('Imported illustration checks failed');
       }
-      let threeD;
-      if (process.env.ST25_3D_AUDIT) {
-        await call('Runtime.evaluate',{expression:'document.getElementById("dino-stage").scrollIntoView({block:"center"})'});
-        await pause(200);
-        for(let attempt=0;attempt<80;attempt++) {
-          const readiness=await call('Runtime.evaluate',{expression:'!!window.ST25Skin3D?.viewer || document.getElementById("skin-3d-host")?.dataset.state === "error"',returnByValue:true});
-          if(readiness.result.value)break;await pause(100);
-        }
-        const check3d=await call('Runtime.evaluate',{expression: `(async()=>{
-          const host=document.getElementById('skin-3d-host'), viewer=window.ST25Skin3D?.viewer;
-          if(${!!process.env.ST25_3D_FALLBACK}) {onHexInputChange('body','#123456');return {fallback:host.dataset.state==='error'&&!document.getElementById('dino-svg-wrapper').hidden,colors:document.getElementById('svg-body').getAttribute('fill')==='#123456',retry:!document.querySelector('.skin-3d-retry').hidden};}
-          if(!viewer) return {ready:false,status:document.querySelector('.skin-3d-status')?.textContent};
-          const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-          await pause(100); const ready=host.dataset.state==='ready'&&viewer.renderer.info.render.triangles>100;
-          onHexInputChange('body','#123456');onHexInputChange('eyes','#fedcba'); await pause(80);
-          const colors=viewer.uniforms.body.value.getHexString()==='123456'&&viewer.materials.eyes.color.getHexString()==='fedcba';
-          updateGrowth(40);const growth=Math.abs(viewer.model.scale.x-.73)<.001;updateGrowth(100);
-          document.getElementById('skin-pattern-idx').value='3';document.getElementById('skin-pattern-idx').dispatchEvent(new Event('input',{bubbles:true}));
-          const pattern=viewer.uniforms.pattern.value===3;
-          const position=viewer.camera.position.clone();viewer.canvas.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true}));
-          const keyboard=position.distanceTo(viewer.camera.position)>.05;
-          const blob=await viewer.exportPNG();const image=await createImageBitmap(blob);const pixels=document.createElement('canvas');pixels.width=image.width;pixels.height=image.height;const pixelContext=pixels.getContext('2d');pixelContext.drawImage(image,0,0);const rgba=pixelContext.getImageData(0,0,image.width,image.height).data;let opaque=0;for(let i=3;i<rgba.length;i+=4)if(rgba[i]>100)opaque++;image.close();const png=blob.type==='image/png'&&opaque>2000;
-          let contextLost=true,contextRecovered=true;
-          if(innerWidth===1440){
-            const extension=viewer.renderer.getContext().getExtension('WEBGL_lose_context');
-            if(extension){extension.loseContext();await pause(100);contextLost=viewer.contextLost&&!document.getElementById('dino-svg-wrapper').hidden;extension.restoreContext();await pause(250);contextRecovered=!viewer.contextLost&&host.dataset.state==='ready';}
-          }
-          applyPreset('golden_rice');setGender('male');
-          const species=[];let maxGeometries=0;
-          if(innerWidth===1440) for(const option of document.getElementById('dino-species-select').options){
-            changeSpecies(option.value);await pause(60);maxGeometries=Math.max(maxGeometries,viewer.renderer.info.memory.geometries);
-            species.push({name:option.value,triangles:viewer.renderer.info.render.triangles});
-          }
-          changeSpecies('Tyrannosaurus');await pause(100);
-          const beforeIdle=viewer.draws;await pause(250);const idle=viewer.draws===beforeIdle;
-          viewer.setAutoRotate(true);await pause(120);const spinning=viewer.draws>beforeIdle;
-          document.getElementById('skin-workspace-tab-1').click();await pause(100);const hiddenDraws=viewer.draws;await pause(180);const hidden=viewer.draws===hiddenDraws;
-          document.getElementById('skin-workspace-tab-0').click();document.getElementById('dino-stage').scrollIntoView({block:'center'});await pause(180);const resumed=viewer.draws>hiddenDraws;viewer.setAutoRotate(false);
-          viewer.setQuality('low');const low=viewer.renderer.getPixelRatio()<=1;viewer.setQuality('auto');
-          viewer.setView('studio');resetAllColors();document.getElementById('skin-pattern-idx').value='0';window.ST25Skin3D.sync();await pause(100);
-          return {ready,colors,growth,pattern,keyboard,png,contextLost,contextRecovered,idle,spinning,hidden,resumed,low,maxGeometries,species,drawCalls:viewer.renderer.info.render.calls,triangles:viewer.renderer.info.render.triangles};
-        })()`,awaitPromise:true,returnByValue:true});
-        const metrics3d=check3d.result.value;threeD=metrics3d;console.log(JSON.stringify({page,width,threeD:metrics3d}));
-        if(!metrics3d || Object.entries(metrics3d).some(([key,value])=>typeof value==='boolean'&&!value) || metrics3d.maxGeometries>180) errors.push('3D verification failed: '+JSON.stringify(metrics3d));
-      }
-
       if (process.env.ST25_SKIN_AUDIT) {
         const exercise=await call('Runtime.evaluate',{expression:`JSON.stringify((()=>{
           const select=document.getElementById('dino-species-select');
@@ -198,7 +152,7 @@ const server=http.createServer((req,res)=>{
         await pause(800);
       }
       const check=await call('Runtime.evaluate',{expression:'JSON.stringify({width:innerWidth,scroll:document.documentElement.scrollWidth,icons:document.querySelectorAll(".site-header .st25-line-icon").length,dock:!!document.getElementById("st25-live-dock"),hud:!!document.querySelector(".player-hud-bar"),brokenImages:[...document.images].filter(i=>i.getAttribute("src")&&i.complete&&!i.naturalWidth).map(i=>i.getAttribute("src"))})',returnByValue:true});
-      const metrics=JSON.parse(check.result.value);const result={page,width,...metrics,threeD,errors:[...errors]};results.push(result);
+      const metrics=JSON.parse(check.result.value);const result={page,width,...metrics,errors:[...errors]};results.push(result);
       console.log(JSON.stringify(result));
       if(process.env.ST25_ILLUSTRATION_AUDIT){
         await call('Runtime.evaluate',{expression:`document.getElementById('dino-stage').scrollIntoView({block:'center',behavior:'instant'})`});
