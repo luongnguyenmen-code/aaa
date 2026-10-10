@@ -49,6 +49,7 @@ const server=http.createServer((req,res)=>{
     socket.onmessage=event=>{const message=JSON.parse(event.data);if(message.method==='Runtime.exceptionThrown')errors.push(message.params.exceptionDetails.exception?.description||message.params.exceptionDetails.text);if(process.env.ST25_3D_AUDIT && message.method==='Runtime.consoleAPICalled' && message.params.type==='error' && !(process.env.ST25_3D_FALLBACK && message.params.args.some(arg=>/WebGL.*context|Error creating WebGL/.test(String(arg.value))))) errors.push(message.params.args.map(arg=>arg.value||arg.description||'').join(' '));const task=pending.get(message.id);if(task){pending.delete(message.id);message.error?task.reject(message.error):task.resolve(message.result);}};
     const call=(method,params={})=>new Promise((resolve,reject)=>{pending.set(++id,{resolve,reject});socket.send(JSON.stringify({id,method,params}));});
     await call('Runtime.enable');await call('Network.enable');
+    await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
     await call('Network.setBlockedURLs',{urls:['*islepilot.eu*','*steamcommunity.com*','*api.steampowered.com*']});
 
     const results=[];
@@ -70,6 +71,10 @@ const server=http.createServer((req,res)=>{
       await pause(2400);
       const motion=await call('Runtime.evaluate',{expression:"document.querySelector('.roll-arena').classList.contains('is-spinning') && document.getElementById('roll-track').getAnimations().length===1 && document.getElementById('roll-submit').disabled",returnByValue:true});
       if(!motion.result.value)throw Error('Spin animation or closed-round controls failed');
+      const reelBefore=await call('Runtime.evaluate',{expression:"getComputedStyle(document.getElementById('roll-track')).transform",returnByValue:true});
+      await pause(3400);
+      const reelAfter=await call('Runtime.evaluate',{expression:"getComputedStyle(document.getElementById('roll-track')).transform",returnByValue:true});
+      if(reelBefore.result.value===reelAfter.result.value)throw Error('Reel stopped instead of continuing its spin');
       const next=snapshot();next.round.id=124;next.history.unshift({id:123,result:0,color:'green',seed:'test123',commitment:'abc123'});fixtures['/api/roll/state']=next;
       await pause(2400);
       const check=await call('Runtime.evaluate',{expression:"({result:document.getElementById('roll-result').textContent.includes('123'),proof:!document.getElementById('roll-proof-data')&&!document.querySelector('.roll-proof'),demoWon:document.getElementById('roll-feedback').textContent.includes('đúng màu'),alerts:document.querySelectorAll('[role=alert]').length})",returnByValue:true});
