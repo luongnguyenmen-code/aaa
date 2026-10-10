@@ -1,5 +1,9 @@
 const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm'), assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '..');
+// The editor must remain deployable even when its entry page is accidentally removed.
+for (const file of ['skin.html', 'assets/js/skin.js', 'assets/js/skin-editor-ui.js', 'assets/css/skin-editor.css']) {
+  assert.ok(fs.existsSync(path.join(root, file)), `Skin editor: missing required file ${file}`);
+}
 let scripts = 0, json = 0, pages = 0;
 function walk(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
