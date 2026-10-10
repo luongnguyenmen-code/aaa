@@ -51,6 +51,8 @@ Chạy `npm test` để kiểm tra cú pháp, route, layout, asset, quyền truy
 
 ## Trình chỉnh Skin IslePilot
 
+`features/skin-layout.js` sắp xếp lại các field và callback của component gốc theo bố cục Skin Designer: ảnh chọn loài phía trên, màu/họa tiết bên trái, mô hình ở giữa, thông số/áp dụng/preset bên phải. Adapter JSX trong `features/islepilot-skin.js` chỉ chuyển bố cục root của SkinEditor; không tạo bộ state màu hoặc API thứ hai. Trên tablet, sidebar chuyển xuống thành một hàng; trên điện thoại, mô hình chuyển lên trước bảng màu. Glitch bị khóa cả ở component (`glitchEnabled:false`) và API (kênh RGBA chỉ nhận 0–1). Phí áp dụng vẫn là 10 Lúa.
+
 `assets/vendor/islepilot-skin/client.js` chứa các module client gốc từ bản lưu trong `reference/`. `islepilot-skin-runtime.js` nạp component độc lập; `features/islepilot-skin.js` nối phiên Steam và endpoint của portal. HTML đã lưu, dữ liệu phiên, script extension và analytics không được đưa vào trang đang chạy. `reference/` được Git bỏ qua.
 
 Model/texture nằm trong `assets/vendor/islepilot-skin/cdn/skinviewer/`, phục vụ qua `/cdn/skinviewer/`. Vercel phục vụ các file này như tài nguyên static, tách khỏi function máy chủ. Máy Node thông thường phục vụ bằng Express. `api/skin-payload.js` kiểm tra payload trước khi chuyển nguyên các kênh màu linear đến IslePilot; token vẫn ở máy chủ.

@@ -26,6 +26,11 @@
       React.useMemo(()=>warmModel(props.species,props.patternIndex||1),[props.species,props.patternIndex]);
       return React.createElement(viewer.SkinViewer3D,props);
     }});
+    const jsx=pilot.require(543355),layout=window.ST25SkinLayout(React);
+    pilot.override(543355,{...jsx,jsxs:(type,props,key)=>{
+      const tree=jsx.jsxs(type,props,key);
+      return type==='div'&&/^grid gap-4 (lg|xl):grid-cols-\[minmax/.test(props?.className||'')?layout(tree):tree;
+    }});
     const {SkinEditor}=pilot.require(2492),{PublicStringsProvider}=pilot.require(849551);
     const {Toaster}=pilot.require(360112);
     const species=['Allosaurus','Beipiaosaurus','Carnotaurus','Ceratosaurus','Deinosuchus','Diabloceratops','Dilophosaurus','Dryosaurus','Gallimimus','Herrerasaurus','Hypsilophodon','Maiasaura','Omniraptor','Pachycephalosaurus','Pteranodon','Stegosaurus','Tenontosaurus','Triceratops','Troodon','Tyrannosaurus'];
@@ -73,14 +78,10 @@
     const resize=new ResizeObserver(reportHeight);resize.observe(editor);
     // Keep the fee beside the real apply action through guest/account re-renders.
     function decorateAction(){
-      const options=editor.querySelector(':scope>div>div:nth-child(2)>div:first-child');
-      if(options&&!options.querySelector('.st25-glitch-locked')){
-        const notice=document.createElement('p');notice.className='st25-glitch-locked';notice.textContent='Glitch đã khóa';options.append(notice);
-      }
       const button=[...editor.querySelectorAll('button')].find(x=>x.textContent.trim()===strings['skin.applyInGame']||x.textContent.trim()===strings['skin.applying']);
       if(!button)return;
       button.classList.add('st25-apply-button');
-      const card=button.closest('.space-y-3');
+      const card=button.closest('.skin-actions');
       if(card&&!card.querySelector('.st25-apply-fee')){
         const fee=document.createElement('div');fee.className='st25-apply-fee';
         const label=document.createElement('span');label.textContent='Phí mỗi lần áp dụng';

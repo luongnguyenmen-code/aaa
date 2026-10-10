@@ -11,6 +11,7 @@ The current editor is the original compiled SkinEditor component (module 2492) f
 - assets/vendor/islepilot-skin/cdn/skinviewer/: 207 downloaded assets, including 22 GLB files and original texture masks.
 - assets/js/islepilot-skin-runtime.js: module-format adapter; replaces Next router and preferences with host/local equivalents.
 - src/features/islepilot-skin.js: original React editor, Vietnamese strings, Steam identity and portal API adapter.
+- src/features/skin-layout.js: species image grid and three-column layout using the original controlled fields/callbacks.
 - src/api/skin-payload.js: validates and preserves original linear color arrays before applying.
 
 Preset storage is local to this browser using the original skyclaw-skin-presets key. IslePilot cloud draft storage and job-status endpoints are not available in the current portal backend. The host uses its existing authenticated /api/skin/apply endpoint and 10 Lua fee. A queued API response does not prove the command completed in game. No live apply was executed during testing.
@@ -20,7 +21,7 @@ Preset storage is local to this browser using the original skyclaw-skin-presets 
 npm.cmd test
 node tests/islepilot-skin-browser.cjs
 
-The browser fixture blocks mutations and external IslePilot/Steam requests. It checks five widths (1440, 1024, 768, 390, 320), original color controls, linear JSON export, saving presets, Glitch layout, guest/session state and rendering without JavaScript errors. Results and screenshots are islepilot-skin-results.json and islepilot-skin-*.png.
+The browser fixture blocks mutations and external IslePilot/Steam requests. It checks five widths (1440, 1024, 768, 390, 320), original color controls, linear JSON export, saving presets, Glitch lock, guest/session state, 20 loaded species thumbnails, functional species/pattern selection, aligned panels and rendering without JavaScript errors. Results and screenshots are islepilot-skin-results.json and islepilot-skin-*.png.
 
 The regression checks validate all asset sizes, GLB headers/buffer bounds, original export/import, invalid payload rejection and forwarding the exact payload through the real controller with a fake upstream.
 

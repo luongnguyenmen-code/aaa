@@ -65,6 +65,7 @@ const server=http.createServer((req,res)=>{
       const exercise=await call('Runtime.evaluate',{expression:`(async()=>{
         const frame=document.getElementById('islepilot-skin-frame'),w=frame.contentWindow,d=w.document;
         const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+        const waitFor=async predicate=>{for(let i=0;i<120;i++){if(await predicate())return true;await pause(50);}return false;};
         let copied='';Object.defineProperty(w.navigator,'clipboard',{configurable:true,value:{writeText:async text=>{copied=text;}}});
         const button=text=>[...d.querySelectorAll('button')].find(b=>b.textContent.trim().toLowerCase()===text.toLowerCase());
         button('Sao chép JSON').click();await pause(100);
@@ -80,15 +81,25 @@ const server=http.createServer((req,res)=>{
         const saved=JSON.parse(w.localStorage.getItem('skyclaw-skin-presets')||'[]');
         const result={color:after.body[0]!==before.body[0]&&after.body[1]!==before.body[1],preset:saved.some(x=>x.name==='QA preset '+${width}),linear:after.body[0]===1,applyEnabled:!button('Áp dụng trong game').disabled};
         result.glitchLocked=!button('Glitch')&&d.body.innerText.includes('Glitch đã khóa');
-        const user=App.user;App.user=null;App.publishUser();await pause(250);
-        result.guestBlocked=button('Áp dụng trong game').disabled;
-        App.user=user;App.publishUser();await pause(250);
-        result.sessionRestored=!button('Áp dụng trong game').disabled;
+        const user=App.user;App.user=null;App.publishUser();
+        result.guestBlocked=await waitFor(()=>button('Áp dụng trong game')?.disabled);
+        App.user=user;App.publishUser();
+        result.sessionRestored=await waitFor(()=>button('Áp dụng trong game')&&!button('Áp dụng trong game').disabled);
         result.orange=w.getComputedStyle(d.documentElement).getPropertyValue('--primary').trim()==='#f6ab45';
         result.fee=d.querySelector('.st25-apply-fee')?.textContent.includes('10 Lúa')&&button('Áp dụng trong game').classList.contains('st25-apply-button');
         result.optimizedTextures=w.performance.getEntriesByType('resource').some(x=>x.name.includes('.preview.webp'));
-        const grid=d.querySelector('.st25-editor>div'),viewer=grid.children[0].getBoundingClientRect(),cards=grid.children[1].children;
-        result.evenFrames=w.innerWidth<=900||(Math.abs(viewer.bottom-cards[1].getBoundingClientRect().bottom)<2&&Math.abs(cards[2].getBoundingClientRect().bottom-cards[3].getBoundingClientRect().bottom)<2);
+        const viewer=d.querySelector('.skin-preview-column').getBoundingClientRect(),colours=d.querySelector('.skin-colours').getBoundingClientRect();
+        result.evenFrames=w.innerWidth<=760||Math.abs(viewer.bottom-colours.bottom)<2;
+        result.speciesCards=d.querySelectorAll('.skin-species-card').length===20;
+        result.speciesImages=[...d.querySelectorAll('.skin-species-card img')].every(x=>x.complete&&x.naturalWidth>0);
+        d.querySelector('[data-species="Carnotaurus"]').click();await waitFor(()=>d.querySelector('[data-species="Carnotaurus"]').getAttribute('aria-pressed')==='true');
+        button('Sao chép JSON').click();await pause(100);
+        result.speciesSelection=JSON.parse(copied).class==='BP_Carnotaurus_C'&&d.querySelector('[data-species="Carnotaurus"]').getAttribute('aria-pressed')==='true';
+        // Select the second numeric field (pattern), rather than the variation field.
+        const patternInput=d.querySelectorAll('.skin-pattern-fields input')[1];
+        Object.getOwnPropertyDescriptor(w.HTMLInputElement.prototype,'value').set.call(patternInput,'1');patternInput.dispatchEvent(new w.Event('input',{bubbles:true}));await pause(200);
+        result.pattern=await waitFor(async()=>{button('Sao chép JSON').click();await pause(50);return JSON.parse(copied).pattern===1;});
+        d.querySelector('[data-species="Tyrannosaurus"]').click();await waitFor(()=>d.querySelector('[data-species="Tyrannosaurus"]').getAttribute('aria-pressed')==='true');await pause(600);
         result.compactFrame=Math.abs(frame.clientHeight-d.getElementById('islepilot-skin-root').getBoundingClientRect().bottom-2)<4;
         return result;
       })()`,awaitPromise:true,returnByValue:true});
