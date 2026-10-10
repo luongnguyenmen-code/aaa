@@ -64,8 +64,12 @@ const server=http.createServer((req,res)=>{
         document.querySelector('input[name=color][value=green]').click();
         const green=document.getElementById('roll-quote').textContent.includes('700');
         document.getElementById('roll-submit').click();
-        return {redQuote:red,greenQuote:green,demoChoice:document.getElementById('roll-feedback').textContent.includes('Lúa'),menu:!!document.querySelector('a[href="roll.html"]'),tiles:document.querySelectorAll('.roll-tile').length===60,overflow:document.documentElement.scrollWidth>innerWidth};
+        return {redQuote:red,greenQuote:green,demoChoice:document.getElementById('roll-feedback').textContent.includes('Lúa'),menu:!!document.querySelector('a[href="roll.html"]'),tiles:document.querySelectorAll('.roll-tile').length===120,overflow:document.documentElement.scrollWidth>innerWidth};
       })()`,returnByValue:true});
+      const spin=snapshot();spin.round.closesAt=Date.now()-500;spin.round.endsAt=Date.now()+6000;spin.round.phase='spinning';fixtures['/api/roll/state']=spin;
+      await pause(2400);
+      const motion=await call('Runtime.evaluate',{expression:"document.querySelector('.roll-arena').classList.contains('is-spinning') && document.getElementById('roll-track').getAnimations().length===1 && document.getElementById('roll-submit').disabled",returnByValue:true});
+      if(!motion.result.value)throw Error('Spin animation or closed-round controls failed');
       const next=snapshot();next.round.id=124;next.history.unshift({id:123,result:0,color:'green',seed:'test123',commitment:'abc123'});fixtures['/api/roll/state']=next;
       await pause(2400);
       const check=await call('Runtime.evaluate',{expression:"({result:document.getElementById('roll-result').textContent.includes('123'),proof:!document.getElementById('roll-proof-data')&&!document.querySelector('.roll-proof'),demoWon:document.getElementById('roll-feedback').textContent.includes('đúng màu'),alerts:document.querySelectorAll('[role=alert]').length})",returnByValue:true});

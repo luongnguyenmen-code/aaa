@@ -1,31 +1,42 @@
 (() => {
   const $=id=>document.getElementById(id),names={red:'Đỏ',black:'Đen',green:'Xanh'},multipliers={red:2,black:2,green:14};
   const statuses={debit_pending:'Đang đối soát tiền gửi',placed:'Đã gửi',credit_pending:'Đang đối soát tiền trả',settled:'Đã kết thúc',review:'Cần đối soát — liên hệ hỗ trợ'};
-  let data,busy=false,reading=false,settling=false,timer,clock,offset=0,animation,animationKey='',lastHistory='',demoBet,disposed=false,lastAccount,lastOwnSignature;
+  let data,busy=false,reading=false,settling=false,timer,clock,offset=0,animation,animationKey='',trackPosition=15,lastHistory='',demoBet,disposed=false,lastAccount,lastOwnSignature;
   const esc=value=>App.escapeHTML(value),amount=()=>$('roll-amount'),color=()=>document.querySelector('input[name=color]:checked').value;
   const money=value=>Number(value).toLocaleString('vi-VN')+' Lúa';
   const order=[1,8,2,9,3,10,4,0,11,5,12,6,13,7,14];
-  $('roll-track').innerHTML=Array.from({length:60},(_,i)=>{const n=order[i%15],c=n===0?'green':n<=7?'red':'black';return `<span class="roll-tile ${c}">${n}</span>`;}).join('');
-  $('roll-track').style.transform='translateX(-35px)';
+  $('roll-track').innerHTML=Array.from({length:120},(_,i)=>{const n=order[i%15],c=n===0?'green':n<=7?'red':'black';return `<span class="roll-tile ${c}">${n}</span>`;}).join('');
+  $('roll-track').style.transform=`translateX(${-35-trackPosition*76}px)`;
   function feedback(text){$('roll-feedback').textContent=text;}
   function ownBet(){return data?.bets.find(b=>Number(b.round_id)===data.round.id);}
   function quote(){const value=Number(amount().value),total=value*multipliers[color()];$('roll-quote').textContent=`Thắng: nhận tổng ${money(total)} · Lãi ${money(total-value)}`;}
   function updateClock(){
     if(!data)return;
-    const now=Date.now()+offset,open=now<data.round.closesAt,seconds=Math.max(0,Math.ceil(((open?data.round.closesAt:data.round.endsAt)-now)/1000));
-    $('roll-clock').textContent=seconds+'s';$('roll-phase').textContent=open?'ĐANG NHẬN GỬI':'ĐANG QUAY';
+    const now=Date.now()+offset,open=now<data.round.closesAt,seconds=Math.max(0,((open?data.round.closesAt:data.round.endsAt)-now)/1000);
+    $('roll-clock').textContent=seconds.toFixed(2)+'s';$('roll-phase').textContent=open?'Chọn màu và gửi Lúa':seconds>0?'Đang quay…':'Đang nhận kết quả…';
+    document.querySelector('.roll-arena').classList.toggle('is-spinning',!open);
     const bet=ownBet(),locked=bet&&bet.status!=='placed';
     $('roll-submit').disabled=busy||!open||(!data.demo&&(!data.authenticated||locked));
     $('roll-submit').textContent=busy?'Đang xử lý…':!open?'Chờ vòng tiếp theo':data.demo?'Thử Roll miễn phí':!data.authenticated?'Liên kết Steam để gửi':bet?'Đổi màu gửi':'Gửi bằng Lúa';
     amount().disabled=busy||!!bet;
     document.querySelectorAll('[data-amount]').forEach(b=>b.disabled=busy||!!bet);
+    document.querySelectorAll('input[name=color]').forEach(x=>x.disabled=busy||!open||!!locked);
   }
   function animate(target,duration,key){
-    if(animationKey===key)return;animationKey=key;
-    const track=$('roll-track'),from=getComputedStyle(track).transform;
-    animation?.cancel();const transform=`translateX(${-35-target*76}px)`;
+    if(animationKey===key)return;const previousKey=animationKey;animationKey=key;
+    const track=$('roll-track');let from=getComputedStyle(track).transform;
+    let visiblePosition=from==='none'?trackPosition:(-35-new DOMMatrixReadOnly(from).m41)/76;
+    animation?.cancel();
+    if(key.startsWith('spin:')){trackPosition=15+trackPosition%15;from=`translateX(${-35-trackPosition*76}px)`;track.style.transform=from;}
+    else if(key.startsWith('result:')){
+      const slot=target%15;
+      if(!previousKey){target=15+slot;duration=0;}
+      else{visiblePosition=15+((visiblePosition%15)+15)%15;from=`translateX(${-35-visiblePosition*76}px)`;target=Math.ceil((visiblePosition+6-slot)/15)*15+slot;duration=Math.min(5000,Math.max(1800,(target-visiblePosition)*400));}
+    }
+    const transform=`translateX(${-35-target*76}px)`;trackPosition=target;
     track.style.transform=transform;
-    if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&!document.hidden){animation=track.animate([{transform:from==='none'?'translateX(-35px)':from},{transform}],{duration,easing:'cubic-bezier(.12,.65,.18,1)'});}
+    const arena=document.querySelector('.roll-arena');arena.classList.remove('is-revealing');
+    if(duration>0&&!matchMedia('(prefers-reduced-motion: reduce)').matches&&!document.hidden){animation=track.animate([{transform:from==='none'?'translateX(-35px)':from},{transform}],{duration,easing:key.startsWith('spin:')?'linear':'cubic-bezier(.25,.5,.5,1)'});if(key.startsWith('result:')){arena.classList.add('is-revealing');const running=animation;running.finished.catch(()=>{}).finally(()=>{if(animation===running)arena.classList.remove('is-revealing');});}}
   }
   function render(){
     $('roll-notice').textContent=data.message;$('roll-round').textContent=data.round.id;
@@ -34,14 +45,15 @@
     if(historyKey!==lastHistory){
       lastHistory=historyKey;
       $('roll-history').innerHTML=data.history.map(x=>`<span class="roll-dot ${x.color}" title="Vòng ${x.id}: ${names[x.color]} ${x.result}">${x.result}</span>`).join('');
+      $('roll-counts').innerHTML=['red','black','green'].map(c=>`<span><i class="roll-dot ${c}" style="width:6px;height:6px"></i>${data.history.filter(x=>x.color===c).length}</span>`).join('');
       const last=data.history[0];if(last){
         $('roll-result').textContent=`Vòng ${last.id}: ${names[last.color]} · Số ${last.result}`;
-        animate(30+order.indexOf(last.result),900,'result:'+last.id);
+        animate(90+order.indexOf(last.result),1800,'result:'+last.id);
       }
       if(demoBet&&last?.id===demoBet.roundId){const won=last.color===demoBet.color;feedback(won?'Thử miễn phí: bạn chọn đúng màu! Không cộng Lúa.':'Thử miễn phí: chưa trúng màu. Không trừ Lúa.');demoBet=null;}
     }
-    if(data.round.phase==='spinning')animate(45,Math.max(200,data.round.endsAt-Date.now()-offset),'spin:'+data.round.id);
-    $('roll-totals').innerHTML=['red','black','green'].map(c=>{const total=data.totals.find(x=>x.color===c)||{amount:0,players:0};return `<div class="roll-total"><span class="roll-dot ${c}">${multipliers[c]}x</span><div>${names[c]}<small>${total.players} người chơi</small></div><strong>${money(total.amount)}</strong></div>`;}).join('');
+    if(data.round.phase==='spinning')animate(75,Math.max(200,data.round.endsAt-Date.now()-offset+2500),'spin:'+data.round.id);
+    $('roll-totals').innerHTML=['red','green','black'].map(c=>{const total=data.totals.find(x=>x.color===c)||{amount:0,players:0},own=ownBet();return `<div class="roll-total ${c}"><div class="roll-total-head"><span class="roll-dot ${c}"></span><span>${names[c]}</span><small>${total.players}</small><strong>${money(total.amount)}</strong></div>${own?.color===c?`<div class="roll-total-own"><span>Bạn · ${esc(statuses[own.status])}</span><b>${money(own.amount)}</b></div>`:`<p class="roll-total-empty">${total.players?'Đã có lượt gửi trong vòng':'Chưa có lượt gửi'}</p>`}</div>`;}).join('');
     const bet=ownBet();
     $('roll-own-bet').textContent=bet?`Bạn gửi ${money(bet.amount)} vào ${names[bet.color]} · ${statuses[bet.status]}`:'Bạn chưa gửi vòng này.';
     const signature=bet?JSON.stringify([bet.id,bet.amount,bet.color]):'';
@@ -84,13 +96,14 @@
     }catch(e){feedback(e.message);}finally{busy=false;updateClock();refresh();}
   });
   amount().addEventListener('input',quote);document.querySelectorAll('input[name=color]').forEach(x=>x.addEventListener('change',quote));
+  document.querySelectorAll('.roll-choice').forEach(label=>label.addEventListener('click',()=>queueMicrotask(()=>{if(!$('roll-submit').disabled)$('roll-form').requestSubmit();})));
   document.querySelectorAll('[data-amount]').forEach(button=>button.addEventListener('click',()=>{
     const value=Number(amount().value)||1,cap=Math.min(1000,Math.max(1,Math.floor(data?.balance||1000)));
-    amount().value=button.dataset.amount==='half'?Math.max(1,Math.floor(value/2)):button.dataset.amount==='double'?Math.min(cap,value*2):cap;quote();
+    amount().value=button.dataset.amount==='half'?Math.max(1,Math.floor(value/2)):button.dataset.amount==='double'?Math.min(cap,value*2):button.dataset.amount==='max'?cap:Number(button.dataset.amount);quote();
   }));
   const unsubscribe=App.subscribeUser(user=>{const account=user?.steam_id||user?.steamId||null;if(account!==lastAccount){lastAccount=account;data=null;$('roll-submit').disabled=true;refresh();}});
-  function visibility(){clearTimeout(timer);clearInterval(clock);animation?.cancel();animationKey='';if(!document.hidden&&!disposed){clock=setInterval(updateClock,250);refresh();}}
+  function visibility(){clearTimeout(timer);clearInterval(clock);animation?.cancel();animationKey='';if(!document.hidden&&!disposed){clock=setInterval(updateClock,50);refresh();}}
   document.addEventListener('visibilitychange',visibility);
   window.addEventListener('pagehide',()=>{disposed=true;clearTimeout(timer);clearInterval(clock);animation?.cancel();unsubscribe();document.removeEventListener('visibilitychange',visibility);},{once:true});
-  clock=setInterval(updateClock,250);refresh();
+  clock=setInterval(updateClock,50);refresh();
 })();
