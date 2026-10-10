@@ -17,7 +17,7 @@ function get(url) {
 (async () => {
   await new Promise(resolve=>server.once('listening',resolve));
   const routes=app._router.stack.filter(layer=>layer.route && typeof layer.route.path==='string' && layer.route.path.startsWith('/api/'));
-  assert.equal(routes.length,71,'All existing API handlers must be registered');
+  assert.equal(routes.length,74,'All existing API handlers and three Roll routes must be registered');
   for (const route of routes) assert.ok(Object.values(API.routes).includes(route.route.path),route.route.path);
   assert.equal(PilotAPI.playerGarage('76561198000000001'),'/players/76561198000000001/garage');
   assert.equal(API.url(API.routes.skinInfo,{steamId:'123'}),'/api/skin/info?steamId=123');
@@ -50,5 +50,5 @@ function get(url) {
   for(const url of ['/src/core/server-config.json','/src/core/auth.js','/src/models/data/portal-data.json','/src/pages/index.html','/assets/js/api/islepilot-client.js','/assets/js/api/upstream-endpoints.js']) {
     assert.equal((await get(url)).status,404,url);
   }
-  console.log(`PASS architecture: ${pages} rendered pages, ${assets.size} public resources, 71 API routes, canonical URLs and private source files`);
+  console.log(`PASS architecture: ${pages} rendered pages, ${assets.size} public resources, 74 API routes, canonical URLs and private source files`);
 })().catch(error=>{console.error(error);process.exitCode=1;}).finally(()=>server.close());

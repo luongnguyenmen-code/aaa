@@ -49,6 +49,8 @@ Chạy `npm start` hoặc `node server.js` từ thư mục dự án `aaa`. Giao 
 
 Chạy `npm test` để kiểm tra cú pháp, route, layout, asset, quyền truy cập và chức năng. Browser audit dùng dữ liệu giả lập và chặn giao dịch thật.
 
+Roll nằm ở `pages/roll.html`, `features/roll.js`, `controllers/roll.js`, `services/roll*.js` và `models/roll-store.js`. Quy tắc nằm trong `core/roll.js`; PostgreSQL lưu dữ liệu bằng `models/roll-schema.sql`. Roll có mục menu riêng “Lên Voi hoặc Đi Ngủ”, dùng ba endpoint `rollState`, `rollBet`, `rollSettle`; không bật lại các trò casino cũ. Thiếu `ROLL_DATABASE_URL` hoặc chưa bật `ROLL_ENABLED=true` thì chỉ cho thử miễn phí. Xem [hướng dẫn Roll](../HUONG_DAN_ROLL.md) để bật cược Lúa trên Vercel và đối soát giao dịch chưa xác nhận.
+
 Các trang dùng `App.readJSON` hoặc `App.readResponse` cho API đọc: request trùng đang chạy được gộp, thời hạn chờ 10 giây bao gồm tải body. `readResponse` giữ HTTP status và cung cấp body riêng cho mỗi caller. POST vẫn chạy riêng, không được gộp hoặc tự gửi lại. Client IslePilot phía server gộp GET thông thường trong cùng tiến trình; GET yêu cầu dữ liệu mới (`bypassCache`) chạy độc lập. Cache được phân biệt theo cấu hình upstream, và `clearPlayerCache` vô hiệu cả cache lẫn khả năng ghi cache của GET cũ đang chạy. Gara và Skin gọi helper này sau thao tác thay đổi. Cơ chế này không gộp request giữa các instance Vercel khác nhau.
 
 ## Trình chỉnh Skin IslePilot

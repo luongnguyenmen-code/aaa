@@ -18,4 +18,5 @@ module.exports = (app, context) => {
   require('../controllers/crates')(app, context);
   require('../controllers/leaderboard')(app, context);
   require('../controllers/casino')(app, context);
+  require('../controllers/roll')(app, context);
 };

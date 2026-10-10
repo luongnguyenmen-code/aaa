@@ -1,0 +1,74 @@
+[
+  {
+    "width": 1440,
+    "exercise": {
+      "redQuote": true,
+      "greenQuote": true,
+      "demoChoice": true,
+      "menu": true,
+      "tiles": true,
+      "overflow": false
+    },
+    "checks": {
+      "result": true,
+      "proof": true,
+      "demoWon": true,
+      "alerts": 0
+    },
+    "errors": []
+  },
+  {
+    "width": 768,
+    "exercise": {
+      "redQuote": true,
+      "greenQuote": true,
+      "demoChoice": true,
+      "menu": true,
+      "tiles": true,
+      "overflow": false
+    },
+    "checks": {
+      "result": true,
+      "proof": true,
+      "demoWon": true,
+      "alerts": 0
+    },
+    "errors": []
+  },
+  {
+    "width": 390,
+    "exercise": {
+      "redQuote": true,
+      "greenQuote": true,
+      "demoChoice": true,
+      "menu": true,
+      "tiles": true,
+      "overflow": false
+    },
+    "checks": {
+      "result": true,
+      "proof": true,
+      "demoWon": true,
+      "alerts": 0
+    },
+    "errors": []
+  },
+  {
+    "width": 320,
+    "exercise": {
+      "redQuote": true,
+      "greenQuote": true,
+      "demoChoice": true,
+      "menu": true,
+      "tiles": true,
+      "overflow": false
+    },
+    "checks": {
+      "result": true,
+      "proof": true,
+      "demoWon": true,
+      "alerts": 0
+    },
+    "errors": []
+  }
+]

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="vi"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lên Voi hoặc Đi Ngủ — Roll ST25</title>
+<meta name="description" content="Roll ST25: chọn đỏ, đen hoặc xanh trong vòng chơi chung. Cược và trả thưởng bằng Lúa qua IslePilot.">
+<link rel="icon" href="assets/imges/st25-favicon.png">
+<link rel="stylesheet" href="assets/css/style.css"><link rel="stylesheet" href="assets/css/redesign.css"><link rel="stylesheet" href="assets/css/buttons.css"><link rel="stylesheet" href="assets/css/fonts.css"><link rel="stylesheet" href="assets/css/motion.css"><link rel="stylesheet" href="assets/css/portal-layout.css"><link rel="stylesheet" href="assets/css/logo.css"><link rel="stylesheet" href="assets/css/roll.css?v=20261010-roll1">
+<script src="assets/js/core.js"></script><script src="assets/js/api/endpoints.js"></script><script src="assets/js/ui.js" defer></script><script src="assets/js/motion.js" defer></script>
+</head><body class="st25-portal portal-roll">
+<!-- include:header -->
+<main class="container roll-page">
+  <div class="roll-heading"><div><p class="roll-eyebrow">MINIGAME ST25 · ROLL</p><h1>Lên Voi hoặc Đi Ngủ</h1><p>Chọn màu. Chờ vòng quay. Nhận Lúa khi thắng.</p></div><div class="roll-wallet"><span>Ví Lúa trong game</span><strong id="roll-balance">—</strong><a href="lien-ket-steam.html" id="roll-login">Liên kết Steam</a></div></div>
+  <p id="roll-notice" class="roll-notice" role="status">Đang kết nối Roll…</p>
+  <section class="roll-arena" aria-label="Vòng quay Roll">
+    <div class="roll-round-meta"><span>Vòng <strong id="roll-round">—</strong></span><span id="roll-phase">Đang tải</span><span class="roll-clock" id="roll-clock" aria-label="Thời gian còn lại">—</span></div>
+    <div class="roll-track-window"><span class="roll-marker" aria-hidden="true"></span><div id="roll-track" class="roll-track" aria-hidden="true"></div></div>
+    <p id="roll-result" class="roll-result" aria-live="polite">Mỗi vòng 30 giây · Đặt cược trong 20 giây đầu</p>
+    <div id="roll-history" class="roll-history" aria-label="Kết quả các vòng gần đây"></div>
+  </section>
+  <div class="roll-workspace">
+    <section class="roll-panel"><h2>Đặt cược</h2>
+      <form id="roll-form"><label for="roll-amount">Số Lúa <span>1–1.000 mỗi vòng</span></label><input id="roll-amount" type="number" min="1" max="1000" step="1" value="10" inputmode="numeric" required>
+      <div class="roll-amount-tools"><button type="button" data-amount="half">½</button><button type="button" data-amount="double">x2</button><button type="button" data-amount="max">Tối đa</button></div>
+      <fieldset class="roll-colors"><legend>Chọn màu</legend>
+        <label class="roll-choice red"><input type="radio" name="color" value="red" checked><span>Đỏ <strong>x2</strong><small>46,67%</small></span></label>
+        <label class="roll-choice black"><input type="radio" name="color" value="black"><span>Đen <strong>x2</strong><small>46,67%</small></span></label>
+        <label class="roll-choice green"><input type="radio" name="color" value="green"><span>Xanh <strong>x14</strong><small>6,67%</small></span></label>
+      </fieldset>
+      <p id="roll-quote" class="roll-quote">Thắng: nhận tổng 20 Lúa · Lãi 10 Lúa</p>
+      <button id="roll-submit" class="btn btn-primary" type="submit" disabled>Đang kết nối…</button>
+      <p id="roll-feedback" role="status" aria-live="polite"></p></form>
+      <p class="roll-muted">Mỗi vòng một mức cược. Có thể đổi màu trước khi đóng cược. Tiền trả đã bao gồm tiền cược.</p>
+    </section>
+    <section class="roll-panel"><h2>Cược trong vòng</h2><div id="roll-totals" class="roll-totals"></div><p id="roll-own-bet" class="roll-muted">Bạn chưa đặt cược vòng này.</p>
+      <details class="roll-rules"><summary>Luật chơi và xác suất</summary><p>15 ô: xanh số 0, đỏ số 1–7, đen số 8–14. Đỏ/đen trả tổng x2; xanh trả tổng x14. Thua mất số Lúa đã cược. Tỷ lệ này áp dụng độc lập cho từng vòng.</p><p>Lợi thế nhà cái theo mức trả thưởng: 6,67%. Không có jackpot hoặc phí phụ.</p><p>Thử miễn phí không trừ hoặc cộng Lúa. Kết quả thử chỉ minh họa vòng quay.</p></details>
+    </section>
+  </div>
+  <section class="roll-panel"><h2>Lịch sử cược của bạn</h2><div class="roll-table-scroll"><table class="roll-table"><thead><tr><th>Vòng</th><th>Màu</th><th>Cược</th><th>Tiền trả</th><th>Trạng thái</th></tr></thead><tbody id="roll-my-history"><tr><td colspan="5">Liên kết Steam để xem lịch sử cược.</td></tr></tbody></table></div></section>
+  <details class="roll-panel roll-proof"><summary>Kiểm chứng kết quả vòng quay</summary><p>Máy chủ công bố SHA-256 của seed trước khi nhận cược và mở seed sau khi vòng kết thúc. Kết quả dùng SHA-256(seed + “:roll:” + nonce), lấy số 32-bit đầu tiên hợp lệ rồi chia dư 15.</p><label for="roll-commitment">Cam kết vòng hiện tại</label><input id="roll-commitment" readonly><label for="roll-proof-data">Seed và kết quả vòng đã kết thúc gần nhất</label><textarea id="roll-proof-data" readonly rows="4"></textarea></details>
+</main>
+<!-- include:footer -->
+<script src="assets/js/app.js?v=20261010-roll1"></script><script src="assets/js/features/roll.js?v=20261010-roll1"></script>
+</body></html>
