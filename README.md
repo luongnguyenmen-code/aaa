@@ -85,7 +85,7 @@ the-isle-portal/
 Chạy `npm test` để kiểm tra mã nguồn, backend và frontend. Xem [kết quả và cấu hình triển khai](tests/AUDIT.md), đặc biệt `SESSION_SECRET` khi triển khai production/Vercel.
 ## Skin Studio
 
-Trình chỉnh skin dùng ảnh chuyển động 2D cho Triceratops, Troodon và Tyrannosaurus, đồng bộ bảng màu theo vùng gần đúng trên ảnh. Các loài khác dùng minh họa SVG. Có thể thiết kế khi chưa đăng nhập; thao tác áp dụng vào game vẫn cần Steam.
+Trình chỉnh skin dùng component IslePilot gốc từ bản trang người dùng cung cấp, với model/texture và phân vùng màu gốc. Có chọn loài, màu, giới tính, họa tiết, Glitch, nhập/xuất JSON và preset lưu trên trình duyệt. Đăng nhập Steam và áp dụng skin đi qua API máy chủ ST25.
 
 Xem [tính năng và cách kiểm tra](tests/SKIN_PREVIEW.md).
 ## ?? C?U TR?C TH? M?C

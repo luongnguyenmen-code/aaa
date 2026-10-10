@@ -18,7 +18,7 @@ Luồng giao diện: `pages → views/render.js → partials → HTML trả về
 | `middleware/` | Kiểm tra nguồn yêu cầu, phiên, giới hạn thao tác đồng thời và xử lý async |
 | `routes/` | Đăng ký API và URL trang công khai |
 | `pages/` | Toàn bộ trang HTML; `islepilot_*` là các bản HTML tham khảo đã có |
-| `pages/illustrations/` | Các trang minh họa khủng long nhập từ `DINO HTML`, phục vụ qua `/illustrations/` |
+| `pages/skin-editor.html` | Trang chứa component chỉnh Skin IslePilot, nhúng vào `/skin.html` |
 | `views/partials/` | Header/footer dùng chung |
 | `views/render.js` | Ghép partial và giải quyết placeholder API |
 | `features/` | JavaScript chức năng đã tách từ các trang HTML |
@@ -48,3 +48,11 @@ Chạy `npm start` hoặc `node server.js` từ thư mục dự án `aaa`. Giao 
 `.env` đặt tại thư mục `aaa`. Biến môi trường hosting/shell được ưu tiên khi nạp `.env`; `ISLEPILOT_API_BASE_URL` có thể ghi đè địa chỉ upstream. Token và `SESSION_SECRET` thuộc cấu hình server, không đưa vào `core/web.js` hoặc API đường dẫn công khai.
 
 Chạy `npm test` để kiểm tra cú pháp, route, layout, asset, quyền truy cập và chức năng. Browser audit dùng dữ liệu giả lập và chặn giao dịch thật.
+
+## Trình chỉnh Skin IslePilot
+
+`assets/vendor/islepilot-skin/client.js` chứa các module client gốc từ bản lưu trong `reference/`. `islepilot-skin-runtime.js` nạp component độc lập; `features/islepilot-skin.js` nối phiên Steam và endpoint của portal. HTML đã lưu, dữ liệu phiên, script extension và analytics không được đưa vào trang đang chạy. `reference/` được Git bỏ qua.
+
+Model/texture nằm trong `assets/vendor/islepilot-skin/cdn/skinviewer/`, phục vụ qua `/cdn/skinviewer/`. Vercel phục vụ các file này như tài nguyên static, tách khỏi function máy chủ. Máy Node thông thường phục vụ bằng Express. `api/skin-payload.js` kiểm tra payload trước khi chuyển nguyên các kênh màu linear đến IslePilot; token vẫn ở máy chủ.
+
+Kiểm tra trình duyệt: `node tests/islepilot-skin-browser.cjs`. Xem [hướng dẫn Skin](../tests/SKIN_PREVIEW.md).

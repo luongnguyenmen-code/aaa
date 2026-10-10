@@ -3,20 +3,13 @@ const fs = require('node:fs');
 const express = require('express');
 const Core = require('../core/config');
 const {renderPage} = require('../views/render');
-const {renderIllustration} = require('../views/illustration');
 
 module.exports = function registerPages(app, {getConfig}) {
-  app.get('/illustrations/:page', (req, res, next) => {
-    try {
-      const html=renderIllustration(req.params.page, req.query.embed==='1');
-      if (html===null) return next();
-      res.type('html').send(html);
-    } catch (error) { next(error); }
-  });
   app.get('/assets/js/core.js', (req, res) => res.sendFile(path.join(Core.root, 'src/core/web.js')));
   app.get('/assets/js/api/endpoints.js', (req, res) => res.sendFile(path.join(Core.root, 'src/api/endpoints.js')));
   app.use('/assets/js/features', express.static(Core.featuresDir, {dotfiles:'deny', index:false}));
   app.use('/assets', express.static(Core.assetsDir, {dotfiles:'deny', index:false}));
+  app.use('/cdn/skinviewer', express.static(path.join(Core.assetsDir,'vendor/islepilot-skin/cdn/skinviewer'), {dotfiles:'deny',index:false}));
   app.get(['/', '/:page', '/pages/:page'], (req, res, next) => {
     const page = req.params.page || 'index.html';
     if (!/^[a-zA-Z0-9_-]+\.html$/.test(page)) return next();

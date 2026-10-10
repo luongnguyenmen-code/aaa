@@ -1,0 +1,16 @@
+html,body{margin:0;background:#090b0d;color:#ededed;font-family:Arial,sans-serif}
+body{overflow-wrap:anywhere}
+.st25-editor{padding:8px}
+.st25-editor :is(input,select,textarea){min-width:0;max-width:100%}
+.st25-editor .grid>*{min-width:0}
+.st25-editor button{max-width:100%}
+.st25-editor [role=alert]{overflow-wrap:anywhere}
+.st25-editor>div>div:first-child{height:560px!important;min-height:360px!important}
+.st25-editor>div>div:nth-child(2){max-height:none!important;overflow:visible!important}
+#skin-client-status{padding:16px;color:#b7c4d0}
+@media(max-width:700px){.st25-editor>div>div:first-child{height:400px!important}}
+@media(max-width:480px){
+  .st25-editor .flex:has(>input[aria-label$=" X"]){display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+  .st25-editor .flex:has(>input[aria-label$=" X"])>span{grid-column:1/-1;width:auto}
+  .st25-editor .flex:has(>input[aria-label$=" X"])>input.w-20{grid-column:span 3;width:100%}
+}

@@ -1,6 +1,6 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'..');let pages=0,scripts=0;
-for(const name of fs.readdirSync(path.join(root,'src/pages')).filter(name=>name.endsWith('.html')&&!name.startsWith('islepilot_'))){
+for(const name of fs.readdirSync(path.join(root,'src/pages')).filter(name=>name.endsWith('.html')&&!name.startsWith('islepilot_')&&name!=='skin-editor.html')){
   const html=require('./helpers/source.cjs').renderPage(name);
   assert.ok(html.includes('assets/css/redesign.css'),name);
   assert.ok(html.includes('assets/js/ui.js'),name);

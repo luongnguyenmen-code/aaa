@@ -8,11 +8,23 @@
         "includeFiles": [
           "src/**",
           "assets/**"
-        ]
+        ],
+        "excludeFiles": "assets/vendor/islepilot-skin/cdn/**"
       }
+    },
+    {
+      "src": "assets/vendor/islepilot-skin/cdn/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "/cdn/skinviewer/(.*)",
+      "dest": "/assets/vendor/islepilot-skin/cdn/skinviewer/$1"
+    },
+    {
+      "handle": "filesystem"
+    },
     {
       "src": "/(.*)",
       "dest": "/server.js"

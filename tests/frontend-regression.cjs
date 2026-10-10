@@ -156,23 +156,6 @@ module.exports = async function run(root = path.resolve(__dirname, '..')) {
     const a=e.context.subject(10); await e.context.subject(10); assert.equal(calls,1);
     gate.resolve({ok:false,json:async()=>({error:'QA denied'})}); await a;
   });
-  await test('Skin JSON copy handles unavailable, denied and working clipboard', async () => {
-    const e = environment();
-    const notices = [];
-    e.context.App = { showToast: (message, type) => notices.push(type) };
-    e.context.navigator = {};
-    const copy = script(e, 'assets/js/skin.js', 'copySkinJson');
-    await copy();
-    assert.equal(notices.pop(), 'error');
-    e.context.navigator.clipboard = { writeText: async () => { throw new Error('Permission denied'); } };
-    await copy();
-    assert.equal(notices.pop(), 'error');
-    let copied;
-    e.context.navigator.clipboard.writeText = async text => { copied = JSON.parse(text); };
-    await copy();
-    assert.equal(notices.pop(), 'success');
-    assert.equal(Object.keys(copied.colors).length, 10);
-  });
   return results;
 };
 if (require.main === module) module.exports().then(r=>console.log(`PASS ${r.length} regressions\n`+r.join('\n'))).catch(e=>{console.error(e);process.exitCode=1;});

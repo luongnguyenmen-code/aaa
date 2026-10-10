@@ -1,5 +1,6 @@
 const PilotAPI = require('../api/upstream-endpoints');
 const ST25API = require('../api/endpoints');
+const {validateSkinPayload} = require('../api/skin-payload');
 // skin feature HTTP handlers. Dependencies are supplied by the application.
 module.exports = function register(app, context) {
   const {getPortalData, savePortalData, callIslePilot, apiCache, getRequestSteamId, getAdminSteamId, getLivePlayerBalance, modifyLivePlayerBalance, hexToLinear} = context;
@@ -79,6 +80,11 @@ app.post(ST25API.routes.skinApply, async (req, res) => {
     return res.status(401).json({ error: "Vui lòng đăng nhập Steam để đổi màu skin!" });
   }
 
+  let importedPayload=null;
+  if(req.body.payload!==undefined){
+    try{importedPayload=validateSkinPayload(req.body.payload);}catch(error){return res.status(400).json({error:error.message});}
+  }
+
   // 1. Kiểm tra số dư Lúa (Phí 10 Lúa để đổi màu da trực tiếp)
   const SKIN_APPLY_COST = 10;
   const curBal = await getLivePlayerBalance(steamId);
@@ -96,14 +102,14 @@ app.post(ST25API.routes.skinApply, async (req, res) => {
     });
   }
 
-  const activeSpecies = species || pInfo.species;
+  const activeSpecies = importedPayload ? importedPayload.class.slice(3,-2) : species || pInfo.species;
   const isFemale = female !== undefined 
     ? Boolean(female) 
     : (gender ? (gender === 'female' || gender === 'cai') : (pInfo.female === true));
 
   // Lập payload chuẩn IslePilot Unreal Engine Blueprint đầy đủ 10 kênh màu và cấu hình
   const cleanSpecies = activeSpecies.replace(/[^a-zA-Z0-9]+/g, "");
-  const payload = {
+  const payload = importedPayload || {
     class: `BP_${cleanSpecies}_C`,
     female: isFemale,
     variation: parseInt(variation) || 0,
