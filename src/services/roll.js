@@ -1,7 +1,11 @@
 const crypto=require('node:crypto'),engine=require('./roll-engine'),rules=require('../core/roll'),defaultStore=require('../models/roll-store');
 const error=(message,status=400)=>Object.assign(Error(message),{status});
 module.exports=function createRollService(bank,store=defaultStore){
-  const ready=()=>rules.enabled()&&!!process.env.ROLL_DATABASE_URL;
+  const ready=()=>rules.enabled()&&!!process.env.ROLL_DATABASE_URL&&typeof process.env.SESSION_SECRET==='string'&&process.env.SESSION_SECRET.length>=32;
+  async function requireReconciled(client,steamId){
+    const unresolved=await client.query("SELECT id FROM st25_roll_bets WHERE steam_id=$1 AND status IN ('review','debit_pending','credit_pending') LIMIT 1",[steamId]);
+    if(unresolved.rows.length)throw error('Ví Lúa có giao dịch cần đối soát. Liên hệ hỗ trợ trước khi chơi tiếp.',409);
+  }
   async function current(now=Date.now(),client){
     const round=engine.makeRound(now);
     return process.env.ROLL_DATABASE_URL?store.ensureRound(round,client):engine.makeRound(now,crypto.createHash('sha256').update('st25-free-preview:'+round.id).digest('hex'));
@@ -10,7 +14,7 @@ module.exports=function createRollService(bank,store=defaultStore){
     // Commit the intent BEFORE sending to IslePilot. Uncertain responses are never retried automatically.
     let response;
     try{response=await bank.change(bet.steam_id,amount,'st25_roll_'+kind+'_'+bet.id);}catch{}
-    if(!response?.ok||!Number.isFinite(response.balance)||response.applied===false){
+    if(!response?.ok||!Number.isFinite(response.balance)||response.balance<0||response.applied===false){
       await client.query("UPDATE st25_roll_bets SET status='review',updated_at=$2 WHERE id=$1",[bet.id,Date.now()]);
       throw error('IslePilot chưa xác nhận giao dịch. Gửi được giữ để đối soát; không bấm gửi lại.',503);
     }
@@ -46,6 +50,7 @@ module.exports=function createRollService(bank,store=defaultStore){
     return store.withPlayer(steamId,async client=>{
       const replay=await client.query('SELECT b.* FROM st25_roll_commands c JOIN st25_roll_bets b ON b.id=c.bet_id WHERE c.steam_id=$1 AND c.request_id=$2',[steamId,input.requestId]);
       if(replay.rows[0])return {bet:replay.rows[0],replayed:true};
+      await requireReconciled(client,steamId);
       const now=Date.now(),round=await current(now,client);
       if(input.roundId!==round.id||now>=round.closesAt)throw error('Vòng gửi đã đóng. Chờ vòng tiếp theo.',409);
       const existing=(await client.query('SELECT * FROM st25_roll_bets WHERE steam_id=$1 AND round_id=$2',[steamId,round.id])).rows[0];
@@ -60,7 +65,7 @@ module.exports=function createRollService(bank,store=defaultStore){
           await client.query('COMMIT');return {bet:changed};
         }catch(e){await client.query('ROLLBACK');throw e;}
       }
-      const balance=await bank.balance(steamId);
+      const balance=await bank.balance(steamId,true);
       if(!Number.isFinite(balance)||balance<input.amount)throw error('Không đủ Lúa trong ví game.',400);
       if(Date.now()>=round.closesAt)throw error('Vòng gửi đã đóng.',409);
       const id=crypto.randomUUID();
@@ -76,6 +81,7 @@ module.exports=function createRollService(bank,store=defaultStore){
     if(!steamId)throw error('Vui lòng liên kết Steam.',401);
     if(!process.env.ROLL_DATABASE_URL)throw error('Roll chưa kết nối dữ liệu.',503);
     return store.withPlayer(steamId,async client=>{
+      await requireReconciled(client,steamId);
       const due=(await client.query("SELECT b.*,r.result FROM st25_roll_bets b JOIN st25_roll_rounds r ON r.id=b.round_id WHERE b.steam_id=$1 AND b.status='placed' AND r.ends_at<=$2 ORDER BY b.round_id LIMIT 1",[steamId,Date.now()])).rows;
       const settled=[];
       for(const row of due){

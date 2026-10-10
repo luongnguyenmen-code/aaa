@@ -1,9 +1,9 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const {newDb}=require('pg-mem'),engine=require('../src/services/roll-engine'),rules=require('../src/core/roll');
 const createService=require('../src/services/roll');
-const originalNow=Date.now,originalEnv={url:process.env.ROLL_DATABASE_URL,enabled:process.env.ROLL_ENABLED};
+const originalNow=Date.now,originalEnv={url:process.env.ROLL_DATABASE_URL,enabled:process.env.ROLL_ENABLED,secret:process.env.SESSION_SECRET};
 let now=600005000;Date.now=()=>now;
-process.env.ROLL_DATABASE_URL='postgres://fixture:fixture@offline.invalid/roll';process.env.ROLL_ENABLED='true';
+process.env.ROLL_DATABASE_URL='postgres://fixture:fixture@offline.invalid/roll';process.env.ROLL_ENABLED='true';process.env.SESSION_SECRET='offline-roll-test-secret-32-characters';
 const sid='76561198000000001',other='76561198000000002';
 function fixture(){
   const db=newDb(),locks=new Set();
@@ -28,7 +28,9 @@ const input=(roundId,color='red',amount=10)=>({roundId,color,amount,requestId:cr
   assert.equal(round.commitment,crypto.createHash('sha256').update(round.seed).digest('hex'));
   assert(!('seed' in engine.publicRound(round,round.closesAt)));assert(!('result' in engine.publicRound(round,round.closesAt-1)));assert.equal(engine.publicRound(round,round.closesAt).result,round.result);assert.equal(round.closesAt-round.startsAt,15000);assert.equal(round.endsAt-round.closesAt,8000);
   assert.equal(engine.publicRound(round,round.endsAt).result,round.result);
-  for(const body of [input(-1),input(round.id,'purple'),input(round.id,'red',0),input(round.id,'red',1001),input(round.id,'red',1.5),{...input(round.id),requestId:'invalid'}])assert.throws(()=>engine.validateBet(body));
+  for(const body of [input(-1),input(round.id,'purple'),input(round.id,'red',0),input(round.id,'red',501),input(round.id,'red',1.5),{...input(round.id),requestId:'invalid'},{...input(round.id),requestId:'-'.repeat(36)},input(round.id,{toString:()=> 'red'})])assert.throws(()=>engine.validateBet(body));
+  assert.equal(rules.maxBet,500);assert.equal(engine.payout(500,'green',0),7000);
+  assert.doesNotThrow(()=>engine.validateBet(input(round.id,'green',500)));
   const f=fixture();await f.store.database();
   let seed='winning';while(engine.draw(seed)<1||engine.draw(seed)>7)seed+='x';
   const winningRound=await f.store.ensureRound(engine.makeRound(now,seed)),request=input(winningRound.id);
@@ -53,12 +55,23 @@ const input=(roundId,color='red',amount=10)=>({roundId,color,amount,requestId:cr
   const payoutFailure=fixture();const payoutRound=await payoutFailure.store.ensureRound(engine.makeRound(now+5000,seed));
   now+=5000;await payoutFailure.service.bet(sid,input(payoutRound.id));payoutFailure.fail();now=payoutRound.endsAt;
   await assert.rejects(payoutFailure.service.settle(sid),e=>e.status===503);
-  await payoutFailure.service.settle(sid);assert.equal(payoutFailure.calls.length,2);
+  await assert.rejects(payoutFailure.service.settle(sid),e=>e.status===409);assert.equal(payoutFailure.calls.length,2);
   assert.equal((await payoutFailure.service.state(sid)).bets[0].status,'review');
   now+=5000;const failed=fixture();failed.fail();const next=await failed.store.ensureRound(engine.makeRound(now));
   const ambiguous=input(next.id);await assert.rejects(failed.service.bet(sid,ambiguous),e=>e.status===503);
   await failed.service.bet(sid,ambiguous);assert.equal(failed.calls.length,1);
   assert.equal((await failed.service.state(sid)).bets[0].status,'review');
+  const unresolvedTime=now;now=next.endsAt+1000;
+  await assert.rejects(failed.service.bet(sid,input(engine.makeRound(now).id)),e=>e.status===409);
+  await assert.rejects(failed.service.settle(sid),e=>e.status===409);
+  assert.equal(failed.calls.length,1);now=unresolvedTime;
+  const edge=fixture(),edgeRound=engine.makeRound(now);let edgeMutations=0;
+  const delayed=createService({balance:async(id,fresh)=>{assert.equal(fresh,true);now=edgeRound.closesAt;return 100;},change:async()=>{edgeMutations++;}},edge.store);
+  await assert.rejects(delayed.bet(sid,input(edgeRound.id)),e=>e.status===409);
+  assert.equal(edgeMutations,0);now=unresolvedTime;
+  const noAuthSecret=process.env.SESSION_SECRET;delete process.env.SESSION_SECRET;
+  await assert.rejects(edge.service.bet(sid,input(edgeRound.id)),e=>e.status===503);
+  process.env.SESSION_SECRET=noAuthSecret;
   // Distributed database locks reject a second player operation while the first is still waiting.
   let release;const held=failed.store.withPlayer(sid,()=>new Promise(resolve=>{release=resolve;}));
   while(!release)await new Promise(resolve=>setImmediate(resolve));
@@ -81,5 +94,5 @@ const input=(roundId,color='red',amount=10)=>({roundId,color,amount,requestId:cr
   console.log('PASS Roll: 15 slots, x2/x14 payouts, hidden seed/result, input validation, PostgreSQL schema, duplicate requests, color change without double debit, closed rounds, private history, confirmed payout once, uncertain debit/payout review, distributed lock release and disabled mode; no live currency calls');
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>{
   Date.now=originalNow;
-  for(const [key,value] of [['ROLL_DATABASE_URL',originalEnv.url],['ROLL_ENABLED',originalEnv.enabled]])if(value===undefined)delete process.env[key];else process.env[key]=value;
+  for(const [key,value] of [['ROLL_DATABASE_URL',originalEnv.url],['ROLL_ENABLED',originalEnv.enabled],['SESSION_SECRET',originalEnv.secret]])if(value===undefined)delete process.env[key];else process.env[key]=value;
 });

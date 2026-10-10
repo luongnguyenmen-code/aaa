@@ -1,6 +1,11 @@
 const API=require('../api/endpoints'),Pilot=require('../api/upstream-endpoints');
 module.exports=(app,context)=>{
-  const service=require('../services/roll')({balance:context.getLivePlayerBalance,
+  const service=require('../services/roll')({balance:async(steamId,fresh=false)=>{
+    const player=await context.callIslePilot(Pilot.player(steamId),'GET',null,fresh);
+    const balance=player?.wallet?.balance;
+    if(!Number.isFinite(balance)||balance<0)throw Object.assign(new Error('Không thể xác minh số dư Lúa hiện tại.'),{status:503});
+    return balance;
+  },
     change:async(steamId,amount,reason)=>{
       const result=await context.callIslePilot(Pilot.playerCurrency(steamId),'POST',{amount,reason});
       context.clearPlayerCache(steamId);return result;

@@ -2,7 +2,7 @@
 
 Trang: `/roll.html`, mục **Kinh Tế & Chợ → Lên Voi hoặc Đi Ngủ** trên máy tính và điện thoại.
 
-Tỷ lệ đã được chủ web chọn: 15 ô, đỏ 7/15, đen 7/15, xanh 1/15. Đỏ/đen trả tổng x2, xanh trả tổng x14, đã bao gồm tiền gửi. Vòng chung 23 giây: nhận gửi 15 giây đầu, quay và dừng trong 8 giây tiếp theo. Mỗi tài khoản một mức gửi mỗi vòng; có thể đổi màu trong thời gian nhận gửi. Không dùng tỷ lệ 30% thắng của các trò sòng bạc cũ. Bản này không có jackpot Triple Green của trang tham khảo.
+Tỷ lệ đã được chủ web chọn: 15 ô, đỏ 7/15, đen 7/15, xanh 1/15. Đỏ/đen trả tổng x2, xanh trả tổng x14, đã bao gồm tiền gửi. Gửi tối đa 500 Lúa/vòng: đỏ/đen trả tổng tối đa 1.000 Lúa, xanh tối đa 7.000 Lúa cho cược mới. Vòng chung 23 giây: nhận gửi 15 giây đầu, quay và dừng trong 8 giây tiếp theo. Mỗi tài khoản một mức gửi mỗi vòng; có thể đổi màu trong thời gian nhận gửi. Không điều chỉnh kết quả theo người chơi hoặc lịch sử thắng. Bản này không có jackpot Triple Green của trang tham khảo.
 
 ## Tạo PostgreSQL và bật gửi Lúa
 
@@ -14,8 +14,9 @@ Tỷ lệ đã được chủ web chọn: 15 ô, đỏ 7/15, đen 7/15, xanh 1/1
    |---|---|
    | `ROLL_DATABASE_URL` | Connection string PostgreSQL trực tiếp vừa sao chép |
    | `ROLL_ENABLED` | `true` |
+   | `SESSION_SECRET` | Chuỗi ngẫu nhiên bí mật ít nhất 32 ký tự, dùng chung cho mọi instance |
 
-4. Giữ `ISLEPILOT_API_TOKEN` hiện có trên Vercel. Token cần quyền đọc người chơi/ví và thay đổi currency. Không đưa token hoặc connection string vào GitHub, HTML hay tin nhắn công khai.
+4. Giữ `ISLEPILOT_API_TOKEN` hiện có trên Vercel. Token cần quyền đọc người chơi/ví và thay đổi currency. Nếu chưa có `SESSION_SECRET`, tạo chuỗi ngẫu nhiên bằng `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` trên máy của bạn, rồi lưu trực tiếp vào Vercel. Không đưa token, secret hoặc connection string vào GitHub, HTML hay tin nhắn công khai. Khi đổi secret, người chơi phải đăng nhập Steam lại; mã mới không chấp nhận khóa dự phòng cũ.
 5. Vercel → **Deployments → bản Production mới nhất → Redeploy**. Biến môi trường chỉ có hiệu lực với deployment mới. [Hướng dẫn Vercel](https://vercel.com/docs/environment-variables).
 6. Mở `/api/roll/state`: phải có `ready: true`, `demo: false`. Lần kết nối đầu tiên tự tạo các bảng `st25_roll_*`; database user cần quyền tạo bảng. Nếu trang vẫn báo lỗi, kiểm tra log Vercel và URL trực tiếp/SSL trước khi gửi.
 7. Đăng nhập Steam trên web. Đối chiếu ví game với số Lúa trên trang. Kiểm tra gửi tối thiểu 1 Lúa và kết quả trong một vòng trước khi thông báo rộng rãi.
@@ -28,7 +29,7 @@ Máy chủ xác định kết quả; frontend chỉ hiển thị. PostgreSQL lư
 
 Tiền thắng được xử lý khi người chơi mở trang, hoặc mở lại trang sau khi vòng kết thúc, qua POST `/api/roll/settle`. Không phụ thuộc bộ hẹn giờ nền trong một Vercel function. Kết quả/lịch sử được cập nhật khoảng hai giây một lần khi tab hiển thị.
 
-IslePilot hiện chưa được xác minh có khóa idempotency cho currency. Nếu timeout hoặc mất kết nối sau khi gửi lệnh, Roll giữ `review`, `debit_pending` hoặc `credit_pending` để đối soát, không tự gửi lại lệnh cộng/trừ. Quản trị viên tra ledger trong Neon và nhật ký currency IslePilot theo bet ID/reason, xác nhận tiền đã thực sự áp dụng rồi xử lý thủ công. Không đổi trạng thái hoặc cộng bù khi chưa đối chiếu. `ROLL_ENABLED=false` dừng gửi mới; vẫn cho thanh toán các gửi đã xác nhận.
+IslePilot hiện chưa được xác minh có khóa idempotency cho currency. Nếu timeout hoặc mất kết nối sau khi gửi lệnh, Roll giữ `review`, `debit_pending` hoặc `credit_pending` để đối soát, không tự gửi lại lệnh cộng/trừ. Tài khoản có giao dịch này bị chặn cược mới và thanh toán thêm cho đến khi xử lý xong. Quản trị viên tra ledger trong Neon và nhật ký currency IslePilot theo bet ID/reason, xác nhận tiền đã thực sự áp dụng rồi xử lý thủ công. Không đổi trạng thái hoặc cộng bù khi chưa đối chiếu. `ROLL_ENABLED=false` dừng gửi mới; vẫn cho thanh toán các gửi đã xác nhận nếu tài khoản không có giao dịch cần đối soát.
 
 SQL xem các gửi cần đối soát:
 

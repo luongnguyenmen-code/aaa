@@ -19,9 +19,9 @@ function publicRound(round,now=Date.now()){
     ...(revealed?{seed:round.seed}: {})};
 }
 function validateBet(body){
-  if(!Number.isSafeInteger(body?.roundId)||body.roundId<0||!Object.hasOwn(rules.payouts,body?.color||'')||
+  if(!Number.isSafeInteger(body?.roundId)||body.roundId<0||typeof body?.color!=='string'||!Object.hasOwn(rules.payouts,body.color)||
     !Number.isSafeInteger(body?.amount)||body.amount<rules.minBet||body.amount>rules.maxBet||
-    !/^[a-f0-9-]{36}$/i.test(body?.requestId||''))throw Object.assign(Error('Cược không hợp lệ: chọn màu và số Lúa nguyên từ 1 đến 1.000.'),{status:400});
+    typeof body?.requestId!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(body.requestId))throw Object.assign(Error(`Cược không hợp lệ: chọn màu và số Lúa nguyên từ ${rules.minBet} đến ${rules.maxBet}.`),{status:400});
   return body;
 }
 module.exports={draw,makeRound,publicRound,validateBet,payout:(amount,color,result)=>rules.slots[result]===color?amount*rules.payouts[color]:0};

@@ -109,6 +109,7 @@
   }
   function render(){
     $('roll-notice').textContent=data.message;$('roll-round').textContent=data.round.number??data.round.id;
+    amount().max=data.rules?.maxBet||500;
     $('roll-login').hidden=data.authenticated;$('roll-balance').textContent=Number.isFinite(data.balance)?money(data.balance):'—';
     renderHistory();
     $('roll-totals').innerHTML=['red','green','black'].map(c=>{const total=data.totals.find(x=>x.color===c)||{amount:0,players:0},own=ownBet();return `<div class="roll-total ${c}"><div class="roll-total-head"><span class="roll-dot ${c}"></span><span>${names[c]}</span><small>${total.players}</small><strong>${money(total.amount)}</strong></div>${own?.color===c?`<div class="roll-total-own"><span>Bạn · ${esc(statuses[own.status])}</span><b>${money(own.amount)}</b></div>`:`<p class="roll-total-empty">${total.players?'Đã có lượt gửi trong vòng':'Chưa có lượt gửi'}</p>`}</div>`;}).join('');
@@ -156,7 +157,7 @@
   amount().addEventListener('input',quote);document.querySelectorAll('input[name=color]').forEach(x=>x.addEventListener('change',quote));
   document.querySelectorAll('.roll-choice').forEach(label=>label.addEventListener('click',()=>queueMicrotask(()=>{if(!$('roll-submit').disabled)$('roll-form').requestSubmit();})));
   document.querySelectorAll('[data-amount]').forEach(button=>button.addEventListener('click',()=>{
-    const value=Number(amount().value)||1,cap=Math.min(1000,Math.max(1,Math.floor(data?.balance||1000)));
+    const value=Number(amount().value)||1,cap=Math.min(data?.rules?.maxBet||500,Math.max(1,Math.floor(data?.balance??500)));
     amount().value=button.dataset.amount==='half'?Math.max(1,Math.floor(value/2)):button.dataset.amount==='double'?Math.min(cap,value*2):button.dataset.amount==='max'?cap:Number(button.dataset.amount);quote();
   }));
   const unsubscribe=App.subscribeUser(user=>{const account=user?.steam_id||user?.steamId||null;if(account!==lastAccount){lastAccount=account;data=null;$('roll-submit').disabled=true;refresh();}});
