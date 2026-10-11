@@ -1,6 +1,7 @@
 const crypto=require('node:crypto'),engine=require('./roll-engine'),rules=require('../core/roll'),defaultStore=require('../models/roll-store');
 const error=(message,status=400)=>Object.assign(Error(message),{status});
 module.exports=function createRollService(bank,store=defaultStore){
+  let cachedBalance=null,lastBalanceTime=0;
   const ready=()=>rules.enabled()&&!!process.env.ROLL_DATABASE_URL&&typeof process.env.SESSION_SECRET==='string'&&process.env.SESSION_SECRET.length>=32;
   async function requireReconciled(client,steamId){
     const unresolved=await client.query("SELECT id FROM st25_roll_bets WHERE steam_id=$1 AND status IN ('review','debit_pending','credit_pending') LIMIT 1",[steamId]);
@@ -36,30 +37,16 @@ module.exports=function createRollService(bank,store=defaultStore){
       ]);
       totals=totalsRes.rows;
       activeBets=activeBetsRes.rows;
-      if(round.seed&&round.seed.length===64&&totals.length>0&&now>=round.closesAt){
-        const flagKey='st25_roll_biased_'+round.id;
-        const already=(await db.query("SELECT value FROM st25_roll_settings WHERE key=$1",[flagKey])).rows[0];
-        if(!already){
-          const recent=(await db.query("SELECT status, payout, amount FROM st25_roll_bets WHERE status='settled' ORDER BY round_id DESC LIMIT 6")).rows;
-          const winStreak=recent.length>=2&&recent[0].payout>0&&recent[1].payout>0;
-          const netProfit=recent.reduce((sum,b)=>sum+(b.payout-b.amount),0);
-          const lossStreak=recent.length>=3&&recent.slice(0,3).every(b=>b.payout===0);
-          const meta={beCau:winStreak||netProfit>0,nhaCau:lossStreak};
-          const biased=engine.biasResult(round,totals,meta);
-          if(biased.result!==round.result){
-            await db.query("UPDATE st25_roll_rounds SET result=$1,seed=$2,commitment=$3 WHERE id=$4",[biased.result,biased.seed,biased.commitment,round.id]);
-            round.result=biased.result;round.seed=biased.seed;round.commitment=biased.commitment;
-          }
-          await db.query("INSERT INTO st25_roll_settings(key,value) VALUES($1,1) ON CONFLICT(key) DO NOTHING",[flagKey]);
-        }
-      }
       history=historyRes.rows.map(row=>engine.publicRound(store.mapRound(row),now));
       if(steamId){
         bets=betsRes.rows;
         pendingCount=pendingRes.rows[0]?.count||0;
       }
     }else{for(let i=1;i<=12;i++)history.push(engine.publicRound(await current(now-i*rules.roundMs),now));}
-    if(steamId)try{balance=await bank.balance(steamId);}catch{}
+    if(steamId){
+      if(Number.isFinite(cachedBalance)&&Date.now()-lastBalanceTime<5000){balance=cachedBalance;}
+      else{try{balance=await bank.balance(steamId);cachedBalance=balance;lastBalanceTime=Date.now();}catch{balance=cachedBalance;}}
+    }
     const responseTime=Date.now();
     return {serverTime:responseTime,ready:ready(),demo:!ready(),authenticated:!!steamId,balance,
       message:ready()?'Gửi và trả thưởng bằng ví Lúa IslePilot trực tiếp. Đặt là trừ Lúa, thắng là cộng ngay.':'Chức năng Roll đang tạm đóng bảo trì. Vui lòng quay lại sau.',
@@ -98,6 +85,7 @@ module.exports=function createRollService(bank,store=defaultStore){
       // The unique request on the bet is also durable if the response is lost before command insertion.
       await client.query('INSERT INTO st25_roll_commands(steam_id,request_id,bet_id) VALUES($1,$2,$3)',[steamId,input.requestId,id]);
       const newBalance=await changeBalance(client,row,-input.amount,'debit');
+      cachedBalance=newBalance;lastBalanceTime=Date.now();
       const placed=(await client.query("UPDATE st25_roll_bets SET status='placed',balance=$2,updated_at=$3 WHERE id=$1 RETURNING *",[id,newBalance,Date.now()])).rows[0];
       return {bet:placed,balance:newBalance};
     });
@@ -110,29 +98,11 @@ module.exports=function createRollService(bank,store=defaultStore){
       const due=(await client.query("SELECT b.*,r.result FROM st25_roll_bets b JOIN st25_roll_rounds r ON r.id=b.round_id WHERE b.steam_id=$1 AND b.status='placed' AND r.ends_at<=$2 ORDER BY b.round_id LIMIT 1",[steamId,Date.now()])).rows;
       const settled=[];
       for(const row of due){
-        const flagKey='st25_roll_biased_'+row.round_id;
-        const already=(await client.query("SELECT value FROM st25_roll_settings WHERE key=$1",[flagKey])).rows[0];
-        if(!already){
-          const rRound=(await client.query("SELECT * FROM st25_roll_rounds WHERE id=$1",[row.round_id])).rows[0];
-          if(rRound&&rRound.seed&&rRound.seed.length===64){
-            const roundTotals=(await client.query("SELECT color,count(*)::integer AS players,sum(amount)::integer AS amount FROM st25_roll_bets WHERE round_id=$1 AND status='placed' GROUP BY color",[row.round_id])).rows;
-            const recent=(await client.query("SELECT status, payout, amount FROM st25_roll_bets WHERE status='settled' AND round_id<$1 ORDER BY round_id DESC LIMIT 6",[row.round_id])).rows;
-            const winStreak=recent.length>=2&&recent[0].payout>0&&recent[1].payout>0;
-            const netProfit=recent.reduce((sum,b)=>sum+(b.payout-b.amount),0);
-            const lossStreak=recent.length>=3&&recent.slice(0,3).every(b=>b.payout===0);
-            const meta={beCau:winStreak||netProfit>0,nhaCau:lossStreak};
-            const biased=engine.biasResult(store.mapRound(rRound),roundTotals,meta);
-            if(biased.result!==rRound.result){
-              await client.query("UPDATE st25_roll_rounds SET result=$1,seed=$2,commitment=$3 WHERE id=$4",[biased.result,biased.seed,biased.commitment,row.round_id]);
-              row.result=biased.result;
-            }
-          }
-          await client.query("INSERT INTO st25_roll_settings(key,value) VALUES($1,1) ON CONFLICT(key) DO NOTHING",[flagKey]);
-        }
         const payout=engine.payout(row.amount,row.color,row.result);
         await client.query("UPDATE st25_roll_bets SET status='credit_pending',payout=$2,updated_at=$3 WHERE id=$1",[row.id,payout,Date.now()]);
         let balance=row.balance;
         if(payout>0)balance=await changeBalance(client,row,payout,'payout');
+        cachedBalance=balance;lastBalanceTime=Date.now();
         settled.push((await client.query("UPDATE st25_roll_bets SET status='settled',balance=$2,updated_at=$3 WHERE id=$1 RETURNING *",[row.id,balance,Date.now()])).rows[0]);
       }
       return {bets:settled,balance:(settled.length?settled[settled.length-1].balance:null)};
