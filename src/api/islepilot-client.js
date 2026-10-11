@@ -1,5 +1,5 @@
 const Core = require('../core/config');
-const {getConfig} = require('../models/settings');
+const { getConfig } = require('../models/settings');
 // In-memory cache for GET endpoints to respect the 120 req/min limit
 const apiCache = new Map();
 const pendingReads = new Map();
@@ -40,37 +40,39 @@ async function callIslePilot(endpoint, method = 'GET', body = null, bypassCache 
   const shared = method === 'GET' && !bypassCache;
   if (shared && pendingReads.has(pendingKey)) return pendingReads.get(pendingKey).promise;
   const entry = { cacheKey, invalidated: false };
-  const request = (async () => { try {
-    const opts = {
-      method,
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'X-Api-Key': token,
-        'Content-Type': 'application/json'
-      }
-    };
-    if (body && method !== 'GET') {
-      opts.body = JSON.stringify(body);
-    }
-    const res = await fetch(url, { ...opts, signal: AbortSignal.timeout(10000) });
-    let json = null;
+  const request = (async () => {
     try {
-      json = await res.json();
-    } catch (_) { }
-
-    if (res.ok) {
-      if (shared && json && !entry.invalidated) {
-        apiCache.set(cacheKey, { time: Date.now(), data: json, scope });
+      const opts = {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'X-Api-Key': token,
+          'Content-Type': 'application/json'
+        }
+      };
+      if (body && method !== 'GET') {
+        opts.body = JSON.stringify(body);
       }
-      return json;
-    } else {
-      console.warn(`IslePilot responded ${res.status} for [${method}] ${url}:`, json?.error || json?.message || '');
-      return { _status: res.status, error: json?.error || `HTTP ${res.status}`, missingScope: res.status === 403 };
+      const res = await fetch(url, { ...opts, signal: AbortSignal.timeout(10000) });
+      let json = null;
+      try {
+        json = await res.json();
+      } catch (_) { }
+
+      if (res.ok) {
+        if (shared && json && !entry.invalidated) {
+          apiCache.set(cacheKey, { time: Date.now(), data: json, scope });
+        }
+        return json;
+      } else {
+        console.warn(`IslePilot responded ${res.status} for [${method}] ${url}:`, json?.error || json?.message || '');
+        return { _status: res.status, error: json?.error || `HTTP ${res.status}`, missingScope: res.status === 403 };
+      }
+    } catch (err) {
+      console.error(`Error calling IslePilot API (${endpoint}): ${err.message}`);
+      return null;
     }
-  } catch (err) {
-    console.error(`Error calling IslePilot API (${endpoint}): ${err.message}`);
-    return null;
-  } })();
+  })();
   entry.promise = request;
   if (shared) pendingReads.set(pendingKey, entry);
   try { return await request; }
@@ -96,4 +98,4 @@ function clearPlayerCache(steamId) {
 }
 
 
-module.exports = {callIslePilot, clearPlayerCache, apiCache};
+module.exports = { callIslePilot, clearPlayerCache, apiCache };
