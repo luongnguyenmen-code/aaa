@@ -244,18 +244,32 @@
       showBigWin(top.name,top.amount,top.colorName,false,top.avatar);
     }
   }
+  function flashBalance(deltaText,isDebit=false){
+    const el=$('roll-balance');if(!el)return;
+    el.classList.remove('balance-pulse');void el.offsetWidth;el.classList.add('balance-pulse');
+    if(deltaText){
+      let tip=document.getElementById('roll-float-payout');
+      if(!tip){tip=document.createElement('span');tip.id='roll-float-payout';el.parentElement?.appendChild(tip);}
+      tip.className='roll-float-payout';
+      if(isDebit){tip.style.color='#ff6860';tip.style.textShadow='0 0 12px rgba(255,104,96,.9)';}
+      else{tip.style.color='#47e7a5';tip.style.textShadow='0 0 12px rgba(71,231,165,.9)';}
+      tip.textContent=deltaText;tip.classList.remove('is-active');void tip.offsetWidth;tip.classList.add('is-active');
+    }
+  }
   async function checkSettle(){
     if(!data||settling||busy)return;
-    const due=data.pendingCount>0||data.bets.some(b=>b.status==='placed'&&Number(b.round_id)<=data.round.id);
+    const now=Date.now()+offset;
+    const due=data.pendingCount>0||data.bets.some(b=>b.status==='placed'&&(Number(b.round_id)<data.round.id||(Number(b.round_id)===data.round.id&&now>=data.round.endsAt)));
     if(!due)return;
     settling=true;
     try{
       const res=await post(ST25API.routes.rollSettle,{});
       if(res&&Number.isFinite(res.balance)){
         data.balance=res.balance;
-        if(App.user)App.user.balance=res.balance;
+        if(App.user){App.user.balance=res.balance;try{App.publishUser();}catch{}}
         $('roll-balance').textContent=money(res.balance);
         const hudBalance=$('hud-balance');if(hudBalance)hudBalance.textContent=Number(res.balance).toLocaleString('vi-VN');
+        const luaVal=document.querySelector('.lua-val');if(luaVal)luaVal.textContent=Number(res.balance).toLocaleString('vi-VN')+' Lúa';
       }
       if(res?.bets?.length){
         for(const sb of res.bets){
@@ -263,9 +277,8 @@
           if(idx>=0)data.bets[idx]=sb;else data.bets.unshift(sb);
           if(sb.payout>0){
             feedback(`🎉 THẮNG ${money(sb.payout)}! Đã cộng ngay vào ví Lúa.`);
-            if(sb.payout>=100||sb.color==='green'){
-              showBigWin('Bạn',sb.payout,names[sb.color],true,'👑');
-            }
+            showBigWin('Bạn',sb.payout,names[sb.color],true,'👑');
+            flashBalance('+'+money(sb.payout));
           }
         }
         render();
@@ -283,10 +296,11 @@
       const next=await App.readJSON(ST25API.routes.rollState);
       if(account!==(App.user?.steam_id||App.user?.steamId||null))return;
       data=next;offset=data.serverTime-Date.now();render();
-      const due=data.pendingCount>0||data.bets.some(b=>b.status==='placed'&&Number(b.round_id)<=data.round.id);
+      const now=Date.now()+offset;
+      const due=data.pendingCount>0||data.bets.some(b=>b.status==='placed'&&(Number(b.round_id)<data.round.id||(Number(b.round_id)===data.round.id&&now>=data.round.endsAt)));
       if(due&&!settling&&!busy){checkSettle();}
     }catch(e){$('roll-notice').textContent='Mất kết nối Roll. Đang thử kết nối lại…';$('roll-submit').disabled=true;data=null;}
-    finally{reading=false;clearTimeout(timer);if(!disposed&&!document.hidden)timer=setTimeout(refresh,data&&Date.now()+offset>=data.round.closesAt?300:1000);}
+    finally{reading=false;clearTimeout(timer);if(!disposed&&!document.hidden)timer=setTimeout(refresh,1000);}
   }
   $('roll-form').addEventListener('submit',async e=>{
     e.preventDefault();if(busy||!data||Date.now()+offset>=data.round.closesAt)return;
@@ -302,9 +316,11 @@
       data.bets=[response.bet,...data.bets.filter(b=>b.id!==response.bet.id)];
       if(Number.isFinite(response.balance)){
         data.balance=response.balance;
-        if(App.user)App.user.balance=response.balance;
+        if(App.user){App.user.balance=response.balance;try{App.publishUser();}catch{}}
         $('roll-balance').textContent=money(response.balance);
         const hudBalance=$('hud-balance');if(hudBalance)hudBalance.textContent=Number(response.balance).toLocaleString('vi-VN');
+        const luaVal=document.querySelector('.lua-val');if(luaVal)luaVal.textContent=Number(response.balance).toLocaleString('vi-VN')+' Lúa';
+        flashBalance('-'+money(betAmt),true);
       }
       feedback(response.replayed?'Cược trước đã được ghi nhận.':`Đã trừ ${money(betAmt)}! Đặt cược vào ${names[betCol]} thành công.`);
       render();
@@ -313,7 +329,6 @@
   amount().addEventListener('input',()=>{const max=data?.rules?.maxBet||500;if(amount().value&&Number(amount().value)>max)amount().value=max;quote();});
   amount().addEventListener('change',()=>{const max=data?.rules?.maxBet||500;let v=Math.floor(Number(amount().value));if(!Number.isFinite(v)||v<1)v=1;else if(v>max)v=max;amount().value=v;quote();});
   document.querySelectorAll('input[name=color]').forEach(x=>x.addEventListener('change',quote));
-  document.querySelectorAll('.roll-choice').forEach(label=>label.addEventListener('click',e=>{if(e.target.tagName==='INPUT')return;queueMicrotask(()=>{if(!$('roll-submit').disabled)$('roll-form').requestSubmit();});}));
   document.querySelectorAll('[data-amount]').forEach(button=>button.addEventListener('click',()=>{
     const value=Number(amount().value)||1,cap=Math.min(data?.rules?.maxBet||500,Math.max(1,Math.floor(data?.balance??500)));
     amount().value=button.dataset.amount==='half'?Math.max(1,Math.floor(value/2)):button.dataset.amount==='double'?Math.min(cap,value*2):button.dataset.amount==='max'?cap:Math.min(cap,Number(button.dataset.amount));quote();

@@ -50,3 +50,19 @@
 .roll-bigwin-close:hover{color:#fff}
 @media(max-width:500px){.roll-bigwin-toast{top:12px;right:12px;left:12px;width:auto;padding:10px 14px}.roll-bigwin-icon{font-size:24px}.roll-bigwin-text{font-size:11px}}
 @media(prefers-reduced-motion:reduce){.roll-bigwin-toast{animation:none}.roll-bigwin-icon{animation:none}}
+
+/* Balance flash & floating payout animation */
+.roll-wallet{position:relative}
+.balance-pulse{animation:balance-glow 1.5s ease-out!important}
+@keyframes balance-glow{
+  0%{color:#47e7a5;text-shadow:0 0 18px #47e7a5;transform:scale(1.15)}
+  40%{color:#ffd700;text-shadow:0 0 14px #ffd700;transform:scale(1.08)}
+  100%{color:#ffb64c;text-shadow:none;transform:scale(1)}
+}
+.roll-float-payout{position:absolute;top:6px;right:18px;font-size:15px;font-weight:900;color:#47e7a5;text-shadow:0 0 12px rgba(71,231,165,.9);pointer-events:none;opacity:0;transform:translateY(0)}
+.roll-float-payout.is-active{animation:float-up 2.2s cubic-bezier(0.1,0.8,0.2,1) forwards}
+@keyframes float-up{
+  0%{opacity:1;transform:translateY(0) scale(1.15)}
+  60%{opacity:1;transform:translateY(-22px) scale(1.05)}
+  100%{opacity:0;transform:translateY(-36px) scale(.9)}
+}

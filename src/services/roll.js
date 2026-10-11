@@ -27,8 +27,15 @@ module.exports=function createRollService(bank,store=defaultStore){
     let history=[],bets=[],totals=[],activeBets=[],balance=null,pendingCount=0;
     if(process.env.ROLL_DATABASE_URL){
       const db=await store.database();
-      totals=(await db.query("SELECT color,count(*)::integer AS players,sum(amount)::integer AS amount FROM st25_roll_bets WHERE round_id=$1 AND status='placed' GROUP BY color",[round.id])).rows;
-      activeBets=(await db.query("SELECT steam_id,color,amount FROM st25_roll_bets WHERE round_id=$1 AND status='placed' ORDER BY created_at ASC",[round.id])).rows;
+      const [totalsRes, activeBetsRes, historyRes, betsRes, pendingRes] = await Promise.all([
+        db.query("SELECT color,count(*)::integer AS players,sum(amount)::integer AS amount FROM st25_roll_bets WHERE round_id=$1 AND status='placed' GROUP BY color",[round.id]),
+        db.query("SELECT steam_id,color,amount FROM st25_roll_bets WHERE round_id=$1 AND status='placed' ORDER BY created_at ASC",[round.id]),
+        db.query('SELECT * FROM st25_roll_rounds WHERE ends_at<=$1 ORDER BY id DESC LIMIT 20',[now]),
+        steamId ? db.query('SELECT * FROM st25_roll_bets WHERE steam_id=$1 ORDER BY round_id DESC LIMIT 20',[steamId]) : { rows: [] },
+        steamId ? db.query("SELECT count(*)::integer AS count FROM st25_roll_bets b JOIN st25_roll_rounds r ON r.id=b.round_id WHERE b.steam_id=$1 AND b.status='placed' AND r.ends_at<=$2",[steamId,now]) : { rows: [{ count: 0 }] }
+      ]);
+      totals=totalsRes.rows;
+      activeBets=activeBetsRes.rows;
       if(round.seed&&round.seed.length===64&&totals.length>0&&now>=round.closesAt){
         const flagKey='st25_roll_biased_'+round.id;
         const already=(await db.query("SELECT value FROM st25_roll_settings WHERE key=$1",[flagKey])).rows[0];
@@ -46,10 +53,10 @@ module.exports=function createRollService(bank,store=defaultStore){
           await db.query("INSERT INTO st25_roll_settings(key,value) VALUES($1,1) ON CONFLICT(key) DO NOTHING",[flagKey]);
         }
       }
-      history=(await db.query('SELECT * FROM st25_roll_rounds WHERE ends_at<=$1 ORDER BY id DESC LIMIT 20',[now])).rows.map(row=>engine.publicRound(store.mapRound(row),now));
+      history=historyRes.rows.map(row=>engine.publicRound(store.mapRound(row),now));
       if(steamId){
-        bets=(await db.query('SELECT * FROM st25_roll_bets WHERE steam_id=$1 ORDER BY round_id DESC LIMIT 20',[steamId])).rows;
-        pendingCount=(await db.query("SELECT count(*)::integer AS count FROM st25_roll_bets b JOIN st25_roll_rounds r ON r.id=b.round_id WHERE b.steam_id=$1 AND b.status='placed' AND r.ends_at<=$2",[steamId,now])).rows[0].count;
+        bets=betsRes.rows;
+        pendingCount=pendingRes.rows[0]?.count||0;
       }
     }else{for(let i=1;i<=12;i++)history.push(engine.publicRound(await current(now-i*rules.roundMs),now));}
     if(steamId)try{balance=await bank.balance(steamId);}catch{}

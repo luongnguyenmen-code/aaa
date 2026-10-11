@@ -16,10 +16,9 @@ if (fs.existsSync(envFile)) {
 if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
   process.env.SESSION_SECRET = 'st25-vietnam-portal-super-secure-production-session-secret-key-2026-64bytes';
 }
-// Tạm tắt kết nối database Roll tự động để cấu hình sau
-// if (!process.env.ROLL_DATABASE_URL) {
-//   process.env.ROLL_DATABASE_URL = 'postgres://local-st25:mem@localhost/st25_roll';
-// }
+if (!process.env.ROLL_DATABASE_URL) {
+  process.env.ROLL_DATABASE_URL = process.env.DATABASE_URL_UNPOOLED || process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL || process.env.DATABASE_URL || '';
+}
 
 module.exports = Object.freeze({
   root,
