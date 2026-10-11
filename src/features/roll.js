@@ -144,7 +144,7 @@
       const player=communityDinos[idx],rc=rnd();
       const color=rc<0.45?'red':rc<0.90?'black':'green';
       const amount=amounts[Math.floor(rnd()*amounts.length)];
-      const delay=1200+rnd()*11500;
+      const delay=1200+rnd()*16500;
       bets.push({name:player.name,avatar:player.avatar,color,amount,delay});
     }
     return bets;
