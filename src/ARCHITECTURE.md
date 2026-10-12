@@ -24,6 +24,7 @@ Luồng giao diện: `pages → views/render.js → partials → HTML trả về
 | `features/` | JavaScript chức năng đã tách từ các trang HTML |
 
 CSS, ảnh, thư viện và JavaScript dùng chung hiện có nằm trong `assets/`.
+Plinko dùng `services/plinko-engine.js` cho xác suất/HMAC, `services/plinko.js` cho giao dịch và `models/plinko-store.js` cho nhật ký PostgreSQL. Chế độ thử chạy trong trình duyệt; giao dịch Lúa chỉ mở khi cấu hình database và cờ bật. Xem `../PLINKO_SETUP.md` để cấu hình và đối soát.
 `src/features/*.js` được phục vụ qua `/assets/js/features/*.js`; cấu hình công khai và danh sách API được phục vụ qua `/assets/js/core.js` và `/assets/js/api/endpoints.js`.
 
 ## Thêm hoặc sửa trang
