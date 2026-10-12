@@ -16,10 +16,6 @@ if (fs.existsSync(envFile)) {
 if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
   process.env.SESSION_SECRET = 'st25-vietnam-portal-super-secure-production-session-secret-key-2026-64bytes';
 }
-const NEON_DEFAULT = 'postgresql://neondb_owner:npg_73LrFYzWyHGI@ep-red-hat-b3btugeg.c-4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require';
-if (!process.env.ROLL_DATABASE_URL) {
-  process.env.ROLL_DATABASE_URL = process.env.DATABASE_URL_UNPOOLED || process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL || process.env.DATABASE_URL || NEON_DEFAULT;
-}
 
 module.exports = Object.freeze({
   root,
