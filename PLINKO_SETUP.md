@@ -1,5 +1,25 @@
 # Plinko ST25
 
+## Trạng thái tiếp tục — 12/10/2026
+
+- Đã hoàn tất mã Plinko, menu, chơi thử, tự động thả bóng, xác minh HMAC và phần tích hợp ví Lúa miễn phí. User xác nhận Lúa không mua bán hoặc quy đổi tài sản có giá trị.
+- Commit mã: `39da96b` (`Add Plinko demo and guarded free-point wallet integration`). `npm test`, kiểm tra Chrome ở bốn kích thước và build Vercel đã đạt. Chưa kiểm thử giao dịch ví thật.
+- Chưa có PostgreSQL hoặc `PLINKO_DATABASE_URL`; giao dịch Lúa chưa bật. Không chỉ đổi `PLINKO_ENABLED=true` khi chưa có database và chưa kiểm tra ví.
+- Push lên `https://github.com/luongnguyenmen-code/aaa.git` bị GitHub từ chối HTTP 403 vì tài khoản bị đình chỉ. Chưa xác nhận bản Plinko được triển khai trên website.
+- Đã mở tab Chrome đến `https://vercel.com/dashboard` để kiểm tra hosting. Chưa xác nhận đăng nhập thành công: lần đọc trạng thái cuối bị hệ thống duyệt tự động lỗi 429. Không vượt qua kiểm tra này.
+- Plugin Neon, Supabase và Vercel có trong danh mục nhưng chưa được cài/kết nối tại thời điểm kiểm tra. Máy chưa phát hiện PostgreSQL CLI, Docker hoặc Vercel CLI; chưa có biến môi trường kết nối database.
+
+Các bước khi quay lại:
+
+1. Người dùng đăng nhập Vercel, rồi báo đã đăng nhập. Không gửi mật khẩu hoặc chuỗi kết nối bí mật vào chat.
+2. Kiểm tra đúng project đang phục vụ `www.st25.io.vn`. Tạo/kết nối PostgreSQL qua tài khoản hosting hoặc nhà cung cấp đã đăng nhập; xem gói và chi phí trước khi xác nhận dịch vụ tính phí.
+3. Lấy chuỗi kết nối PostgreSQL trực tiếp, không transaction pooler, lưu vào biến môi trường server `PLINKO_DATABASE_URL`. Khởi tạo bảng/index và kiểm tra kết nối, lưu dữ liệu, khóa advisory.
+4. Khắc phục quyền push GitHub hoặc dùng phương thức triển khai Vercel được cấp quyền để đưa mã Plinko hiện tại lên hosting. Không chuyển website sang Sites riêng.
+5. Kiểm tra quyền IslePilot và giao dịch bằng tài khoản thử được chỉ định; đối soát debit/payout và trạng thái pending trước khi bật `PLINKO_ENABLED=true` công khai.
+6. Redeploy, xác minh `/plinko.html`, API, menu trên điện thoại và desktop; báo chính xác chế độ nào đã hoạt động trên website.
+
+Người dùng yêu cầu tạm lưu các bước để làm tiếp sau. Chưa tạo database, chưa thay đổi cấu hình hosting và chưa thực hiện giao dịch Lúa thật.
+
 Trang `/plinko.html`, menu Kinh Tế & Chợ, desktop và điện thoại.
 
 Đây là Plinko riêng của ST25 lấy cảm hứng từ trải nghiệm thả bóng. Không sao chép thương hiệu hoặc bảng thưởng chưa xác minh của Clash.gg. Chỉ sử dụng điểm Lúa miễn phí, không mua bán, quy đổi tiền hoặc tài sản có giá trị.
