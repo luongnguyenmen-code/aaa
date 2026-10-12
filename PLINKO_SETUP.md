@@ -1,40 +1,32 @@
 # Plinko ST25
 
-## Cập nhật setup database — 12/10/2026
+## Trạng thái hiện tại — 12/10/2026
 
-- Kiểm tra tiếp: `PLINKO_DATABASE_URL` đã có trên Production; chưa xác minh kết nối/khóa DB. `ISLEPILOT_API_TOKEN` vẫn chưa có. API công khai trả `ready:false`.
-- API key IslePilot đã được gửi vào chat: cần thu hồi key đó và tạo key mới, lưu trực tiếp trên Vercel; không dùng lại key đã lộ.
-- Bản redeploy dashboard ngày 12/10 chạy `iad1` dù bản trước chạy `sin1`; đang triển khai lại từ cấu hình local để khôi phục Singapore. Cần kiểm tra vùng sau mỗi redeploy.
+- Mã Plinko và tích hợp ví Lúa miễn phí đã có. Lúa không mua bán hoặc quy đổi tài sản có giá trị. Chưa kiểm thử giao dịch ví thật.
+- Neon project `ST25 VIETNAM GAME` đã được người dùng tạo tại Singapore. `PLINKO_DATABASE_URL` đã lưu trên Vercel Production; chưa xác minh kết nối, quyền tạo bảng/index, lưu dữ liệu hoặc khóa advisory.
+- Vercel team `st-25-vietnam-game`, project `st25-vietnam`. Website đang chạy: https://st25-vietnam.vercel.app. Chưa gắn domain `www.st25.io.vn`.
+- Deployment đã xác minh Ready: `dpl_9VQFMQ9mNfp1dxemiggEqz6n7GDG`. Backend `api/index` chạy ở Singapore (`sin1`). `vercel.json` đã cấu hình vùng này; phải kiểm tra lại vùng sau mỗi redeploy vì từng có bản dashboard redeploy chạy `iad1`.
+- Production đã có `SESSION_SECRET`, `PUBLIC_ORIGIN`, `PLINKO_DATABASE_URL`, `ISLEPILOT_API_TOKEN`, `PLINKO_ENABLED`. Không lưu giá trị bí mật trong Git hoặc chat.
+- Người dùng báo đã lưu API key mới. Đã redeploy áp dụng key mới; `/api/server/status` trả HTTP 200, `online:true`, `islepilot_sync:true`. Chưa xác minh quyền đọc ví hoặc trừ/cộng Lúa; chưa xác minh key cũ đã được thu hồi.
+- `/plinko.html` và `/api/plinko/state` hoạt động; lần kiểm tra cuối Plinko `ready:false`. Giữ `PLINKO_ENABLED=false` cho đến khi kiểm thử hoàn tất.
+- `npm test` đã đạt trong phiên setup. Đây là kiểm thử offline, không xác minh ví thật.
+- Đã triển khai bằng Vercel CLI từ máy. Liên kết repository với Vercel từng thất bại; trạng thái GitHub hiện tại xem kết quả push của phiên đồng bộ mới nhất.
 
-- Đã đăng nhập Vercel CLI và tạo project `st-25-vietnam-game/st25-vietnam`, triển khai trực tiếp từ máy do liên kết GitHub thất bại.
-- Production alias đã xác minh: `https://st25-vietnam.vercel.app`; function `api/index` chạy ở `sin1`. `/plinko.html` và `/api/plinko/state` trả HTTP 200, Plinko `ready:false`.
-- Đã lưu production `SESSION_SECRET` ngẫu nhiên, `PLINKO_ENABLED=false`, `PUBLIC_ORIGIN=https://st25-vietnam.vercel.app`. Chưa có `PLINKO_DATABASE_URL` hoặc `ISLEPILOT_API_TOKEN` trên project mới; chưa gắn domain `www.st25.io.vn`.
-- Người dùng đã tạo Neon project `ST25 VIETNAM GAME` tại Singapore (ảnh xác nhận). Cần lưu chuỗi Neon trực tiếp vào biến production `PLINKO_DATABASE_URL` và kiểm tra database/khóa trước khi bật giao dịch.
+## Tiếp tục trên máy khác
 
-- Đã cấu hình `regions: ["sin1"]` trong `vercel.json` để backend chạy ở Singapore khi triển khai cấu hình này.
-- Phương án đề xuất: Neon Free, vùng Singapore, kết nối PostgreSQL trực tiếp (không endpoint `-pooler`). Chưa tạo database hoặc lưu `PLINKO_DATABASE_URL` trên hosting.
-- Phiên điều khiển máy tính hiện không có trình duyệt kết nối; thao tác mở Chrome báo `Browser is not available: chrome`. Cần kết nối trình duyệt hoặc Neon/Vercel để tiếp tục setup trên tài khoản người dùng.
-- `PLINKO_ENABLED` vẫn phải giữ `false` cho đến khi kiểm tra database và ví hoàn tất. Chưa triển khai thay đổi vùng lên Vercel.
+1. Clone repository `https://github.com/luongnguyenmen-code/aaa.git`, vào thư mục `aaa` và chạy `npm.cmd ci` trên Windows (hoặc `npm ci` trên hệ điều hành khác).
+2. Đọc tài liệu này trước khi thay đổi Plinko. Chạy `npm.cmd test` để kiểm tra mã.
+3. Đăng nhập Vercel bằng `npx.cmd --yes vercel@latest login`.
+4. Liên kết đúng project có sẵn: `npx.cmd --yes vercel@latest link --yes --project st25-vietnam --scope st-25-vietnam-game`. Không tạo project khác.
+5. Các biến bí mật Production đã nằm trên Vercel, không cần sao chép vào Git. Để chạy local, tạo `.env` riêng từ `.env.example` và lấy credentials từ tài khoản dịch vụ; không commit file này. Biến loại Secret trên Vercel không tải lại bằng env pull được.
+6. Khi triển khai, chạy `npx.cmd --yes vercel@latest --prod --yes --scope st-25-vietnam-game`, rồi inspect để xác minh Ready và backend `sin1`.
 
-## Trạng thái tiếp tục — 12/10/2026
+## Việc còn lại
 
-- Đã hoàn tất mã Plinko, menu, chơi thử, tự động thả bóng, xác minh HMAC và phần tích hợp ví Lúa miễn phí. User xác nhận Lúa không mua bán hoặc quy đổi tài sản có giá trị.
-- Commit mã: `39da96b` (`Add Plinko demo and guarded free-point wallet integration`). `npm test`, kiểm tra Chrome ở bốn kích thước và build Vercel đã đạt. Chưa kiểm thử giao dịch ví thật.
-- Chưa có PostgreSQL hoặc `PLINKO_DATABASE_URL`; giao dịch Lúa chưa bật. Không chỉ đổi `PLINKO_ENABLED=true` khi chưa có database và chưa kiểm tra ví.
-- Push lên `https://github.com/luongnguyenmen-code/aaa.git` bị GitHub từ chối HTTP 403 vì tài khoản bị đình chỉ. Chưa xác nhận bản Plinko được triển khai trên website.
-- Đã mở tab Chrome đến `https://vercel.com/dashboard` để kiểm tra hosting. Chưa xác nhận đăng nhập thành công: lần đọc trạng thái cuối bị hệ thống duyệt tự động lỗi 429. Không vượt qua kiểm tra này.
-- Plugin Neon, Supabase và Vercel có trong danh mục nhưng chưa được cài/kết nối tại thời điểm kiểm tra. Máy chưa phát hiện PostgreSQL CLI, Docker hoặc Vercel CLI; chưa có biến môi trường kết nối database.
-
-Các bước khi quay lại:
-
-1. Người dùng đăng nhập Vercel, rồi báo đã đăng nhập. Không gửi mật khẩu hoặc chuỗi kết nối bí mật vào chat.
-2. Kiểm tra đúng project đang phục vụ `www.st25.io.vn`. Tạo/kết nối PostgreSQL qua tài khoản hosting hoặc nhà cung cấp đã đăng nhập; xem gói và chi phí trước khi xác nhận dịch vụ tính phí.
-3. Lấy chuỗi kết nối PostgreSQL trực tiếp, không transaction pooler, lưu vào biến môi trường server `PLINKO_DATABASE_URL`. Khởi tạo bảng/index và kiểm tra kết nối, lưu dữ liệu, khóa advisory.
-4. Khắc phục quyền push GitHub hoặc dùng phương thức triển khai Vercel được cấp quyền để đưa mã Plinko hiện tại lên hosting. Không chuyển website sang Sites riêng.
-5. Kiểm tra quyền IslePilot và giao dịch bằng tài khoản thử được chỉ định; đối soát debit/payout và trạng thái pending trước khi bật `PLINKO_ENABLED=true` công khai.
-6. Redeploy, xác minh `/plinko.html`, API, menu trên điện thoại và desktop; báo chính xác chế độ nào đã hoạt động trên website.
-
-Người dùng yêu cầu tạm lưu các bước để làm tiếp sau. Chưa tạo database, chưa thay đổi cấu hình hosting và chưa thực hiện giao dịch Lúa thật.
+1. Đăng nhập Steam trên website mới để kiểm tra số dư/lịch sử; kiểm tra database, bảng/index và advisory lock. Không kết luận database hoạt động chỉ vì biến môi trường đã tồn tại.
+2. Dùng tài khoản thử được người dùng chỉ định để kiểm thử quyền ví, debit/payout, chống trùng và đối soát giao dịch pending. Chưa tự bật giao dịch công khai.
+3. Chỉ bật `PLINKO_ENABLED=true` sau khi kiểm tra database/ví đạt và hoàn tất triển khai.
+4. Xác định hosting/domain hiện có trước khi gắn `www.st25.io.vn`; chưa thay DNS trong phiên này.
 
 Trang `/plinko.html`, menu Kinh Tế & Chợ, desktop và điện thoại.
 
