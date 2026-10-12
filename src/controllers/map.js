@@ -2,13 +2,16 @@ const PilotAPI = require('../api/upstream-endpoints');
 const ST25API = require('../api/endpoints');
 // map feature HTTP handlers. Dependencies are supplied by the application.
 module.exports = function register(app, context) {
-  const {fs, path, Core, callIslePilot, posToLatLng, getRequestSteamId} = context;
+  const {fs, path, Core, callIslePilot, posToLatLng, getRequestSteamId, normalizeStatPct} = context;
 
 
 // 7. Live Map Coordinates (Member View - Only show this player, hide others)
 app.get(ST25API.routes.playerMap, async (req, res) => {
   const reqSteamId = getRequestSteamId(req);
-  const onlineData = await callIslePilot(PilotAPI.paths.playersOnline);
+  const [onlineData, ownPlayer] = await Promise.all([
+    callIslePilot(PilotAPI.paths.playersOnline),
+    reqSteamId ? callIslePilot(PilotAPI.player(reqSteamId)) : null
+  ]);
   const allOnline = (onlineData && onlineData.players) || [];
 
   if (!reqSteamId) {
@@ -37,7 +40,7 @@ app.get(ST25API.routes.playerMap, async (req, res) => {
   }
 
   // 1. Fetch requested player details from IslePilot
-  let player = await callIslePilot(PilotAPI.player(reqSteamId));
+  let player = ownPlayer && !ownPlayer.error && !ownPlayer._status ? ownPlayer : null;
   let isOnline = false;
 
   const foundOnline = allOnline.find(p => p.steamId === reqSteamId);
@@ -47,6 +50,7 @@ app.get(ST25API.routes.playerMap, async (req, res) => {
   } else if (player) {
     isOnline = player.online !== false;
   }
+  if (!player) return res.status(503).json({ error: 'Không thể cập nhật vị trí nhân vật.' });
 
   let activePlayer = player;
 
@@ -59,9 +63,9 @@ app.get(ST25API.routes.playerMap, async (req, res) => {
     name: activePlayer.name,
     species: activePlayer.species || "Chưa chọn",
     growth: `${Math.round((activePlayer.growth || 0) * 100)}%`,
-    health: Math.round(((activePlayer.health || 0) / (activePlayer.maxHealth || 1)) * 100) || 100,
-    hunger: Math.round(((activePlayer.hunger || 0) / (activePlayer.maxHunger || 1)) * 100) || 100,
-    thirst: Math.round(((activePlayer.thirst || 0) / (activePlayer.maxThirst || 1)) * 100) || 100,
+    health: normalizeStatPct(activePlayer.health, activePlayer.maxHealth),
+    hunger: normalizeStatPct(activePlayer.hunger, activePlayer.maxHunger),
+    thirst: normalizeStatPct(activePlayer.thirst, activePlayer.maxThirst),
     lat: loc.lat,
     lng: loc.lng,
     grid: loc.grid,
@@ -79,9 +83,9 @@ app.get(ST25API.routes.playerMap, async (req, res) => {
     gender: (activePlayer && activePlayer.female) ? "Cái (Female)" : "Đực (Male)",
     growth: activePlayer ? `${Math.round((activePlayer.growth || 0) * 100)}%` : "0%",
     growth_num: activePlayer ? Math.round((activePlayer.growth || 0) * 100) : 0,
-    health: activePlayer ? Math.round(((activePlayer.health || 0) / (activePlayer.maxHealth || 1)) * 100) : 100,
-    hunger: activePlayer ? Math.round(((activePlayer.hunger || 0) / (activePlayer.maxHunger || 1)) * 100) : 100,
-    thirst: activePlayer ? Math.round(((activePlayer.thirst || 0) / (activePlayer.maxThirst || 1)) * 100) : 100,
+    health: activePlayer ? normalizeStatPct(activePlayer.health, activePlayer.maxHealth) : 100,
+    hunger: activePlayer ? normalizeStatPct(activePlayer.hunger, activePlayer.maxHunger) : 100,
+    thirst: activePlayer ? normalizeStatPct(activePlayer.thirst, activePlayer.maxThirst) : 100,
     stamina: 100,
     isPrimeElder: activePlayer ? (activePlayer.isPrimeElder || false) : false,
     lat: loc.lat,

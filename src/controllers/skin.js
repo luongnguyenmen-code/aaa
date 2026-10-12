@@ -11,7 +11,8 @@ app.get(ST25API.routes.skinInfo, async (req, res) => {
   const callerSteamId = getRequestSteamId(req);
   const target = String(req.query.steamId || '').trim();
   const steamId = getAdminSteamId(req) && /^\d{17}$/.test(target) ? target : callerSteamId;
-  const userBal = steamId ? await getLivePlayerBalance(steamId) : 0;
+  const shopRead = callIslePilot(PilotAPI.paths.shopSkins);
+  let userBal = 0;
   let personaName = "Chưa đăng nhập Steam";
   let species = "Tyrannosaurus";
   let growth = 100;
@@ -20,9 +21,11 @@ app.get(ST25API.routes.skinInfo, async (req, res) => {
 
   if (steamId) {
     const [p, pilotSkins] = await Promise.all([
-      callIslePilot(PilotAPI.player(steamId), 'GET', null, true),
-      callIslePilot(PilotAPI.playerSkins(steamId), 'GET', null, true)
+      callIslePilot(PilotAPI.player(steamId)),
+      callIslePilot(PilotAPI.playerSkins(steamId))
     ]);
+    if (!p || p.error || !Number.isFinite(p.wallet?.balance)) return res.status(503).json({ error: 'Không thể cập nhật dữ liệu skin và ví.' });
+    userBal = p.wallet.balance;
 
     if (p) {
       if (p.name) personaName = p.name;
@@ -32,7 +35,7 @@ app.get(ST25API.routes.skinInfo, async (req, res) => {
     }
 
     if (pilotSkins && Array.isArray(pilotSkins.skins)) {
-      ownedSkins = pilotSkins.skins;
+      ownedSkins = pilotSkins.skins.slice();
     }
 
     // Kết hợp skin nhận từ Hòm Quà trong portal-data nếu có
@@ -53,7 +56,7 @@ app.get(ST25API.routes.skinInfo, async (req, res) => {
   }
 
   // Lấy skin shop trực tiếp từ IslePilot API
-  const shopData = await callIslePilot(PilotAPI.paths.shopSkins);
+  const shopData = await shopRead;
   let shopSkins = (shopData && shopData.skins && shopData.skins.length > 0) ? shopData.skins : [
     { id: "cmuvdy3510ehdqq0190p5cmyd", name: "Tyrannosaurus Halloween", price: 20, species: "Tyrannosaurus", icon: "🎃" }
   ];
@@ -126,6 +129,7 @@ app.post(ST25API.routes.skinApply, async (req, res) => {
     mouth: hexToLinear(colors?.mouth || "#7a3b3b"),
     claws: hexToLinear(colors?.claws || "#3a3a3a")
   };
+  try { validateSkinPayload(payload); } catch (error) { return res.status(400).json({ error: error.message }); }
 
   // 3. Gọi trực tiếp IslePilot API: POST /players/{steamId}/skin/apply
   const applyRes = await callIslePilot(PilotAPI.playerSkinApply(steamId), 'POST', { payload });
@@ -153,14 +157,21 @@ app.post(ST25API.routes.skinApply, async (req, res) => {
 
 // Mua Skin từ Shop bằng Lúa (POST /api/skin/buy)
 app.post(ST25API.routes.skinBuy, async (req, res) => {
-  const { skinId, skinName, price } = req.body;
+  const { skinId } = req.body;
   const steamId = getRequestSteamId(req);
 
   if (!steamId) {
     return res.status(401).json({ error: "Vui lòng đăng nhập Steam để mua skin!" });
   }
 
-  const skinPrice = Number(price) || 20;
+  if (typeof skinId !== 'string' || !skinId) return res.status(400).json({ error: 'Thiếu mã skin.' });
+  const catalog = await callIslePilot(PilotAPI.paths.shopSkins);
+  if (!catalog || catalog.error || !Array.isArray(catalog.skins)) return res.status(503).json({ error: 'Không thể xác minh giá skin trên IslePilot.' });
+  const skin = catalog.skins.find(item => String(item.id) === skinId);
+  if (!skin) return res.status(404).json({ error: 'Skin không còn trong cửa hàng.' });
+  const skinName = skin.name || skinId;
+  const skinPrice = Number(skin.price ?? skin.cost);
+  if (!Number.isSafeInteger(skinPrice) || skinPrice < 0) return res.status(503).json({ error: 'Giá skin chưa hợp lệ.' });
   const curBal = await getLivePlayerBalance(steamId);
   if (curBal < skinPrice) {
     return res.status(400).json({
@@ -170,6 +181,7 @@ app.post(ST25API.routes.skinBuy, async (req, res) => {
 
   // Gọi IslePilot API mua skin
   const pilotRes = await callIslePilot(PilotAPI.playerSkins(steamId), 'POST', { shopSkinId: skinId });
+  if (!pilotRes || pilotRes.error || pilotRes._status || pilotRes.ok === false || pilotRes.success === false) return res.status(pilotRes?._status || 503).json({ error: pilotRes?.error || 'IslePilot chưa xác nhận mua skin; chưa trừ Lúa tại portal.' });
 
   // Trừ Lúa
   const deduct = await modifyLivePlayerBalance(steamId, -skinPrice, `Mua skin shop: ${skinName || skinId}`);

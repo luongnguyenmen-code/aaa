@@ -188,7 +188,7 @@
       playShakeSound();
 
       try {
-        const res = await fetch(ST25API.routes.casinoTaiXiuPlay, {
+        const res = await App.mutate(ST25API.routes.casinoTaiXiuPlay, {
           method: 'POST',
           headers: getAuthHeaders(),
           credentials: 'include',
@@ -333,7 +333,7 @@
       playShakeSound();
 
       try {
-        const res = await fetch(ST25API.routes.casinoBauCuaPlay, {
+        const res = await App.mutate(ST25API.routes.casinoBauCuaPlay, {
           method: 'POST',
           headers: getAuthHeaders(),
           credentials: 'include',
@@ -535,7 +535,7 @@
 
       try {
         // Gửi lệnh đặt cược lên server
-        const res = await fetch(ST25API.routes.casinoDinoRacePlay, {
+        const res = await App.mutate(ST25API.routes.casinoDinoRacePlay, {
           method: 'POST',
           headers: getAuthHeaders(),
           credentials: 'include',

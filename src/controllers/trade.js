@@ -2,7 +2,7 @@ const PilotAPI = require('../api/upstream-endpoints');
 const ST25API = require('../api/endpoints');
 // trade feature HTTP handlers. Dependencies are supplied by the application.
 module.exports = function register(app, context) {
-  const {getPortalData, savePortalData, callIslePilot, clearPlayerCache, getRequestSteamId, TRADE_TIMEOUT_MS, cleanExpiredTrades, getPlayerGarageStatus, addDinoToGarage, getLivePlayerBalance, modifyLivePlayerBalance} = context;
+  const {getPortalData, savePortalData, callIslePilot, clearPlayerCache, getRequestSteamId, TRADE_TIMEOUT_MS, cleanExpiredTrades, getPlayerGarageStatus, addDinoToGarage, getLivePlayerBalance, modifyLivePlayerBalance, transferLivePlayerBalance} = context;
 
 
 // ==========================================
@@ -12,6 +12,7 @@ module.exports = function register(app, context) {
 // Lấy dữ liệu Trade của người chơi hiện tại
 app.get(ST25API.routes.tradeData, async (req, res) => {
   const steamId = getRequestSteamId(req);
+  const recentPlayersRead = callIslePilot(PilotAPI.paths.players);
   const data = getPortalData();
   if (!data.trades) data.trades = [];
   cleanExpiredTrades(data);
@@ -23,9 +24,11 @@ app.get(ST25API.routes.tradeData, async (req, res) => {
   let myDinos = [];
 
   if (steamId) {
-    balance = await getLivePlayerBalance(steamId);
-    garageStatus = await getPlayerGarageStatus(steamId);
-    const p = await callIslePilot(PilotAPI.player(steamId));
+    const [liveBalance, liveGarage, p] = await Promise.all([
+      getLivePlayerBalance(steamId), getPlayerGarageStatus(steamId), callIslePilot(PilotAPI.player(steamId))
+    ]);
+    balance = liveBalance;
+    garageStatus = liveGarage;
     if (p) {
       if (p.name) personaName = p.name;
       if (p.avatar) avatar = p.avatar;
@@ -67,7 +70,7 @@ app.get(ST25API.routes.tradeData, async (req, res) => {
   // Danh sách người chơi online/gần đây để chọn giao dịch
   let recentPlayers = [];
   try {
-    const pl = await callIslePilot(PilotAPI.paths.players);
+    const pl = await recentPlayersRead;
     if (pl && Array.isArray(pl.players)) {
       recentPlayers = pl.players
         .filter(p => !steamId || p.steamId !== steamId)
@@ -114,8 +117,9 @@ app.post(ST25API.routes.tradeCreate, async (req, res) => {
     return res.status(400).json({ error: "Bạn không thể tự tạo giao dịch với chính mình!" });
   }
 
-  const numSenderLua = Math.max(0, parseInt(senderLua) || 0);
-  const numRequestedLua = Math.max(0, parseInt(requestedLua) || 0);
+  const numSenderLua = Number(senderLua ?? 0);
+  const numRequestedLua = Number(requestedLua ?? 0);
+  if ([numSenderLua, numRequestedLua].some(amount => !Number.isSafeInteger(amount) || amount < 0 || amount > 10000)) return res.status(400).json({ error: 'Số Lúa giao dịch phải là số nguyên từ 0 đến 10,000.' });
 
   if (!dinoId && numSenderLua <= 0 && numRequestedLua <= 0) {
     return res.status(400).json({ error: "Vui lòng chọn ít nhất một Khủng Long hoặc nhập số Lúa muốn giao dịch!" });
@@ -156,7 +160,7 @@ app.post(ST25API.routes.tradeCreate, async (req, res) => {
   const rawG = selectedDino && selectedDino.growth !== undefined ? Number(selectedDino.growth) : 1;
   const displayGrowth = rawG > 1 ? Math.min(100, Math.round(rawG)) : Math.round(rawG * 100);
 
-  const tradeId = `trade-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const tradeId = `trade-${require('node:crypto').randomUUID()}`;
   const tradeOffer = {
     id: tradeId,
     senderSteamId,
@@ -330,26 +334,23 @@ app.post(ST25API.routes.tradeAccept, async (req, res) => {
     }
   }
 
-  // 4. THỰC HIỆN HOÁN ĐỔI ATOMIC:
-  // a) Chuyển Lúa yêu cầu (từ người nhận -> người gửi)
-  if (trade.requestedLua > 0) {
-    await modifyLivePlayerBalance(receiverSteamId, -trade.requestedLua, `Trade ST25: Trả ${trade.requestedLua} Lúa cho ${senderSteamId}`);
-    await modifyLivePlayerBalance(senderSteamId, trade.requestedLua, `Trade ST25: Nhận ${trade.requestedLua} Lúa từ ${receiverSteamId}`);
-  }
-
-  // b) Chuyển Lúa tặng kèm (từ người gửi -> người nhận)
-  if (trade.senderLua > 0) {
-    await modifyLivePlayerBalance(senderSteamId, -trade.senderLua, `Trade ST25: Gửi ${trade.senderLua} Lúa cho ${receiverSteamId}`);
-    await modifyLivePlayerBalance(receiverSteamId, trade.senderLua, `Trade ST25: Nhận ${trade.senderLua} Lúa từ ${senderSteamId}`);
-  }
+  // Settle the same final balances with one net transfer instead of four mutations.
+  const netLua = Number(trade.requestedLua || 0) - Number(trade.senderLua || 0);
+  if (!Number.isSafeInteger(netLua)) return res.status(400).json({ error: 'Số Lúa của lời mời không hợp lệ.' });
+  if (netLua > 0) await transferLivePlayerBalance(receiverSteamId, senderSteamId, netLua, `Trade ST25 ${trade.id}`);
+  if (netLua < 0) await transferLivePlayerBalance(senderSteamId, receiverSteamId, -netLua, `Trade ST25 ${trade.id}`);
 
   // c) Chuyển Khủng Long vào Gara người nhận và xóa khỏi người gửi
   let transferredDino = null;
   if (trade.senderDino) {
     const targetDino = trade.senderDino;
+    if (!targetDino.isLocal && !String(targetDino.id).startsWith('dino-')) {
+      const result = await callIslePilot(PilotAPI.playerGarageItemSell(senderSteamId, targetDino.id), 'POST', {});
+      if (!result || result.error || result._status) throw Object.assign(Error('Chưa xác nhận bàn giao khủng long trên IslePilot. Liên hệ BQT để đối soát.'), { status: 503 });
+    }
     transferredDino = addDinoToGarage(receiverSteamId, {
       ...targetDino,
-      id: `dino-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: `dino-${require('node:crypto').randomUUID()}`,
       source: `Giao Dịch ST25 (Nhận từ: ${trade.senderName})`,
       stored_at: new Date().toLocaleString('vi-VN'),
       isLocal: true
@@ -366,11 +367,6 @@ app.post(ST25API.routes.tradeAccept, async (req, res) => {
       );
     }
 
-    if (!targetDino.isLocal && !String(targetDino.id).startsWith('dino-')) {
-      try {
-        await callIslePilot(PilotAPI.playerGarageItemSell(senderSteamId, targetDino.id), 'POST', {});
-      } catch (_) {}
-    }
   }
 
   // d) Đánh dấu giao dịch hoàn tất

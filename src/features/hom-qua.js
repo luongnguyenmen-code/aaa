@@ -20,7 +20,7 @@
       if (!sid) return;
       App.showToast('Đang chuyển đổi tài khoản...', 'info');
       try {
-        const res = await fetch(ST25API.routes.playerLoginManual, {
+        const res = await App.mutate(ST25API.routes.playerLoginManual, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ steamId: sid })
@@ -163,7 +163,7 @@
       try {
         App.showToast('Đang kết nối IslePilot Cloud để quay thưởng... 🎃', 'info');
         const crateIdToOpen = (activeLoadedCrate && activeLoadedCrate.id) || 'cmuvclx96082iml01bson72ak';
-        const res = await fetch(ST25API.routes.cratesOpen, {
+        const res = await App.mutate(ST25API.routes.cratesOpen, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

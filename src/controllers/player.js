@@ -95,12 +95,14 @@ app.get(ST25API.routes.playerVitals, async (req, res) => {
 app.get(ST25API.routes.playerMe, async (req, res) => {
   const reqSteamId = getRequestSteamId(req);
   if (reqSteamId) {
-    const pilotPlayer = await callIslePilot(PilotAPI.player(reqSteamId));
+    const [pilotPlayer, garageStatus] = await Promise.all([
+      callIslePilot(PilotAPI.player(reqSteamId)),
+      getPlayerGarageStatus(reqSteamId, { fresh: false })
+    ]);
     if (pilotPlayer && !pilotPlayer.error && !pilotPlayer._status) {
       const loc = posToLatLng(pilotPlayer.position);
       const isAdmin = isUserAdmin(reqSteamId);
       const isSuperAdmin = SUPER_ADMINS.includes(String(reqSteamId).trim());
-      const garageStatus = await getPlayerGarageStatus(reqSteamId, { player: pilotPlayer, fresh: false });
       const portalData = getPortalData();
       cleanExpiredTrades(portalData);
       const incomingTrades = (portalData.trades || []).filter(t => t.receiverSteamId === reqSteamId && t.status === 'pending');
@@ -167,7 +169,9 @@ app.post(ST25API.routes.playerLogout, (req, res) => {
 // Chuyển đổi nhanh Steam ID Profile
 app.post(ST25API.routes.playerSessionSwitch, async (req, res) => {
   const { steamId } = req.body;
-  if (!steamId) return res.status(400).json({ error: "Thiếu steamId" });
+  const authenticated = getRequestSteamId(req);
+  if (!authenticated) return res.status(401).json({ error: 'Vui lòng đăng nhập qua Steam.' });
+  if (steamId !== authenticated) return res.status(403).json({ error: 'Đổi tài khoản cần đăng nhập lại qua Steam.' });
   await linkPlayerBySteamId(steamId);
   res.json({ success: true });
 });
@@ -183,6 +187,7 @@ app.post(ST25API.routes.playerDaily, async (req, res) => {
   }
 
   const result = await callIslePilot(PilotAPI.playerDaily(steamId), 'POST', {});
+  context.clearPlayerCache(steamId);
   if (result && !result.error && !result.missingScope) {
     return res.json({
       success: true,

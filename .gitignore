@@ -16,5 +16,8 @@ tests/.quests-browser-*/
 aaa-local-before-merge-fix.zip
 /debug.log
 .vercel
+src/models/data/mutation-journal.json
+src/models/data/*.tmp
+src/core/*.tmp
 .env*
 !.env.example

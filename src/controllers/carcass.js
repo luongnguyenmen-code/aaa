@@ -46,7 +46,7 @@ app.post(ST25API.routes.carcassOrder, async (req, res) => {
 
   // 2. KÍCH HOẠT LỆNH THẬT TRÊN MÁY CHỦ ISLEPILOT:
   // - 2.1 LỆNH RỚT XÁC VẬT LÝ THEO ĐÚNG LOÀI & GROWTH TRỰC TIẾP TẠI TỌA ĐỘ NGƯỜI CHƠI
-  await callIslePilot(PilotAPI.paths.commands, 'POST', {
+  const dropResult = await callIslePilot(PilotAPI.paths.commands, 'POST', {
     action: 'carcass',
     steamId: steamId,
     offerId: carcass.id,
@@ -54,6 +54,14 @@ app.post(ST25API.routes.carcassOrder, async (req, res) => {
     growth: carcass.growthVal,
     bones: false
   });
+  if (!dropResult || dropResult.error || dropResult._status || dropResult.ok === false || dropResult.success === false) {
+    const certainFailure = dropResult?._status >= 400 && dropResult._status < 500 && !dropResult._uncertain;
+    if (certainFailure) await modifyLivePlayerBalance(steamId, carcass.price, `Hoàn Lúa: lệnh thả xác ${carcass.name} bị từ chối`);
+    if (!data.carcassOrders) data.carcassOrders = [];
+    data.carcassOrders.unshift({ id: require('node:crypto').randomUUID(), steamId, carcassName: carcass.name, price: carcass.price, orderedAt: new Date().toISOString(), status: certainFailure ? 'Đã hoàn Lúa' : 'Chờ đối soát', note: dropResult?.error || 'Chưa xác nhận lệnh thả xác' });
+    savePortalData(data);
+    return res.status(503).json({ error: certainFailure ? 'Lệnh thả xác bị từ chối. Lúa đã được hoàn vào ví.' : 'Chưa xác nhận lệnh thả xác. Không đặt lại; liên hệ BQT để đối soát Lúa.' });
+  }
 
   // - 2.2 Phát thông báo tiếp tế toàn server qua IslePilot
   await callIslePilot(PilotAPI.paths.commands, 'POST', {
@@ -63,7 +71,7 @@ app.post(ST25API.routes.carcassOrder, async (req, res) => {
   });
 
   const order = {
-    id: `drop-${Date.now()}`,
+    id: `drop-${require('node:crypto').randomUUID()}`,
     steamId,
     carcassName: carcass.name,
     price: carcass.price,
@@ -71,6 +79,7 @@ app.post(ST25API.routes.carcassOrder, async (req, res) => {
     status: "Đã Rớt Xác Thành Công",
     note: "Đã thả xác vật lý rơi ngay vị trí của bạn trong game để ăn thịt!"
   };
+  if (!data.carcassOrders) data.carcassOrders = [];
   data.carcassOrders.unshift(order);
   savePortalData(data);
 

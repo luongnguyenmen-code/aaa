@@ -1,8 +1,8 @@
 
     async function loadMyTickets() {
       try {
-        const res = await App.readResponse(ST25API.routes.supportMyTickets);
-        const tickets = await res.json();
+        const tickets = await App.readJSON(ST25API.routes.supportMyTickets);
+        const safeTickets = tickets.map(ticket => Object.fromEntries(Object.entries(ticket).map(([key, value]) => [key, App.escapeHTML(key === 'videoUrl' ? (/^https?:\/\//i.test(String(value)) ? value : '#') : value)])));
 
         const badge = document.getElementById('ticket-count-badge');
         badge.textContent = `${tickets.length} Ticket`;
@@ -13,7 +13,7 @@
           return;
         }
 
-        container.innerHTML = tickets.map(t => `
+        container.innerHTML = safeTickets.map(t => `
           <div class="ticket-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
               <strong style="color: #fbbf24;">Mã #${t.id}</strong>
@@ -43,7 +43,7 @@
       if (!confirm('Bạn có chắc chắn muốn gửi lệnh cứu kẹt GPS cho khủng long hiện tại? Khủng long sẽ được đưa về vị trí an toàn.')) return;
 
       try {
-        const res = await fetch(ST25API.routes.supportUnstuck, { method: 'POST' });
+        const res = await App.mutate(ST25API.routes.supportUnstuck, { method: 'POST' });
         const result = await res.json();
         if (res.ok) {
           App.showToast(result.message, 'success');
@@ -65,7 +65,7 @@
       const details = document.getElementById('ticket-details').value.trim();
 
       try {
-        const res = await fetch(ST25API.routes.supportTicket, {
+        const res = await App.mutate(ST25API.routes.supportTicket, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ targetPlayer, timeReport, locationReport, violationRule, videoUrl, details })

@@ -73,7 +73,7 @@
     async function generateNewInviteCode() {
       try {
         App.showToast('Đang tạo mã mời mới...', 'info');
-        const res = await fetch(ST25API.routes.referralGenerateCode, {
+        const res = await App.mutate(ST25API.routes.referralGenerateCode, {
           method: 'POST',
           headers: getAuthHeaders(),
           credentials: 'include'
@@ -132,7 +132,7 @@
       btn.textContent = '⏳ Đang kiểm tra & cộng Lúa...';
 
       try {
-        const res = await fetch(ST25API.routes.referralClaim, {
+        const res = await App.mutate(ST25API.routes.referralClaim, {
           method: 'POST',
           headers: getAuthHeaders(),
           credentials: 'include',

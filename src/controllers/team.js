@@ -2,7 +2,7 @@ const PilotAPI = require('../api/upstream-endpoints');
 const ST25API = require('../api/endpoints');
 // team feature HTTP handlers. Dependencies are supplied by the application.
 module.exports = function register(app, context) {
-  const {callIslePilot, posToLatLng, getRequestSteamId} = context;
+  const {callIslePilot, posToLatLng, getRequestSteamId, normalizeStatPct} = context;
 
 
 // 8. Team / Pack Members (Real Data from IslePilot)
@@ -10,6 +10,7 @@ app.get(ST25API.routes.playerTeam, async (req, res) => {
   const reqSteamId = getRequestSteamId(req);
   if (!reqSteamId) return res.status(401).json({ error: 'Chưa đăng nhập Steam.' });
   const onlineData = await callIslePilot(PilotAPI.paths.playersOnline);
+  if (!onlineData || onlineData.error || !Array.isArray(onlineData.players)) return res.status(503).json({ error: 'Không thể cập nhật dữ liệu đàn.' });
   const allOnline = (onlineData && onlineData.players) || [];
 
   const thisPlayer = allOnline.find(p => p.steamId === reqSteamId);
@@ -35,10 +36,10 @@ app.get(ST25API.routes.playerTeam, async (req, res) => {
       avatar: "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg",
       species: p.species,
       growth: Math.round((p.growth || 0) * 100),
-      health: Math.round(((p.health || 0) / (p.maxHealth || 1)) * 100) || 100,
+      health: normalizeStatPct(p.health, p.maxHealth),
       status: p.health > 0 ? "Khoẻ mạnh" : "Đang nghỉ",
       role: idx === 0 ? "Chủ đàn (Pack Leader)" : "Thành viên",
-      coordinates: `Ô ${loc.grid} (X: ${Math.round(p.position.x / 100)})`,
+      coordinates: `Ô ${loc.grid} (X: ${Math.round((p.position?.x ?? 0) / 100)})`,
       last_seen: "Vừa xong",
       online: p.online
     };

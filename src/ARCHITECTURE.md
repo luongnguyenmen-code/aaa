@@ -52,6 +52,14 @@ Chạy `npm test` để kiểm tra cú pháp, route, layout, asset, quyền truy
 
 Các trang dùng `App.readJSON` hoặc `App.readResponse` cho API đọc: request trùng đang chạy được gộp, thời hạn chờ 10 giây bao gồm tải body. `readResponse` giữ HTTP status và cung cấp body riêng cho mỗi caller. POST vẫn chạy riêng, không được gộp hoặc tự gửi lại. Client IslePilot phía server gộp GET thông thường trong cùng tiến trình; GET yêu cầu dữ liệu mới (`bypassCache`) chạy độc lập. Cache được phân biệt theo cấu hình upstream, và `clearPlayerCache` vô hiệu cả cache lẫn khả năng ghi cache của GET cũ đang chạy. Gara và Skin gọi helper này sau thao tác thay đổi. Cơ chế này không gộp request giữa các instance Vercel khác nhau.
 
+## Lưu trữ và biên nhận giao dịch
+
+`models/json-store.js` ghi JSON nguyên tử; lỗi lưu được truyền về handler. `ST25_DATA_DIR` chọn thư mục dữ liệu bền vững cho Node một tiến trình; sao chép JSON hiện có trước khi chuyển thư mục. `.env.local` được nạp trước `.env`, biến hosting/shell có ưu tiên cao nhất.
+
+`models/persistent-state.js` dùng PostgreSQL khi có `PORTAL_DATABASE_URL` kết nối trực tiếp. Mỗi API đọc snapshot trong request; API ghi giữ session advisory lock và checkpoint trạng thái trước/sau tác động upstream. Khi có ghi đang chạy, lượt ghi khác nhận 429. Vercel/nhiều instance cần DB này; JSON trong function hoặc `/tmp` không bảo đảm lưu bền vững. Không dùng transaction pooler cho session lock.
+
+`services/mutation-journal.js` ghi biên nhận trước POST có tác động, lưu từng phản hồi và chặn tài khoản/tài sản có giao dịch chưa xác nhận. Kết quả mơ hồ cần đối soát, không tự gửi lại/hoàn tiền. API đọc player/Gara bình thường dùng cache ngắn và gộp request; trong mutation dùng dữ liệu mới. `App.mutate` đặt thời hạn 45 giây, chặn nhấp đôi theo URL và không retry. Chi tiết kiểm chứng/giới hạn nằm trong [báo cáo](../RELIABILITY_AUDIT.md).
+
 ## Trình chỉnh Skin IslePilot
 
 `features/skin-layout.js` sắp xếp lại các field và callback của component gốc theo bố cục Skin Designer: ảnh chọn loài phía trên, màu/họa tiết bên trái, mô hình ở giữa, thông số/áp dụng/preset bên phải. Adapter JSX trong `features/islepilot-skin.js` chỉ chuyển bố cục root của SkinEditor; không tạo bộ state màu hoặc API thứ hai. Trên tablet, sidebar chuyển xuống thành một hàng; trên điện thoại, mô hình chuyển lên trước bảng màu. Glitch bị khóa cả ở component (`glitchEnabled:false`) và API (kênh RGBA chỉ nhận 0–1). Phí áp dụng vẫn là 10 Lúa.

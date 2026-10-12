@@ -32,6 +32,12 @@ Root causes addressed:
 
 The browser audit uses mock API data. It does not establish frame rate on a user's GPU/phone, hosting latency, or live IslePilot transaction success. The four IslePilot export snapshots receive static validation rather than live browser testing.
 
+## Reliability checks
+
+`node tests/reliability-regression.cjs` is included in `npm test`. It uses an isolated temporary data directory, fake upstream responses and a mocked PostgreSQL pool; no production mutations run. It covers preserved garage assets, quest rollback, uncertain receipts across restart, participant locks, confirmed refunds, atomic storage failures, malformed data, command rejection, aborted requests and shared/cancelled frontend reads. Database fixtures cover cross-instance locking, read isolation and HTTP/model/journal persistence, not a live PostgreSQL deployment.
+
+Set `ST25_AUDIT_OUTPUT_DIR` to a directory inside the workspace, such as `.build-cache/reliability-browser`, before running `redesign-browser-audit.cjs` or `islepilot-skin-browser.cjs` to keep new screenshots/results separate from checked-in baselines. See [the audit report](../RELIABILITY_AUDIT.md) for evidence and remaining live-provider/deployment checks.
+
 ## 3D skin checks
 
 API concurrency checks: `node tests/api-concurrency-regression.cjs` (also included in `npm test`). Offline fixtures cover twelve simultaneous upstream GETs becoming one request, failed-read release, independent response bodies, HTTP error preservation, timeout and recovery, fresh transaction reads, cache invalidation while an old request is in flight, changed upstream credentials, separate POSTs and double-click protection for carcass orders. `redesign-browser-audit.cjs` includes the casino page; its disabled-state check shares the statistics request instead of loading an extra script in the document head.

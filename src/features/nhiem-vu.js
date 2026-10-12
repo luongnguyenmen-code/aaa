@@ -34,12 +34,14 @@
           if (data.steamId) currentSteamId = data.steamId;
           renderPersonalDashboard(data);
           renderQuests(data);
-        } else {
+        } else if (res.status === 401) {
           showUnlinkedState();
+        } else {
+          App.showToast('Không thể cập nhật nhiệm vụ lúc này. Dữ liệu đang hiển thị được giữ nguyên.', 'warning');
         }
       } catch (e) {
         console.error('Failed to load personal quests:', e);
-        showUnlinkedState();
+        App.showToast('Kết nối nhiệm vụ bị gián đoạn. Hãy cập nhật lại sau.', 'warning');
       }
     }
 
@@ -146,7 +148,7 @@
 
     async function claimSingleQuest(questId, claimKey, questName, reward) {
       try {
-        const res = await fetch(ST25API.routes.playerQuestsClaim, {
+        const res = await App.mutate(ST25API.routes.playerQuestsClaim, {
           method: 'POST',
           headers: getAuthHeaders(),
           credentials: 'include',
@@ -179,7 +181,7 @@
 
     async function claimAllQuests() {
       try {
-        const res = await fetch(ST25API.routes.playerQuestsClaimAll, {
+        const res = await App.mutate(ST25API.routes.playerQuestsClaimAll, {
           method: 'POST',
           headers: getAuthHeaders(),
           credentials: 'include',

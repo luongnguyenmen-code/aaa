@@ -7,6 +7,7 @@ const App = {
   nextWeatherUpdate: 0,
   readRequests: new Map(),
   responseRequests: new Map(),
+  mutationRequests: new Set(),
   userListeners: new Set(),
 
   subscribeUser(listener) {
@@ -23,29 +24,43 @@ const App = {
   },
 
   // Coalesce identical reads and bound their lifetime; mutations are never retried here.
+  readKey(url, options) {
+    const normalized = { ...options };
+    delete normalized.signal;
+    if (!normalized.method || normalized.method.toUpperCase() === 'GET') delete normalized.method;
+    if (normalized.credentials === 'same-origin') delete normalized.credentials;
+    if (normalized.headers) {
+      const entries = typeof Headers !== 'undefined' ? [...new Headers(normalized.headers).entries()] : Object.entries(normalized.headers);
+      normalized.headers = Object.fromEntries(entries.map(([key, value]) => [key.toLowerCase(), String(value)]).sort(([a], [b]) => a.localeCompare(b)));
+    }
+    return url + JSON.stringify(Object.fromEntries(Object.entries(normalized).sort(([a], [b]) => a.localeCompare(b))));
+  },
+
   readResponse(url, options = {}) {
     if (options.method && options.method.toUpperCase() !== 'GET') throw new Error('readResponse only accepts GET');
-    const key = url + JSON.stringify(options);
+    const key = this.readKey(url, options) + (options.signal ? ':' + (this.signalRequestId = (this.signalRequestId || 0) + 1) : '');
     let request = this.responseRequests.get(key);
     if (!request) {
       const controller = new AbortController();
+      const abort = () => controller.abort();
+      if (options.signal?.aborted) abort();
+      else options.signal?.addEventListener('abort', abort, { once: true });
       const timeout = setTimeout(() => controller.abort(), ST25Core.readTimeoutMs);
       request = fetch(url, { ...options, signal: controller.signal }).then(async response => {
         // Buffer once so every caller can consume its own body, including HTTP errors.
         const body = await response.arrayBuffer();
         return new Response([204,205,304].includes(response.status) ? null : body, { status: response.status, statusText: response.statusText, headers: response.headers });
-      }).finally(() => { clearTimeout(timeout); this.responseRequests.delete(key); });
+      }).finally(() => { clearTimeout(timeout); options.signal?.removeEventListener('abort', abort); this.responseRequests.delete(key); });
       this.responseRequests.set(key, request);
     }
     return request.then(response => response.clone());
   },
 
   readJSON(url, options = {}) {
-    const key = url + JSON.stringify(options);
-    if (this.readRequests.has(key)) return this.readRequests.get(key);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), ST25Core.readTimeoutMs);
-    const request = fetch(url, { ...options, signal: controller.signal })
+    if (options.method && options.method.toUpperCase() !== 'GET') throw new Error('readJSON only accepts GET');
+    const key = this.readKey(url, options);
+    if (!options.signal && this.readRequests.has(key)) return this.readRequests.get(key);
+    const request = this.readResponse(url, options)
       .then(async response => {
         if (!response.ok) {
           const error = new Error(`HTTP ${response.status}`);
@@ -54,11 +69,28 @@ const App = {
         }
         return response.json();
       }).finally(() => {
-        clearTimeout(timeout);
-        this.readRequests.delete(key);
+        if (this.readRequests.get(key) === request) this.readRequests.delete(key);
       });
-    this.readRequests.set(key, request);
+    if (!options.signal) this.readRequests.set(key, request);
     return request;
+  },
+
+  async mutate(url, options = {}) {
+    if (this.mutationRequests.has(url)) throw new Error('Thao tác trước đang được xử lý. Vui lòng chờ.');
+    this.mutationRequests.add(url);
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    if (options.signal?.aborted) abort();
+    else options.signal?.addEventListener('abort', abort, { once: true });
+    const timeout = setTimeout(abort, 45000);
+    try {
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      const body = await response.arrayBuffer();
+      return new Response([204,205,304].includes(response.status) ? null : body, { status: response.status, statusText: response.statusText, headers: response.headers });
+    } catch (error) {
+      if (controller.signal.aborted) throw new Error('Chưa nhận được xác nhận từ máy chủ. Kiểm tra trạng thái trước khi gửi lại.');
+      throw error;
+    } finally { clearTimeout(timeout); options.signal?.removeEventListener('abort', abort); this.mutationRequests.delete(url); }
   },
 
   escapeHTML(value) {
@@ -91,15 +123,16 @@ const App = {
       if (document.hidden) clearTimeout(this.pollingTimer);
       else this.schedulePolling(0);
     });
-    window.addEventListener('pagehide', () => clearTimeout(this.pollingTimer));
-    window.addEventListener('pageshow', e => { if (e.persisted) this.schedulePolling(0); });
+    window.addEventListener('pagehide', () => { this.pollingSuspended = true; clearTimeout(this.pollingTimer); });
+    window.addEventListener('pageshow', e => { this.pollingSuspended = false; if (e.persisted) this.schedulePolling(0); });
   },
 
   schedulePolling(delay = 15000) {
     clearTimeout(this.pollingTimer);
-    if (document.hidden) return;
+    if (document.hidden || this.pollingSuspended || this.pollingInFlight) return;
     this.pollingTimer = setTimeout(async () => {
       if (document.hidden) return;
+      this.pollingInFlight = true;
       const tasks = [this.checkAuthSilently()];
       if (Date.now() >= this.nextWeatherUpdate) {
         this.nextWeatherUpdate = Date.now() + 30000;
@@ -107,6 +140,7 @@ const App = {
         tasks.push(this.loadConfig());
       }
       await Promise.allSettled(tasks);
+      this.pollingInFlight = false;
       this.schedulePolling();
     }, delay);
   },
@@ -182,9 +216,11 @@ const App = {
   },
 
   async checkAuth() {
+    const generation = this.authGeneration || 0;
     let error = null;
     try {
       const u = await this.readJSON(ST25API.routes.playerMe);
+      if (generation !== (this.authGeneration || 0)) return;
         if (u && u.linked && u.steam_id) {
           this.user = u;
           this.notifications = Array.isArray(u.notifications) ? u.notifications : [];
@@ -204,6 +240,7 @@ const App = {
           } catch (_) {}
         }
     } catch (e) {
+      if (generation !== (this.authGeneration || 0)) return;
       this.user = null;
       error = e;
     }
@@ -212,8 +249,10 @@ const App = {
   },
 
   async checkAuthSilently() {
+    const generation = this.authGeneration || 0;
     try {
       const u = await this.readJSON(ST25API.routes.playerMe);
+      if (generation !== (this.authGeneration || 0)) return;
       const wasAdmin = !!this.user?.isAdmin;
       this.user = u && u.linked && u.steam_id ? u : null;
       this.authResolved = true;
@@ -369,7 +408,7 @@ const App = {
     const maxSlots = u.maxSlots ?? 3;
     const unreadCount = (this.notifications || []).length;
     const isAdmin = !!u.isAdmin;
-    const avatar = u.avatar || 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg';
+    const avatar = this.escapeHTML(u.avatar || 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg');
     const roleClass = isAdmin ? 'role-admin' : (String(u.roleKey || '').includes('vip') ? 'role-vip' : '');
     const identity = JSON.stringify([u.steam_id, u.persona_name, avatar, u.role, roleClass, isAdmin]);
     const notificationsSignature = JSON.stringify(this.notifications);
@@ -434,7 +473,7 @@ const App = {
         <div style="position: relative;">
           <div class="hud-profile-pill" onclick="App.toggleProfilePopover(event)">
             <img src="${avatar}" class="hud-avatar ${roleClass}" alt="Steam Avatar">
-            <span class="hud-username">${u.persona_name || 'Người chơi'}</span>
+            <span class="hud-username">${this.escapeHTML(u.persona_name || 'Người chơi')}</span>
             <span style="font-size: 0.7rem; color: #94a3b8;">▾</span>
           </div>
 
@@ -442,9 +481,9 @@ const App = {
           <div id="hud-profile-popover" class="hud-popover" style="width: 250px;">
             <div style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
               <img src="${avatar}" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #fbbf24; margin-bottom: 6px;" alt="Avatar">
-              <div style="font-weight: 800; color: #fff; font-size: 0.95rem;">${u.persona_name}</div>
+              <div style="font-weight: 800; color: #fff; font-size: 0.95rem;">${this.escapeHTML(u.persona_name)}</div>
               <div style="font-size: 0.75rem; color: #94a3b8; font-family: monospace;">${u.steam_id}</div>
-              <div style="margin-top: 4px;"><span class="rule-badge badge-allow" style="font-size: 0.72rem;">${u.role || 'Thành viên'}</span></div>
+              <div style="margin-top: 4px;"><span class="rule-badge badge-allow" style="font-size: 0.72rem;">${this.escapeHTML(u.role || 'Thành viên')}</span></div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 4px;">
               <a href="lien-ket-steam.html" class="nav-dropdown-item">🔄 Đổi Tài Khoản Steam</a>
@@ -599,14 +638,23 @@ const App = {
     window.location.reload();
   },
 
-  logoutUser() {
-    this.user = null;
-    localStorage.removeItem('the_isle_demo_user');
-    localStorage.removeItem('st25_steam_user');
-    fetch(ST25API.routes.playerLogout, { method: 'POST' }).catch(() => {});
-    this.updateUI();
-    this.showToast('Đã đăng xuất tài khoản.', 'info');
-    setTimeout(() => window.location.reload(), 500);
+  async logoutUser() {
+    if (this.logoutBusy) return;
+    this.logoutBusy = true;
+    try {
+      const response = await this.mutate(ST25API.routes.playerLogout, { method: 'POST' });
+      if (!response.ok) throw new Error('Máy chủ chưa xác nhận đăng xuất.');
+      this.authGeneration = (this.authGeneration || 0) + 1;
+      this.user = null;
+      this.notifications = [];
+      try { localStorage.removeItem('the_isle_demo_user'); localStorage.removeItem('st25_steam_user'); } catch (_) {}
+      this.publishUser();
+      this.renderPlayerHUD();
+      this.updateUI();
+      this.showToast('Đã đăng xuất tài khoản.', 'info');
+      window.location.reload();
+    } catch (error) { this.showToast(error.message || 'Không thể xác nhận đăng xuất.', 'error'); }
+    finally { this.logoutBusy = false; }
   },
 
   showToast(message, type = 'info') {

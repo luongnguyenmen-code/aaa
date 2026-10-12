@@ -1,18 +1,23 @@
 const ST25API = require('../api/endpoints');
+const PilotAPI = require('../api/upstream-endpoints');
 // support feature HTTP handlers. Dependencies are supplied by the application.
 module.exports = function register(app, context) {
-  const {getPortalData, savePortalData, getRequestSteamId} = context;
+  const {getPortalData, savePortalData, getRequestSteamId, callIslePilot, clearPlayerCache} = context;
 
 
 // 13. Hệ Thống Hỗ Trợ & Cứu Kẹt (Support & Unstuck)
-app.post(ST25API.routes.supportUnstuck, (req, res) => {
+app.post(ST25API.routes.supportUnstuck, async (req, res) => {
   const steamId = getRequestSteamId(req);
   if (!steamId) {
     return res.status(401).json({ error: "Vui lòng đăng nhập Steam để sử dụng Cứu Kẹt GPS!" });
   }
+  const result = await callIslePilot(PilotAPI.paths.commands, 'POST', { action: 'unstuck', steamId });
+  if (!result || result.error || result._status) return res.status(result?._status || 503).json({ error: result?.error || 'IslePilot chưa xác nhận yêu cầu cứu kẹt.' });
+  clearPlayerCache(steamId);
   res.json({
     success: true,
-    message: `Hệ thống đã nhận lệnh Cứu Kẹt GPS cho tài khoản ${steamId}. Khủng long của bạn được dịch chuyển đến vùng an toàn (Rừng Dừa / Đồng Cỏ Cứu Trợ). Vui lòng relog game sau 30 giây!`
+    message: `IslePilot đã tiếp nhận yêu cầu Cứu Kẹt GPS cho tài khoản ${steamId}. Hãy kiểm tra nhân vật trong game.`,
+    jobId: result.jobId
   });
 });
 
@@ -28,7 +33,7 @@ app.post(ST25API.routes.supportTicket, (req, res) => {
   const steamId = getRequestSteamId(req) || "Khách ẩn danh";
 
   const newTicket = {
-    id: `TK-${Math.floor(1000 + Math.random() * 9000)}`,
+    id: `TK-${require('node:crypto').randomUUID()}`,
     senderSteamId: steamId,
     targetPlayer: targetPlayer || "Chưa rõ SteamID",
     timeReport: timeReport || new Date().toLocaleString('vi-VN'),

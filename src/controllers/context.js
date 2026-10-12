@@ -6,6 +6,7 @@ const Core = require('../core/config');
 const {getConfig, saveConfig} = require('../models/settings');
 const {getPortalData, savePortalData} = require('../models/portal-data');
 const {callIslePilot, clearPlayerCache, apiCache} = require('../api/islepilot-client');
+const Journal = require('../services/mutation-journal');
 module.exports = function createContext() {
 
 
@@ -13,6 +14,7 @@ module.exports = function createContext() {
 // MUTEX / CONCURRENCY LOCK MANAGER (CHỐNG SPAM & RACE CONDITION DUPLICATE LÚA)
 // ==========================================
 const playerActionLocks = new Set();
+const pendingMutations = new Set();
 
 function acquirePlayerLock(steamId, action = 'default') {
   if (!steamId) return false;
@@ -212,7 +214,10 @@ function isQuestCompleted(q) {
 // Helper: Kiểm tra nhiệm vụ đã được nhận thưởng trong chu kỳ hiện tại hay chưa (tự động reset mỗi ngày/tuần/tháng)
 function isQuestClaimedInPeriod(q, userClaimedQuests) {
   if (!userClaimedQuests) return false;
-  if (q.claimedAt) return true; // IslePilot Cloud đã ghi nhận đã claim
+  if (q.claimedAt) {
+    const date = new Date(q.claimedAt);
+    if (!Number.isNaN(date.getTime()) && getQuestPeriodKey(q, date) === getQuestPeriodKey(q)) return true;
+  }
 
   const currentPeriodKey = getQuestPeriodKey(q);
   const claimKey = `${q.id}_${currentPeriodKey}`;
@@ -277,7 +282,7 @@ function cleanExpiredTrades(targetData = null) {
   const affectedSteamIds = new Set();
 
   data.trades.forEach(t => {
-    if (t.status === 'pending' && !pendingMutations.has('trade:' + String(t.id))) {
+    if (t.status === 'pending' && !pendingMutations.has('trade:' + String(t.id)) && !Journal.unresolved(['trade:' + String(t.id)])) {
       const createdTime = t.createdAtTimestamp || (t.createdAt ? new Date(t.createdAt).getTime() : 0);
       if (!createdTime || (now - createdTime >= TRADE_TIMEOUT_MS)) {
         t.status = 'expired';
@@ -297,15 +302,17 @@ function cleanExpiredTrades(targetData = null) {
   }
   return hasExpired;
 }
-function startMaintenance() { return setInterval(() => {
+let maintenanceTimer;
+function startMaintenance() { if (maintenanceTimer) return maintenanceTimer; maintenanceTimer = setInterval(() => {
+  if (require('../models/persistent-state').configured()) return;
   try {
     cleanExpiredTrades();
   } catch (_) {}
-}, 5000); }
+}, 5000); maintenanceTimer.unref?.(); return maintenanceTimer; }
 
 
 // Helper: Tra cứu quyền hạn và tính toán sức chứa Gara theo Role Discord & Steam ID
-async function getPlayerGarageStatus(steamId, { player = null, fresh = true } = {}) {
+async function getPlayerGarageStatus(steamId, { player = null, fresh = Journal.active() } = {}) {
   const cfg = getConfig();
   const garageCfg = cfg.garage || {};
   const roleLimits = garageCfg.role_limits || {
@@ -317,6 +324,7 @@ async function getPlayerGarageStatus(steamId, { player = null, fresh = true } = 
 
   const cleanSteamId = steamId ? String(steamId).trim() : '';
   const portalData = getPortalData();
+  const garageRead = callIslePilot(PilotAPI.playerGarage(cleanSteamId), 'GET', null, fresh);
   const dynamicAssign = (portalData.adminAssignments && portalData.adminAssignments[cleanSteamId]) || null;
 
   let discordInfo = null;
@@ -383,7 +391,10 @@ async function getPlayerGarageStatus(steamId, { player = null, fresh = true } = 
   }
 
   // Gọi trực tiếp IslePilot API: GET /players/{cleanSteamId}/garage
-  const pilotGarage = await callIslePilot(PilotAPI.playerGarage(cleanSteamId), 'GET', null, fresh);
+  const pilotGarage = await garageRead;
+  if (!pilotGarage || pilotGarage.error || pilotGarage._status || !Array.isArray(pilotGarage.garage)) {
+    throw Object.assign(new Error('Không thể xác minh dữ liệu Gara IslePilot. Vui lòng chờ kết nối phục hồi.'), { status: 503 });
+  }
   const cloudDinos = (pilotGarage && pilotGarage.garage && Array.isArray(pilotGarage.garage)) ? pilotGarage.garage : [];
   
   // Lọc bỏ triệt để các khủng long ĐANG ĐĂNG BÁN trên Chợ (ký gửi Chợ của người chơi này)
@@ -410,7 +421,12 @@ async function getPlayerGarageStatus(steamId, { player = null, fresh = true } = 
 
   // Đồng bộ thuần túy 100% thời gian thực từ IslePilot Cloud (Single Source of Truth)
   // Không gộp thú cục bộ ảo để tránh tình trạng phân tán container serverless khiến F5 lúc ra 6 lúc ra 7
-  const dinos = cloudDinos.filter(d => {
+  // Local purchases/rewards must remain visible, without duplicating cloud IDs.
+  const mergedDinos = new Map(cloudDinos.map(d => [String(d.id), d]));
+  for (const d of portalData.userGarage?.[cleanSteamId] || []) {
+    if (!mergedDinos.has(String(d.id))) mergedDinos.set(String(d.id), { ...d, isLocal: true });
+  }
+  const dinos = [...mergedDinos.values()].filter(d => {
     const strId = String(d.id);
     if (activeSellingDinoIds.has(strId)) return false;
     if (activeTradeDinoIds.has(strId)) return false;
@@ -577,15 +593,16 @@ function addDinoToGarage(steamId, dino, targetData = null) {
   if (!data.userGarage[cleanId]) data.userGarage[cleanId] = [];
 
   const newDino = {
-    id: dino.id || `dino-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    id: dino.id || `dino-${require('node:crypto').randomUUID()}`,
     species: dino.species || "Tyrannosaurus",
     gender: dino.gender || "Đực (Male)",
     growth: dino.growth !== undefined ? dino.growth : 100,
-    health: dino.health || 100,
-    hunger: dino.hunger || 100,
-    thirst: dino.thirst || 100,
+    health: dino.health ?? 100,
+    hunger: dino.hunger ?? 100,
+    thirst: dino.thirst ?? 100,
     diet: dino.diet || ["S", "S", "D"],
     mutations: dino.mutations || [],
+    isPrimeElder: !!dino.isPrimeElder,
     stored_at: dino.stored_at || new Date().toLocaleString('vi-VN'),
     source: dino.source || "Giao Dịch / Hòm Quà",
     isLocal: true
@@ -600,9 +617,9 @@ function addDinoToGarage(steamId, dino, targetData = null) {
 
 
 // Helper: Get real wallet balance from IslePilot API
-async function getLivePlayerBalance(steamId) {
-  const p = await callIslePilot(PilotAPI.player(steamId));
-  if (p && p.wallet && typeof p.wallet.balance === 'number') {
+async function getLivePlayerBalance(steamId, fresh = Journal.active()) {
+  const p = await callIslePilot(PilotAPI.player(steamId), 'GET', null, fresh);
+  if (p && !p.error && !p._status && p.wallet && Number.isFinite(p.wallet.balance)) {
     return p.wallet.balance;
   }
   throw Object.assign(new Error('Không thể xác minh số dư IslePilot.'), { status: 503 });
@@ -620,13 +637,29 @@ async function modifyLivePlayerBalance(steamId, amount, reason = "web_portal") {
   clearPlayerCache(steamId);
 
   const data = getPortalData();
-  if (res && res.ok && typeof res.balance === 'number') {
+  if (res && !res.error && !res._status && res.ok && res.applied !== false && Number.isFinite(res.balance)) {
+    if (!data.userWallets) data.userWallets = {};
     data.userWallets[steamId] = res.balance;
     savePortalData(data);
     return { success: true, balance: res.balance, applied: res.applied };
   }
 
-  throw Object.assign(new Error('IslePilot chưa xác nhận giao dịch Lúa.'), { status: 503 });
+  throw Object.assign(new Error('IslePilot chưa xác nhận giao dịch Lúa.'), { status: 503, definitive: !!res && !res._uncertain && (res.applied === false || (res._status >= 400 && res._status < 500)) });
+}
+
+async function transferLivePlayerBalance(sender, receiver, amount, reason) {
+  const debit = await modifyLivePlayerBalance(sender, -amount, reason);
+  try {
+    await modifyLivePlayerBalance(receiver, amount, reason);
+  } catch (error) {
+    if (error.definitive) {
+      await modifyLivePlayerBalance(sender, amount, `Hoàn Lúa: ${reason}`);
+      await Journal.compensated();
+      error.message = 'Tài khoản nhận bị từ chối giao dịch. Lúa đã được hoàn vào ví người gửi.';
+    }
+    throw error;
+  }
+  return debit;
 }
 
 
@@ -745,7 +778,7 @@ const GACHA_HALLOWEEN_FALLBACK = {
 // Hàm đọc danh sách hòm quà trực tiếp từ IslePilot Cloud (GET /cases)
 async function getLiveIslePilotCrates() {
   try {
-    const pilotCases = await callIslePilot(PilotAPI.paths.cases, 'GET', null, true);
+    const pilotCases = await callIslePilot(PilotAPI.paths.cases, 'GET', null, Journal.active());
     if (pilotCases && pilotCases.crates && Array.isArray(pilotCases.crates) && pilotCases.crates.length > 0) {
       return pilotCases.crates.map(c => {
         const items = (c.items || []).map(item => {
@@ -798,8 +831,8 @@ async function getLiveIslePilotCrates() {
         return {
           id: c.id,
           name: c.name === "Halloween" ? "Hòm Halloween Huyền Bí 🎃" : c.name,
-          price: Number(c.cost) || 8,
-          cost: Number(c.cost) || 8,
+          price: Number(c.cost ?? 8),
+          cost: Number(c.cost ?? 8),
           color: c.color || "#6600ff",
           icon: "🎃",
           theme: "halloween",
@@ -1104,5 +1137,5 @@ function getCasinoData() {
   }
   return data;
 }
-return {fs, path, Auth, Core, getConfig, saveConfig, getPortalData, savePortalData, callIslePilot, clearPlayerCache, apiCache, playerActionLocks, acquirePlayerLock, releasePlayerLock, posToLatLng, parseCookies, getRequestSteamId, getAdminSteamId, normalizeStatPct, linkPlayerBySteamId, getQuestPeriodKey, isQuestCompleted, isQuestClaimedInPeriod, SUPER_ADMINS, isUserAdmin, TRADE_TIMEOUT_MS, cleanExpiredTrades, startMaintenance, getPlayerGarageStatus, formatGarageError, ROLE_NAME_MAP, getAllAssignedUsers, addDinoToGarage, getLivePlayerBalance, modifyLivePlayerBalance, CARCASS_TYPES, srgbByteToLinear, hexToLinear, GACHA_HALLOWEEN_FALLBACK, getLiveIslePilotCrates, getRealServerPlayers, ensureCombatLogs, combatState, generateLiveCombatEvents, CASINO_PLAYER_WIN_RATE, CASINO_BAO_WIN_RATE, getCasinoData};
+return {fs, path, Auth, Core, getConfig, saveConfig, getPortalData, savePortalData, callIslePilot, clearPlayerCache, apiCache, pendingMutations, playerActionLocks, acquirePlayerLock, releasePlayerLock, posToLatLng, parseCookies, getRequestSteamId, getAdminSteamId, normalizeStatPct, linkPlayerBySteamId, getQuestPeriodKey, isQuestCompleted, isQuestClaimedInPeriod, SUPER_ADMINS, isUserAdmin, TRADE_TIMEOUT_MS, cleanExpiredTrades, startMaintenance, getPlayerGarageStatus, formatGarageError, ROLE_NAME_MAP, getAllAssignedUsers, addDinoToGarage, getLivePlayerBalance, modifyLivePlayerBalance, transferLivePlayerBalance, CARCASS_TYPES, srgbByteToLinear, hexToLinear, GACHA_HALLOWEEN_FALLBACK, getLiveIslePilotCrates, getRealServerPlayers, ensureCombatLogs, combatState, generateLiveCombatEvents, CASINO_PLAYER_WIN_RATE, CASINO_BAO_WIN_RATE, getCasinoData};
 };

@@ -204,7 +204,9 @@ app.post(ST25API.routes.adminAssignRoleSlots, async (req, res) => {
   clearPlayerCache(adminSteamId);
 
   // Kiểm tra ngay kết quả sau khi lưu
-  const updatedStatus = await getPlayerGarageStatus(cleanSteamId);
+  let updatedStatus;
+  try { updatedStatus = await getPlayerGarageStatus(cleanSteamId); }
+  catch (_) { updatedStatus = { maxSlots: finalSlots, roleKey: cleanRole, roleName: ROLE_NAME_MAP[cleanRole] || cleanRole, totalParked: null, syncPending: true }; }
   const updatedAssignments = getAllAssignedUsers();
 
   res.json({
@@ -243,6 +245,8 @@ app.post(ST25API.routes.adminSyncAssignments, async (req, res) => {
       const sid = String(item.steamId).trim();
       const rKey = item.roleKey || 'default';
       const sNum = Number(item.slots) || 3;
+      const itemTimestamp = Number(item.updatedAtTimestamp) || 0;
+      if (portalData.adminDeleted?.[sid] && itemTimestamp <= portalData.adminDeleted[sid]) return;
 
       // Nếu server chưa có, hoặc client có cập nhật mới hơn
       if (!portalData.adminAssignments[sid] || (item.updatedAtTimestamp && item.updatedAtTimestamp > (portalData.adminAssignments[sid].updatedAtTimestamp || 0))) {
@@ -409,6 +413,8 @@ app.post(ST25API.routes.adminCombatAction, async (req, res) => {
   }
 
   const { logId, action, targetSteamId, reason } = req.body;
+  if (!['resolve', 'kick', 'ban', 'warn'].includes(action)) return res.status(400).json({ error: 'Hành động không hợp lệ.' });
+  if (action !== 'resolve' && !/^\d{17}$/.test(String(targetSteamId || ''))) return res.status(400).json({ error: 'Steam ID người chơi không hợp lệ.' });
   const data = getPortalData();
   const log = (data.combatLogs || []).find(l => l.id === logId);
 
@@ -417,11 +423,13 @@ app.post(ST25API.routes.adminCombatAction, async (req, res) => {
     if (log) log.resolved = true;
     resultMsg = `Đã đánh dấu đã kiểm tra lượt đánh [${logId}].`;
   } else if (action === 'kick') {
-    await callIslePilot(PilotAPI.playerKick(targetSteamId), 'POST', { reason: reason || "Nghi vấn gian lận sát thương / hitbox" });
+    const result = await callIslePilot(PilotAPI.playerKick(targetSteamId), 'POST', { reason: reason || "Nghi vấn gian lận sát thương / hitbox" });
+    if (!result || result.error || result._status) return res.status(result?._status || 503).json({ error: result?.error || 'IslePilot chưa xác nhận lệnh Kick.' });
     if (log) log.resolved = true;
     resultMsg = `Đã KICK người chơi ${targetSteamId} ra khỏi game!`;
   } else if (action === 'ban') {
-    await callIslePilot(PilotAPI.playerBan(targetSteamId), 'POST', { reason: reason || "Phát hiện hack sát thương / reach hack", durationHours: 720 });
+    const result = await callIslePilot(PilotAPI.playerBan(targetSteamId), 'POST', { reason: reason || "Phát hiện hack sát thương / reach hack", durationHours: 720 });
+    if (!result || result.error || result._status) return res.status(result?._status || 503).json({ error: result?.error || 'IslePilot chưa xác nhận lệnh Ban.' });
     if (log) log.resolved = true;
     resultMsg = `Đã CẤM (BAN 30 ngày) người chơi ${targetSteamId}!`;
   } else if (action === 'warn') {

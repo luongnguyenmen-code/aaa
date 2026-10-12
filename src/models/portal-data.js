@@ -1,4 +1,6 @@
 const fs = require('node:fs');
+const { writeJSON } = require('./json-store');
+const Persistent = require('./persistent-state');
 const {dataFile: DATA_FILE, temporaryDataFile: TMP_DATA_FILE} = require('../core/config');
 let memoryPortalData = null;
 
@@ -6,6 +8,7 @@ let memoryPortalData = null;
 // ==================== NEW FEATURES BACKEND ==================== //
 
 function getPortalData() {
+  if (Persistent.current()) return Persistent.get('portal');
   if (memoryPortalData) return memoryPortalData;
 
   // 1. Đọc từ DATA_FILE gốc trong thư mục dự án (Nguồn dữ liệu chính)
@@ -17,7 +20,7 @@ function getPortalData() {
       return memoryPortalData;
     }
   } catch (e) {
-    console.error('Lỗi đọc portal-data.json gốc:', e.message);
+    throw Object.assign(new Error('File dữ liệu portal không đọc được. Không tạo dữ liệu mới để ghi đè.'), { status: 503, cause: e });
   }
 
   // 2. Fallback đọc từ TMP_DATA_FILE (cho môi trường Serverless tạm thời)
@@ -71,15 +74,14 @@ function getPortalData() {
 
 
 function savePortalData(data) {
-  memoryPortalData = data;
+  if (Persistent.set('portal', data)) return true;
   try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+    writeJSON(DATA_FILE, data);
+    memoryPortalData = data;
   } catch (err) {
-    console.warn('Không thể ghi file DATA_FILE gốc:', err.message);
+    memoryPortalData = null;
+    throw Object.assign(new Error('Không thể lưu dữ liệu portal. Thao tác chưa được xác nhận.'), { status: 503, cause: err });
   }
-  try {
-    fs.writeFileSync(TMP_DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
-  } catch (_) {}
   return true;
 }
 module.exports = {getPortalData, savePortalData};

@@ -40,7 +40,7 @@
       const url=new URL(typeof input==='string'?input:input.url,location.href);
       if(url.origin===location.origin&&url.pathname==='/api/skin/set'){
         let body;try{body=JSON.parse(options?.body||'{}');}catch{return Promise.resolve(new Response(JSON.stringify({error:'Dữ liệu skin không hợp lệ'}),{status:400,headers:{'Content-Type':'application/json'}}));}
-        return originalFetch(ST25API.routes.skinApply,{...options,body:JSON.stringify({payload:body.payload})}).then(async response=>{
+        return originalFetch(ST25API.routes.skinApply,{...options,signal:AbortSignal.any([options?.signal,AbortSignal.timeout(45000)].filter(Boolean)),body:JSON.stringify({payload:body.payload})}).then(async response=>{
           const data=await response.json();
           // The portal accepts the command; its API does not expose command-status polling.
           delete data.jobId;
@@ -73,7 +73,7 @@
       });
       parent.postMessage({type:'st25-skin-editor-ready'},location.origin);
     }else{
-      const me=await originalFetch(ST25API.routes.playerMe).then(response=>response.ok?response.json():null).catch(()=>null);
+      const me=await originalFetch(ST25API.routes.playerMe,{signal:AbortSignal.timeout(10000)}).then(response=>response.ok?response.json():null).catch(()=>null);
       render(me?.user||me);
     }
     window.ST25OriginalSkin={ready:true,exports:pilot.require(110149),defaults:pilot.require(70454)};

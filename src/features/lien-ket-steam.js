@@ -9,17 +9,7 @@
 
       const btnUnlink = document.getElementById('btn-unlink');
       if (btnUnlink) {
-        btnUnlink.addEventListener('click', async () => {
-          try {
-            await fetch(ST25API.routes.playerLogout, { method: 'POST' });
-          } catch (_) {}
-          localStorage.removeItem('st25_steam_user');
-          if (typeof App !== 'undefined' && App.showToast) {
-            App.showToast('Đã huỷ liên kết tài khoản Steam.', 'info');
-          }
-          resetProfileCard();
-          setTimeout(() => window.location.reload(), 400);
-        });
+        btnUnlink.addEventListener('click', () => App.logoutUser());
       }
     });
 
