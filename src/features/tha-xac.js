@@ -3,8 +3,14 @@
 
     async function loadCarcassData() {
       try {
-        const typesData = await App.readJSON(ST25API.routes.carcassTypes);
-        currentBalance = typesData.balance ?? 0;
+        const [typesRes, marketRes] = await Promise.all([
+          App.readResponse(ST25API.routes.carcassTypes),
+          App.readResponse(ST25API.routes.marketData)
+        ]);
+        const typesData = await typesRes.json();
+        const marketData = await marketRes.json();
+
+        currentBalance = typesData.balance !== undefined ? typesData.balance : marketData.balance;
         document.getElementById('carcass-lua-val').textContent = `${currentBalance.toLocaleString('vi-VN')} Lúa 🌾`;
 
         const types = Array.isArray(typesData) ? typesData : (typesData.types || []);
@@ -74,7 +80,7 @@
 
       orderCarcass.pending = true;
       try {
-        const res = await App.mutate(ST25API.routes.carcassOrder, {
+        const res = await fetch(ST25API.routes.carcassOrder, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ carcassId })

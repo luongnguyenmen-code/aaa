@@ -1,9 +1,6 @@
 // Local visual audit. The fixture blocks mutations and never contacts IslePilot.
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),{spawn}=require('node:child_process');
 const root=path.resolve(__dirname,'..');
-const outputDir=process.env.ST25_AUDIT_OUTPUT_DIR?path.resolve(root,process.env.ST25_AUDIT_OUTPUT_DIR):__dirname;
-if(outputDir!==root&&!outputDir.startsWith(root+path.sep))throw Error('Audit output must stay in this workspace');
-fs.mkdirSync(outputDir,{recursive:true});
 const {renderPage, readPublicAsset}=require('./helpers/source.cjs');
 const steam='76561198000000001';
 const dino={species:'Tyrannosaurus',gender:'Đực (Male)',growth:90,health:51,hunger:99,thirst:99,stamina:100,grid:'F7',lat:450,lng:500,position:{x:0,y:0}};
@@ -36,7 +33,7 @@ const server=http.createServer((req,res)=>{
 });
 (async()=>{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin=`http://127.0.0.1:${server.address().port}`;
-  const profile=path.join(outputDir,`.redesign-browser-${Date.now()}`);
+  const profile=path.join(__dirname,`.redesign-browser-${Date.now()}`);
   const child=spawn('C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless','--disable-gpu',...(process.env.ST25_3D_FALLBACK?['--disable-webgl']:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']),'--no-first-run','--disable-background-networking',`--user-data-dir=${profile}`,'--remote-debugging-port=0','about:blank'],{windowsHide:true,stdio:'ignore'});
   const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));let socket;
   try{
@@ -62,9 +59,9 @@ const server=http.createServer((req,res)=>{
       const check=await call('Runtime.evaluate',{expression:'JSON.stringify({width:innerWidth,scroll:document.documentElement.scrollWidth,icons:document.querySelectorAll(".site-header .st25-line-icon").length,dock:!!document.getElementById("st25-live-dock"),hud:!!document.querySelector(".player-hud-bar"),brokenImages:[...document.images].filter(i=>i.getAttribute("src")&&i.complete&&!i.naturalWidth).map(i=>i.getAttribute("src"))})',returnByValue:true});
       const metrics=JSON.parse(check.result.value);const result={page,width,...metrics,errors:[...errors]};results.push(result);
       console.log(JSON.stringify(result));
-      if(['index.html','bando.html','nhiem-vu.html','skin.html'].includes(page)){const shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:!process.env.ST25_ILLUSTRATION_AUDIT});fs.writeFileSync(path.join(outputDir,`${process.env.ST25_ILLUSTRATION_AUDIT?'skin-motion':'redesign-'+page.replace('.html','')}-${width}.png`),Buffer.from(shot.data,'base64'));}
+      if(['index.html','bando.html','nhiem-vu.html','skin.html'].includes(page)){const shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:!process.env.ST25_ILLUSTRATION_AUDIT});fs.writeFileSync(path.join(__dirname,`${process.env.ST25_ILLUSTRATION_AUDIT?'skin-motion':'redesign-'+page.replace('.html','')}-${width}.png`),Buffer.from(shot.data,'base64'));}
     }
-    fs.writeFileSync(path.join(outputDir,process.env.ST25_ILLUSTRATION_AUDIT?'skin-motion-results.json':process.env.ST25_3D_AUDIT ? (process.env.ST25_3D_FALLBACK?'skin-3d-fallback-results.json':process.env.ST25_3D_GUEST?'skin-3d-guest-results.json':'skin-3d-results.json') : process.env.ST25_SKIN_AUDIT?'skin-audit-results.json':'redesign-audit-results.json'),JSON.stringify({scope:'Offline mocks; transactions blocked; not a live API test',results},null,2));
+    fs.writeFileSync(path.join(__dirname,process.env.ST25_ILLUSTRATION_AUDIT?'skin-motion-results.json':process.env.ST25_3D_AUDIT ? (process.env.ST25_3D_FALLBACK?'skin-3d-fallback-results.json':process.env.ST25_3D_GUEST?'skin-3d-guest-results.json':'skin-3d-results.json') : process.env.ST25_SKIN_AUDIT?'skin-audit-results.json':'redesign-audit-results.json'),JSON.stringify({scope:'Offline mocks; transactions blocked; not a live API test',results},null,2));
     await call('Browser.close');
     if(results.some(r=>r.scroll>r.width||r.errors.length||r.brokenImages.length))process.exitCode=1;
   }finally{socket?.close();child.kill();server.close();}

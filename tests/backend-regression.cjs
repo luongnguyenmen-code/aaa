@@ -1,8 +1,4 @@
 const assert = require('node:assert/strict'), http = require('node:http'), fs = require('node:fs');
-const path = require('node:path'), os = require('node:os');
-const isolatedData = fs.mkdtempSync(path.join(os.tmpdir(), 'st25-backend-test-'));
-for (const [source, name] of [['src/core/server-config.json', 'server-config.json'], ['src/models/data/portal-data.json', 'portal-data.json']]) fs.copyFileSync(source, path.join(isolatedData, name));
-process.env.ST25_DATA_DIR = isolatedData;
 process.env.SESSION_SECRET = 'offline-test-secret-no-live-credentials';
 process.env.ISLEPILOT_API_TOKEN = 'offline-test-token';
 const Auth = require('../server-auth');
@@ -57,15 +53,6 @@ function request(url, method = 'GET', headers = {}, body) {
   mode = 'debit-fail';
   assert.equal((await request('/api/market/transfer', 'POST', transferHeaders, transferBody)).status, 500);
   assert.equal((await request('/api/crates/open', 'POST', transferHeaders, JSON.stringify({steamId:'76561198000000002'}))).status, 403);
-  // The prior ambiguous 503 debit is intentionally blocked until reconciliation.
-  const journal = path.join(isolatedData, 'mutation-journal.json');
-  if (fs.existsSync(journal)) {
-    assert.equal((await request('/api/market/transfer', 'POST', transferHeaders, transferBody)).status, 409);
-    // Start a fresh isolated application journal for the separate lock scenario.
-    const rows = JSON.parse(fs.readFileSync(journal, 'utf8'));
-    rows.forEach(row => row.status = 'resolved');
-    fs.writeFileSync(journal, JSON.stringify(rows));
-  }
   mode = 'slow';
   const first = request('/api/market/transfer', 'POST', transferHeaders, transferBody);
   while (!release) await new Promise(resolve => setTimeout(resolve, 5));

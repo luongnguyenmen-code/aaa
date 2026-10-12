@@ -1,9 +1,6 @@
 // Local visual audit. The fixture blocks mutations and never contacts IslePilot.
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),{spawn}=require('node:child_process');
 const root=path.resolve(__dirname,'..');
-const outputDir=process.env.ST25_AUDIT_OUTPUT_DIR?path.resolve(root,process.env.ST25_AUDIT_OUTPUT_DIR):__dirname;
-if(outputDir!==root&&!outputDir.startsWith(root+path.sep))throw Error('Audit output must stay in this workspace');
-fs.mkdirSync(outputDir,{recursive:true});
 const {renderPage, readPublicAsset}=require('./helpers/source.cjs');
 const steam='76561198000000001';
 const dino={species:'Tyrannosaurus',gender:'Đực (Male)',growth:90,health:51,hunger:99,thirst:99,stamina:100,grid:'F7',lat:450,lng:500,position:{x:0,y:0}};
@@ -36,7 +33,7 @@ const server=http.createServer((req,res)=>{
 });
 (async()=>{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin=`http://127.0.0.1:${server.address().port}`;
-  const profile=path.join(outputDir,`.redesign-browser-${Date.now()}`);
+  const profile=path.join(__dirname,`.redesign-browser-${Date.now()}`);
   const child=spawn('C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless','--disable-gpu',...(process.env.ST25_3D_FALLBACK?['--disable-webgl']:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']),'--no-first-run','--disable-background-networking',`--user-data-dir=${profile}`,'--remote-debugging-port=0','about:blank'],{windowsHide:true,stdio:'ignore'});
   const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));let socket;
   try{
@@ -126,9 +123,9 @@ const server=http.createServer((req,res)=>{
       })()`,awaitPromise:true,returnByValue:true});
       const result=await call('Runtime.evaluate',{expression:`(()=>{const frame=document.getElementById('islepilot-skin-frame'),w=frame?.contentWindow,d=w?.document;return {ready:!!w?.ST25OriginalSkin?.ready,canvas:d?.querySelectorAll('canvas').length,colors:d?.querySelectorAll('input[type=color]').length,scroll:document.documentElement.scrollWidth,innerScroll:d?.documentElement.scrollWidth,status:d?.getElementById('skin-client-status').textContent,alerts:[...d?.querySelectorAll('[role=alert]')||[]].map(x=>x.textContent),text:d?.body.innerText.slice(0,1300)}})()`,returnByValue:true});
       const record={width,...result.result.value,exercise:exercise.exceptionDetails?{error:exercise.exceptionDetails.exception?.description||exercise.exceptionDetails.text}:exercise.result.value,errors:[...errors]};results.push(record);console.log(JSON.stringify(record));
-      const shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});fs.writeFileSync(path.join(outputDir,'islepilot-skin-'+width+'.png'),Buffer.from(shot.data,'base64'));
+      const shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});fs.writeFileSync(path.join(__dirname,'islepilot-skin-'+width+'.png'),Buffer.from(shot.data,'base64'));
     }
-    fs.writeFileSync(path.join(outputDir,'islepilot-skin-results.json'),JSON.stringify(results,null,2));
+    fs.writeFileSync(path.join(__dirname,'islepilot-skin-results.json'),JSON.stringify(results,null,2));
     await call('Browser.close');
     if(results.some(r=>!r.ready||!r.canvas||r.colors!==10||r.scroll>r.width||r.errors.length||r.alerts.length||!r.exercise||Object.values(r.exercise).some(x=>x!==true)))process.exitCode=1;
   }finally{socket?.close();child.kill();server.close();}

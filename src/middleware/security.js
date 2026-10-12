@@ -1,9 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const Auth = require('../core/auth');
-const Journal = require('../services/mutation-journal');
-const Persistent = require('../models/persistent-state');
-module.exports = function installSecurity(app, {getPortalData, pendingMutations}) {
+module.exports = function installSecurity(app, {getPortalData}) {
 app.disable('x-powered-by');
 app.use(cors({ origin: false }));
 // Reject cross-origin browser mutations, including requests without JSON bodies.
@@ -16,20 +14,13 @@ app.use('/api', (req, res, next) => {
   }
   next();
 });
+const pendingMutations = new Set();
 app.use('/api', (req, res, next) => {
   const steamId = Auth.getRequestSteamId(req);
   if (!steamId || ['GET', 'HEAD', 'OPTIONS'].includes(req.method) || req.path === '/player/logout') return next();
   if (pendingMutations.has(steamId)) return res.status(429).json({ error: 'Yêu cầu trước đang được xử lý. Vui lòng đợi.' });
   pendingMutations.add(steamId);
-  req.authenticatedSteamId = steamId;
   res.once('finish', () => pendingMutations.delete(steamId));
-  // A client can disconnect while its JSON body is still being parsed.
-  res.once('close', () => {
-    if (!req.mutationStarted) {
-      pendingMutations.delete(steamId);
-      for (const key of req.mutationLocks || []) pendingMutations.delete(key);
-    }
-  });
   next();
 });
 app.use(express.json());
@@ -48,7 +39,6 @@ app.use('/api', (req, res, next) => {
   if (!steamId || ['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
   const keys = new Set();
   const body = req.body || {};
-  if (req.path.startsWith('/admin/') && /^\d{17}$/.test(String(body.targetSteamId || ''))) keys.add(String(body.targetSteamId));
   if (req.path === '/market/transfer' && /^\d{17}$/.test(String(body.receiverSteamId || ''))) keys.add(String(body.receiverSteamId));
   if (['/market/buy', '/market/cancel-listing'].includes(req.path)) {
     const listingId = String(body.itemId || body.listingId || '');
@@ -62,7 +52,6 @@ app.use('/api', (req, res, next) => {
     if (trade?.senderSteamId) keys.add(trade.senderSteamId);
     if (trade?.receiverSteamId) keys.add(trade.receiverSteamId);
   }
-  if (req.path === '/referral/claim' && typeof body.code === 'string') keys.add('code:' + body.code.trim().toUpperCase());
   keys.delete(steamId);
   if ([...keys].some(key => pendingMutations.has(key))) return res.status(429).json({ error: 'Giao dịch liên quan đang được xử lý. Vui lòng đợi.' });
   req.mutationLocks = [...keys];
@@ -71,23 +60,11 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
-for (const method of ['get', 'post', 'put', 'patch', 'delete', 'all']) {
+for (const method of ['get', 'post', 'put', 'patch', 'delete']) {
   const register = app[method].bind(app);
   app[method] = (route, ...handlers) => register(route, ...handlers.map(handler =>
-    typeof handler === 'function'
-      ? (req, res, next) => Promise.resolve().then(async () => {
-        if (!req.originalUrl.startsWith('/api/')) return handler(req, res, next);
-        const sendJSON = res.json;
-        let output;
-        res.json = function (body) { output = body; this.mutationFailed = body?.success === false; return this; };
-        try {
-          req.mutationStarted = true;
-          await Persistent.run(req, () => req.authenticatedSteamId
-            ? Journal.run(req, res, pendingMutations, () => handler(req, res, next))
-            : handler(req, res, next));
-        } finally { res.json = sendJSON; }
-        if (output !== undefined && !res.destroyed) return res.json(output);
-      }).catch(next).finally(() => { if (res.destroyed) { pendingMutations.delete(Auth.getRequestSteamId(req)); for (const key of req.mutationLocks || []) pendingMutations.delete(key); } }) : handler));
+    typeof handler === 'function' && handler.constructor.name === 'AsyncFunction'
+      ? (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next).finally(() => { if (res.destroyed) { pendingMutations.delete(Auth.getRequestSteamId(req)); for (const key of req.mutationLocks || []) pendingMutations.delete(key); } }) : handler));
 }
 
 

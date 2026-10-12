@@ -2,7 +2,7 @@ const PilotAPI = require('../api/upstream-endpoints');
 const ST25API = require('../api/endpoints');
 // market feature HTTP handlers. Dependencies are supplied by the application.
 module.exports = function register(app, context) {
-  const {getPortalData, savePortalData, callIslePilot, clearPlayerCache, acquirePlayerLock, releasePlayerLock, getRequestSteamId, getPlayerGarageStatus, addDinoToGarage, getLivePlayerBalance, modifyLivePlayerBalance, transferLivePlayerBalance} = context;
+  const {getPortalData, savePortalData, callIslePilot, clearPlayerCache, acquirePlayerLock, releasePlayerLock, getRequestSteamId, getPlayerGarageStatus, addDinoToGarage, getLivePlayerBalance, modifyLivePlayerBalance} = context;
 
 
 // 9.5 Bảng Quy Định Bán Khủng Long (GET /sell-rules)
@@ -15,19 +15,20 @@ app.get(ST25API.routes.marketSellRules, async (req, res) => {
 app.get(ST25API.routes.marketData, async (req, res) => {
   const data = getPortalData();
   const steamId = getRequestSteamId(req);
-  const [userBalance, garageStatus, player] = steamId ? await Promise.all([
-    getLivePlayerBalance(steamId), getPlayerGarageStatus(steamId), callIslePilot(PilotAPI.player(steamId))
-  ]) : [0, null, null];
+  const userBalance = steamId ? await getLivePlayerBalance(steamId) : 0;
   let personaName = "Khách (Chưa đăng nhập)";
 
   if (steamId) {
-    if (player && player.name) personaName = player.name;
+    const p = await callIslePilot(PilotAPI.player(steamId));
+    if (p && p.name) personaName = p.name;
     else personaName = `Player_${steamId.slice(-4)}`;
   }
 
   // Lấy khủng long trong Gara để cho phép chọn đăng bán (bao gồm cả Cloud Gara và thú trúng từ Hòm)
   let myGarageDinos = [];
   if (steamId) {
+    try {
+      const garageStatus = await getPlayerGarageStatus(steamId);
       if (garageStatus && Array.isArray(garageStatus.dinos)) {
         myGarageDinos = garageStatus.dinos.map(g => {
           const rawG = g.growth !== undefined ? Number(g.growth) : 1;
@@ -42,6 +43,7 @@ app.get(ST25API.routes.marketData, async (req, res) => {
           };
         });
       }
+    } catch (_) {}
   }
 
   res.json({
@@ -83,7 +85,7 @@ app.post(ST25API.routes.marketListDino, async (req, res) => {
   const displayGrowth = rawG > 1 ? Math.min(100, Math.round(rawG)) : Math.round(rawG * 100);
 
   // Tạo tin rao bán
-  const listingId = `mkt-${require('node:crypto').randomUUID()}`;
+  const listingId = `mkt-${Date.now()}`;
   let sellerName = `Player_${steamId.slice(-4)}`;
   try {
     const p = await callIslePilot(PilotAPI.player(steamId));
@@ -206,8 +208,8 @@ app.post(ST25API.routes.marketTransfer, async (req, res) => {
     return res.status(400).json({ error: "Bạn không thể tự chuyển Lúa cho chính mình!" });
   }
 
-  const numAmount = Number(amount);
-  if (!Number.isSafeInteger(numAmount) || numAmount < 1 || numAmount > 10000) {
+  const numAmount = Math.floor(Number(amount));
+  if (isNaN(numAmount) || numAmount < 1 || numAmount > 10000) {
     return res.status(400).json({ error: "Số Lúa chuyển phải là số nguyên từ 1 đến 10,000 Lúa 🌾!" });
   }
 
@@ -223,7 +225,9 @@ app.post(ST25API.routes.marketTransfer, async (req, res) => {
     }
 
     // Deduct from sender via API
-    const deductRes = await transferLivePlayerBalance(senderSteamId, cleanReceiver, numAmount, `Chuyển Lúa ${senderSteamId} tới ${cleanReceiver}: ${note || ''}`);
+    const deductRes = await modifyLivePlayerBalance(senderSteamId, -numAmount, `Chuyển Lúa tới ${cleanReceiver}: ${note || ''}`);
+    // Add to receiver via API
+    await modifyLivePlayerBalance(cleanReceiver, numAmount, `Nhận Lúa từ ${senderSteamId}: ${note || ''}`);
 
     res.json({
       success: true,
@@ -232,7 +236,7 @@ app.post(ST25API.routes.marketTransfer, async (req, res) => {
     });
   } catch (err) {
     console.error('Lỗi chuyển Lúa:', err);
-    res.status(500).json({ error: err.definitive ? err.message : 'Chưa xác nhận đầy đủ giao dịch chuyển Lúa. Kiểm tra ví và liên hệ BQT trước khi gửi lại.' });
+    res.status(500).json({ error: "Lỗi hệ thống khi chuyển Lúa! Vui lòng thử lại sau." });
   } finally {
     releasePlayerLock(senderSteamId, 'transfer');
   }
@@ -274,20 +278,18 @@ app.post(ST25API.routes.marketBuy, async (req, res) => {
   }
 
   // 1. Trừ tiền người mua
-  if (!Number.isSafeInteger(item.price) || item.price < 1) return res.status(400).json({ error: 'Giá bài đăng không hợp lệ.' });
-  const deductRes = item.sellerSteamId
-    ? await transferLivePlayerBalance(steamId, item.sellerSteamId, item.price, `Mua ${item.title} từ Chợ ST25`)
-    : await modifyLivePlayerBalance(steamId, -item.price, `Mua ${item.title} từ Chợ ST25`);
+  const deductRes = await modifyLivePlayerBalance(steamId, -item.price, `Mua ${item.title} từ Chợ ST25`);
+
+  // 2. Cộng tiền người bán
+  if (item.sellerSteamId) {
+    await modifyLivePlayerBalance(item.sellerSteamId, item.price, `Bán ${item.title} trên Chợ ST25 cho ${steamId}`);
+  }
 
   // 3. Chuyển Khủng Long TRỰC TIẾP VÀO GARA của người mua
   const targetDinoData = item.dinoData || {};
-  if (item.sellerSteamId && targetDinoData.id && !targetDinoData.isLocal && !String(targetDinoData.id).startsWith('dino-')) {
-    const result = await callIslePilot(PilotAPI.playerGarageItemSell(item.sellerSteamId, targetDinoData.id), 'POST', {});
-    if (!result || result.error || result._status) throw Object.assign(Error('Chưa xác nhận bàn giao khủng long trên IslePilot. Liên hệ BQT để đối soát.'), { status: 503 });
-  }
   const newDino = addDinoToGarage(steamId, {
     ...targetDinoData,
-    id: `dino-${require('node:crypto').randomUUID()}`,
+    id: `dino-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     species: item.species || targetDinoData.species || "Tyrannosaurus",
     gender: item.gender || targetDinoData.gender || "Đực (Male)",
     growth: item.growth !== undefined ? item.growth : (targetDinoData.growth || 100),
@@ -311,6 +313,12 @@ app.post(ST25API.routes.marketBuy, async (req, res) => {
       );
     }
 
+    // Nếu là Cloud Dino trên IslePilot, thử gọi lệnh sell trên cloud
+    if (!targetDinoData.isLocal && !String(targetDinoData.id).startsWith('dino-')) {
+      try {
+        await callIslePilot(PilotAPI.playerGarageItemSell(item.sellerSteamId, targetDinoData.id), 'POST', {});
+      } catch (_) {}
+    }
   }
 
   // 5. Xóa bài khỏi Chợ

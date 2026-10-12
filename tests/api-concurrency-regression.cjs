@@ -4,7 +4,7 @@ const reply=data=>({ok:true,json:async()=>data});
 function backend(){
   const cfg={islepilot:{api_token:'offline-fixture',api_base_url:'https://offline.invalid'}};
   const context={module:{exports:{}},process:{env:{}},AbortSignal,console:{warn(){},error(){}},fetch:async()=>reply({})};
-  context.require=name=>name.includes('mutation-journal')?{before(){},after(){}}:name.includes('settings')?{getConfig:()=>cfg}:{upstreamBaseURL:'https://offline.invalid'};
+  context.require=name=>name.includes('settings')?{getConfig:()=>cfg}:{upstreamBaseURL:'https://offline.invalid'};
   vm.runInNewContext(fs.readFileSync('src/api/islepilot-client.js','utf8'),context);
   return {api:context.module.exports,context,cfg};
 }
@@ -49,13 +49,6 @@ function backend(){
     await Promise.all([api.callIslePilot('/commands','POST',{}),api.callIslePilot('/commands','POST',{})]);assert.equal(calls,4);
   }
   {
-    const {api,context}=backend();let calls=0;
-    context.fetch=async()=>{calls++;return {ok:false,status:429,headers:{get:()=> '60'},json:async()=>({error:'Rate limit fixture'})};};
-    assert.equal((await api.callIslePilot('/server'))._status,429);
-    assert.equal((await api.callIslePilot('/players'))._status,429);
-    assert.equal(calls,1,'Retry-After prevents repeated polling calls during upstream throttling');
-  }
-  {
     const timers=new Map();let id=0,calls=0;const gate=deferred();
     const context={Response,AbortController,ST25Core:{readTimeoutMs:10000},document:{addEventListener(){}},window:{},
       setTimeout:f=>{timers.set(++id,f);return id;},clearTimeout:id=>timers.delete(id),fetch:()=>{calls++;return gate.promise;}};
@@ -74,7 +67,6 @@ function backend(){
     const gate=deferred();let calls=0;
     const context={document:{addEventListener(){}},confirm:()=>true,App:{showToast(){}},
       ST25API:{routes:{carcassOrder:'/api/carcass/order'}},fetch:()=>{calls++;return gate.promise;}};
-    context.App.mutate=(...args)=>context.fetch(...args);
     vm.runInNewContext(fs.readFileSync('src/features/tha-xac.js','utf8'),context);
     const first=context.orderCarcass('1',10,'fixture');await context.orderCarcass('1',10,'fixture');assert.equal(calls,1);
     gate.reject(Error('offline'));await first;

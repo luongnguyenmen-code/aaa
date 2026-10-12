@@ -64,7 +64,7 @@ const Garage = {
     this.prepareController = controller;
     const timeout = setTimeout(() => controller.abort(), 10000);
     try {
-      return await App.mutate(url, {
+      return await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(sid ? { 'x-steam-id': sid } : {}) },
         body: JSON.stringify(body),
@@ -84,13 +84,12 @@ const Garage = {
 
   async refresh() {
     App.showToast('Đang đồng bộ dữ liệu với IslePilot Cloud...', 'info');
-    const loaded = await this.fetchGarageData();
+    await this.fetchGarageData();
     this.render();
-    if (loaded) App.showToast('Đã đồng bộ dữ liệu Gara thành công!', 'success');
+    App.showToast('Đã đồng bộ dữ liệu Gara thành công!', 'success');
   },
 
   checkCooldown() {
-    try {
     const expireTime = localStorage.getItem('the_isle_garage_cooldown');
     if (expireTime) {
       const remaining = Math.ceil((parseInt(expireTime) - Date.now()) / 1000);
@@ -101,22 +100,19 @@ const Garage = {
         localStorage.removeItem('the_isle_garage_cooldown');
       }
     }
-    } catch (_) { /* Storage may be disabled; server authentication still works. */ }
   },
 
   startCooldownTimer() {
     if (this.cooldownTimer) clearInterval(this.cooldownTimer);
     this.updateCooldownUI();
 
-    let storedDeadline;
-    try { storedDeadline = Number(localStorage.getItem('the_isle_garage_cooldown')); } catch (_) {}
-    const deadline = storedDeadline || Date.now() + this.cooldownSeconds * 1000;
+    const deadline = Number(localStorage.getItem('the_isle_garage_cooldown')) || Date.now() + this.cooldownSeconds * 1000;
     this.cooldownTimer = setInterval(async () => {
       this.cooldownSeconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
       if (this.cooldownSeconds <= 0) {
         clearInterval(this.cooldownTimer);
         this.cooldownTimer = null;
-        try { localStorage.removeItem('the_isle_garage_cooldown'); } catch (_) {}
+        localStorage.removeItem('the_isle_garage_cooldown');
         App.showToast('Thời gian chuẩn bị hoàn tất! Dữ liệu đã sẵn sàng.', 'success');
         await this.fetchGarageData();
         this.render();
@@ -182,12 +178,6 @@ const Garage = {
   },
 
   async fetchGarageData() {
-    if (this.garageRead) return this.garageRead;
-    this.garageRead = this.loadGarageData();
-    try { return await this.garageRead; } finally { this.garageRead = null; }
-  },
-
-  async loadGarageData() {
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const qId = urlParams.get('steamId');
@@ -247,7 +237,7 @@ const Garage = {
           // Ẩn tất cả công cụ và liên kết Admin
           this.setAdminVisibility(false);
           this.updateHeaderUI();
-          return true;
+          return;
         }
 
         // NẾU ĐÃ ĐĂNG NHẬP HỢP LỆ
@@ -273,11 +263,11 @@ const Garage = {
 
         // Lưu thông tin người dùng hiện tại vào localStorage
         if (!data.isViewingOther) {
-          try { localStorage.setItem('st25_steam_user', JSON.stringify({
+          localStorage.setItem('st25_steam_user', JSON.stringify({
             steam_id: data.steamId,
             persona_name: data.personaName,
             isAdmin: !!data.isAdmin
-          })); } catch (_) {}
+          }));
         }
 
         // Điền Steam ID vào ô soi nhanh nếu là Admin
@@ -290,11 +280,10 @@ const Garage = {
         this.setAdminVisibility(!!data.isAdmin);
 
         this.updateHeaderUI();
-        return true;
+        return;
     } catch (e) {
       console.error('Lỗi nạp dữ liệu garage:', e);
       App.showToast('Không thể kết nối máy chủ để lấy dữ liệu Gara!', 'error');
-      return false;
     }
   },
 
@@ -618,7 +607,7 @@ const Garage = {
 
     try {
       App.showToast('Hết 30 giây! Đang gửi lệnh niêm phong vào Gara...', 'info');
-      const res = await App.mutate(ST25API.routes.playerGaragePark, {
+      const res = await fetch(ST25API.routes.playerGaragePark, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(sid ? { 'x-steam-id': sid } : {}) },
         body: JSON.stringify({ steamId: sid })
@@ -629,7 +618,7 @@ const Garage = {
       if (res.ok && data.success) {
         App.showToast(data.message || 'Đã cất khủng long vào Gara thành công!', 'success');
         this.hideActionAlert();
-        try { localStorage.setItem('the_isle_garage_cooldown', Date.now() + 30000); } catch (_) {}
+        localStorage.setItem('the_isle_garage_cooldown', Date.now() + 30000);
         this.cooldownSeconds = 30;
         this.startCooldownTimer();
         await this.fetchGarageData();
@@ -744,7 +733,7 @@ const Garage = {
     App.showToast(`⏳ Hết 30 giây! Đang chính thức hồi phục [${escapeGarageHtml(d.species)}] vào game server...`, 'info');
 
     try {
-      const res = await App.mutate(ST25API.routes.playerGarageRestore, {
+      const res = await fetch(ST25API.routes.playerGarageRestore, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(sid ? { 'x-steam-id': sid } : {}) },
         body: JSON.stringify({ garageDinoId: d.garageDinoId, steamId: sid })
@@ -753,7 +742,7 @@ const Garage = {
       if (res.ok && data.success) {
         App.showToast(`🎉 XUẤT HIỆN THÀNH CÔNG: [${escapeGarageHtml(d.species)} ${d.growth}%] đã ra đảo!`, 'success');
         this.hideActionAlert();
-        try { localStorage.setItem('the_isle_garage_cooldown', Date.now() + 30000); } catch (_) {}
+        localStorage.setItem('the_isle_garage_cooldown', Date.now() + 30000);
         this.cooldownSeconds = 30;
         this.startCooldownTimer();
         await this.fetchGarageData();
@@ -814,7 +803,7 @@ const Garage = {
     const sid = this.getActiveSteamId();
     try {
       App.showToast(`Đang bán [${species}] vào hệ thống...`, 'info');
-      const res = await App.mutate(ST25API.routes.playerGarageSell, {
+      const res = await fetch(ST25API.routes.playerGarageSell, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(sid ? { 'x-steam-id': sid } : {}) },
         body: JSON.stringify({ garageDinoId, steamId: sid })

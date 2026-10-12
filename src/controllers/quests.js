@@ -2,7 +2,7 @@ const PilotAPI = require('../api/upstream-endpoints');
 const ST25API = require('../api/endpoints');
 // quests feature HTTP handlers. Dependencies are supplied by the application.
 module.exports = function register(app, context) {
-  const {getPortalData, savePortalData, callIslePilot, clearPlayerCache, acquirePlayerLock, releasePlayerLock, getRequestSteamId, getQuestPeriodKey, isQuestCompleted, isQuestClaimedInPeriod, getLivePlayerBalance, modifyLivePlayerBalance, normalizeStatPct} = context;
+  const {getPortalData, savePortalData, callIslePilot, clearPlayerCache, acquirePlayerLock, releasePlayerLock, getRequestSteamId, getQuestPeriodKey, isQuestCompleted, isQuestClaimedInPeriod, getLivePlayerBalance, modifyLivePlayerBalance} = context;
 
 
 // 6. Quests (Nhiệm Vụ Cá Nhân) Endpoint
@@ -29,7 +29,6 @@ app.get(ST25API.routes.playerQuests, async (req, res) => {
     callIslePilot(PilotAPI.player(steamId)),
     getLivePlayerBalance(steamId)
   ]);
-  if (!questsData || questsData.error || !Array.isArray(questsData.quests)) return res.status(503).json({ error: 'Không thể cập nhật nhiệm vụ. Dữ liệu đã lưu được giữ nguyên.' });
 
   const portalData = getPortalData();
   const userClaimedQuests = (portalData.claimedQuests && portalData.claimedQuests[steamId]) || {};
@@ -53,7 +52,7 @@ app.get(ST25API.routes.playerQuests, async (req, res) => {
       const claimKey = `${q.id}_${periodKey}`;
       const isCompleted = isQuestCompleted(q);
       const isClaimed = isQuestClaimedInPeriod(q, userClaimedQuests);
-      const canClaim = isCompleted && !isClaimed && q.locked !== true;
+      const canClaim = isCompleted && !isClaimed;
 
       return {
         id: q.id,
@@ -118,9 +117,9 @@ app.get(ST25API.routes.playerQuests, async (req, res) => {
       species: playerDetails.species || "Chưa chọn loài",
       gender: playerDetails.female ? "Cái (Female)" : "Đực (Male)",
       growth: Math.round((playerDetails.growth || 0) * 100),
-      health: normalizeStatPct(playerDetails.health, playerDetails.maxHealth),
-      hunger: normalizeStatPct(playerDetails.hunger, playerDetails.maxHunger),
-      thirst: normalizeStatPct(playerDetails.thirst, playerDetails.maxThirst),
+      health: Math.round(((playerDetails.health || 0) / (playerDetails.maxHealth || 1)) * 100) || 100,
+      hunger: Math.round(((playerDetails.hunger || 0) / (playerDetails.maxHunger || 1)) * 100) || 100,
+      thirst: Math.round(((playerDetails.thirst || 0) / (playerDetails.maxThirst || 1)) * 100) || 100,
       playtimeHours: Math.round((playerDetails.totalPlaySec || 0) / 3600),
       online: playerDetails.online !== false
     } : null,
@@ -168,7 +167,6 @@ app.post(ST25API.routes.playerQuestsClaim, async (req, res) => {
     if (!quest) {
       return res.status(404).json({ error: "Nhiệm vụ không tồn tại hoặc đã hết hạn kỳ này!" });
     }
-    if (quest.locked === true) return res.status(400).json({ error: 'Nhiệm vụ này chưa được mở khóa.' });
 
     const isDone = isQuestCompleted(quest);
     if (!isDone) {
@@ -198,7 +196,6 @@ app.post(ST25API.routes.playerQuestsClaim, async (req, res) => {
 
     const periodKey = getQuestPeriodKey(quest);
     const claimKey = `${quest.id}_${periodKey}`;
-    const previousClaim = data.claimedQuests[steamId][questId];
 
     // ĐÁNH DẤU ĐÃ NHẬN VÀ LƯU TRƯỚC (CHỐNG CONCURRENCY SPAM)
     data.claimedQuests[steamId][claimKey] = {
@@ -221,10 +218,9 @@ app.post(ST25API.routes.playerQuestsClaim, async (req, res) => {
       balRes = await modifyLivePlayerBalance(steamId, rewardAmount, `quest_reward_${questId}`);
       clearPlayerCache(steamId);
     } catch (err) {
-      // Definitive rejection may be retried after the journal is reconciled.
+      // Revert nếu lỗi kết nối
       delete data.claimedQuests[steamId][claimKey];
-      if (previousClaim === undefined) delete data.claimedQuests[steamId][questId];
-      else data.claimedQuests[steamId][questId] = previousClaim;
+      delete data.claimedQuests[steamId][questId];
       savePortalData(data);
       throw err;
     }
@@ -274,13 +270,12 @@ app.post(ST25API.routes.playerQuestsClaimAll, async (req, res) => {
     let totalReward = 0;
     const claimedNames = [];
     const claimedKeys = [];
-    const previousClaims = new Map();
 
     for (const quest of questsData.quests) {
       const isDone = isQuestCompleted(quest);
       const alreadyClaimed = isQuestClaimedInPeriod(quest, data.claimedQuests[steamId]);
 
-      if (isDone && !alreadyClaimed && quest.locked !== true) {
+      if (isDone && !alreadyClaimed) {
         let rewardAmount = 0;
         if (Array.isArray(quest.rewards)) {
           quest.rewards.forEach(r => {
@@ -299,7 +294,6 @@ app.post(ST25API.routes.playerQuestsClaimAll, async (req, res) => {
         const periodKey = getQuestPeriodKey(quest);
         const claimKey = `${quest.id}_${periodKey}`;
         claimedKeys.push(claimKey);
-        for (const key of [claimKey, quest.id]) if (!previousClaims.has(key)) previousClaims.set(key, data.claimedQuests[steamId][key]);
 
         data.claimedQuests[steamId][claimKey] = {
           claimedAt: new Date().toISOString(),
@@ -332,10 +326,7 @@ app.post(ST25API.routes.playerQuestsClaimAll, async (req, res) => {
       clearPlayerCache(steamId);
     } catch (err) {
       // Revert nếu lỗi
-      for (const [key, previous] of previousClaims) {
-        if (previous === undefined) delete data.claimedQuests[steamId][key];
-        else data.claimedQuests[steamId][key] = previous;
-      }
+      claimedKeys.forEach(k => delete data.claimedQuests[steamId][k]);
       savePortalData(data);
       throw err;
     }

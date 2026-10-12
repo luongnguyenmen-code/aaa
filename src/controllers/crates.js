@@ -2,15 +2,14 @@ const PilotAPI = require('../api/upstream-endpoints');
 const ST25API = require('../api/endpoints');
 // crates feature HTTP handlers. Dependencies are supplied by the application.
 module.exports = function register(app, context) {
-  const {getPortalData, savePortalData, callIslePilot, clearPlayerCache, getRequestSteamId, getLivePlayerBalance, modifyLivePlayerBalance, addDinoToGarage, getLiveIslePilotCrates} = context;
+  const {getPortalData, savePortalData, callIslePilot, clearPlayerCache, getRequestSteamId, getLivePlayerBalance, modifyLivePlayerBalance, GACHA_HALLOWEEN_FALLBACK, getLiveIslePilotCrates} = context;
 
 
 // 1. Danh sách các hòm mở thưởng (Đồng bộ thời gian thực từ IslePilot Cloud)
 app.get(ST25API.routes.cratesList, async (req, res) => {
   const steamId = getRequestSteamId(req);
-  const [userBal, crates] = await Promise.all([
-    steamId ? getLivePlayerBalance(steamId) : 0, getLiveIslePilotCrates()
-  ]);
+  const userBal = steamId ? await getLivePlayerBalance(steamId) : 0;
+  const crates = await getLiveIslePilotCrates();
 
   res.json({
     steamId: steamId || null,
@@ -33,34 +32,31 @@ app.post(ST25API.routes.cratesOpen, async (req, res) => {
   const cleanSteamId = String(steamId || '').trim();
   const crates = await getLiveIslePilotCrates();
   const reqCrateId = req.body.crateId;
-  const crate = crates.find(c => c.id === reqCrateId);
-  if (!crate) return res.status(400).json({ error: 'Hòm quà không tồn tại.' });
+  const crate = (crates.find(c => c.id === reqCrateId) || crates[0]) || GACHA_HALLOWEEN_FALLBACK;
 
   const userBal = await getLivePlayerBalance(cleanSteamId);
-  const price = Number(crate.price ?? crate.cost ?? 8);
-  const rewards = (crate.rewards || []).filter(reward => Number.isFinite(Number(reward.weight ?? 1)) && Number(reward.weight ?? 1) > 0);
-  if (!Number.isSafeInteger(price) || price < 0 || !rewards.length) return res.status(503).json({ error: 'Danh mục hòm quà chưa hợp lệ. Chưa trừ Lúa.' });
+  const price = Number(crate.price || crate.cost || 8);
   if (userBal < price) {
     return res.status(400).json({ error: `Bạn không đủ Lúa để mở hòm! Cần ${price} Lúa 🌾 (Hiện có: ${userBal} Lúa).` });
   }
 
-  // 2. Quay số trúng thưởng theo trọng số weight từ IslePilot Cloud
-  const totalWeight = rewards.reduce((sum, r) => sum + Number(r.weight ?? 1), 0);
-  if (!Number.isFinite(totalWeight)) return res.status(503).json({ error: 'Trọng số hòm quà không hợp lệ.' });
-  let randomVal = Math.random() * totalWeight;
-  let wonReward = rewards[0];
+  // 1. Trừ Lúa mở hòm trực tiếp vào tài khoản Steam của người chơi trên IslePilot Cloud
+  const deductRes = await modifyLivePlayerBalance(cleanSteamId, -price, `Quay Gacha ${crate.name}`);
+  let currentBalance = deductRes.balance;
 
-  for (const reward of rewards) {
-    const w = Number(reward.weight ?? 1);
-    if (randomVal < w) {
+  // 2. Quay số trúng thưởng theo trọng số weight từ IslePilot Cloud
+  const totalWeight = crate.rewards.reduce((sum, r) => sum + (Number(r.weight) || 1), 0);
+  let randomVal = Math.random() * totalWeight;
+  let wonReward = crate.rewards[0];
+
+  for (const reward of crate.rewards) {
+    const w = Number(reward.weight) || 1;
+    if (randomVal <= w) {
       wonReward = reward;
       break;
     }
     randomVal -= w;
   }
-  await require('../services/mutation-journal').annotate({ crateId: crate.id, reward: wonReward });
-  const deductRes = await modifyLivePlayerBalance(cleanSteamId, -price, `Quay Gacha ${crate.name}`);
-  let currentBalance = deductRes.balance;
 
   // 3. Phân phối phần thưởng: DINO TRÚNG THƯỞNG ĐƯỢC CỘNG THẲNG VÀO GARAGE
   let transferredToGarage = false;
@@ -78,11 +74,31 @@ app.post(ST25API.routes.cratesOpen, async (req, res) => {
     const growth = wonReward.growth !== undefined ? Number(wonReward.growth) : (dinoData.growth !== undefined ? Number(dinoData.growth) : 80);
     const isPrimeElder = wonReward.isPrimeElder !== undefined ? !!wonReward.isPrimeElder : !!dinoData.isPrimeElder;
 
-    addDinoToGarage(cleanSteamId, {
-      species, growth: growth <= 1 ? growth * 100 : growth,
+    // 1. Gửi lệnh swap trực tiếp lên IslePilot để khi vào game người chơi nhận dino ngay
+    try {
+      await callIslePilot(PilotAPI.paths.commands, 'POST', {
+        action: 'swap',
+        steamId: cleanSteamId,
+        species: species,
+        growth: growth > 1 ? growth / 100 : growth
+      });
+    } catch (_) {}
+
+    // 2. Lưu vào Túi Đồ của người chơi
+    if (!data.userInventory) data.userInventory = {};
+    if (!data.userInventory[cleanSteamId]) data.userInventory[cleanSteamId] = [];
+    data.userInventory[cleanSteamId].push({
+      id: `dino-${Date.now()}`,
+      name: `${species} ${growth}%`,
+      icon: "🦖",
+      desc: `Trúng thưởng từ ${crate.name}`,
+      type: "dino_voucher",
+      species: species,
+      growth: growth,
       gender: dinoData.gender || (Math.random() > 0.5 ? "Đực (Male)" : "Cái (Female)"),
-      isPrimeElder, source: `Trúng thưởng từ ${crate.name}`
-    }, data);
+      isPrimeElder: isPrimeElder,
+      date: new Date().toISOString()
+    });
     savePortalData(data);
     transferredToGarage = true;
   } else if (wonReward.type === 'skin' || wonReward.prizeKind === 'skin') {

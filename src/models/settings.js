@@ -1,26 +1,18 @@
 const fs = require('node:fs');
-const { writeJSON } = require('./json-store');
-const Persistent = require('./persistent-state');
 const {configFile: CONFIG_FILE, temporaryConfigFile: TMP_CONFIG_FILE} = require('../core/config');
 let memoryConfig = null;
-let configStamp = null;
 
 
 function getConfig() {
-  if (Persistent.current()) return Persistent.get('config');
   // 1. Đọc từ CONFIG_FILE gốc trong thư mục dự án (Nguồn dữ liệu chính)
   try {
     if (fs.existsSync(CONFIG_FILE)) {
-      const stat = fs.statSync(CONFIG_FILE);
-      const stamp = `${stat.mtimeMs}:${stat.size}`;
-      if (memoryConfig && configStamp === stamp) return memoryConfig;
       const raw = fs.readFileSync(CONFIG_FILE, 'utf-8').replace(/^\uFEFF/, '');
       memoryConfig = JSON.parse(raw);
-      configStamp = stamp;
       return memoryConfig;
     }
   } catch (e) {
-    throw Object.assign(new Error('File cấu hình máy chủ không đọc được.'), { status: 503, cause: e });
+    console.error('Lỗi đọc server-config.json gốc:', e.message);
   }
 
   if (memoryConfig) return memoryConfig;
@@ -54,16 +46,15 @@ function getConfig() {
 
 
 function saveConfig(cfg) {
-  if (Persistent.set('config', cfg)) return true;
+  memoryConfig = cfg;
   try {
-    writeJSON(CONFIG_FILE, cfg);
-    memoryConfig = cfg;
-    configStamp = null;
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf-8');
   } catch (err) {
-    memoryConfig = null;
-    configStamp = null;
-    throw Object.assign(new Error('Không thể lưu cấu hình máy chủ.'), { status: 503, cause: err });
+    console.warn('Không thể ghi file CONFIG_FILE gốc:', err.message);
   }
+  try {
+    fs.writeFileSync(TMP_CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf-8');
+  } catch (_) {}
   return true;
 }
 module.exports = {getConfig, saveConfig};

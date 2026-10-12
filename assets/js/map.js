@@ -532,7 +532,7 @@ const IsleMap = {
       btnExecute.textContent = 'Đang TP...';
 
       try {
-        const tpRes = await App.mutate(ST25API.routes.teleportExecute, {
+        const tpRes = await fetch(ST25API.routes.teleportExecute, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ locationId, steamId: this.selectedSteamId })

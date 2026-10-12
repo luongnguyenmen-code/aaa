@@ -107,7 +107,7 @@
             }
           } catch (_) {}
 
-          const res = await App.mutate(`${ST25API.routes.adminRolesSlots}?steamId=${encodeURIComponent(this.currentAdminSteamId)}&_t=${Date.now()}`, {
+          const res = await fetch(`${ST25API.routes.adminRolesSlots}?steamId=${encodeURIComponent(this.currentAdminSteamId)}&_t=${Date.now()}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -322,7 +322,7 @@
             'x-steam-id': this.currentAdminSteamId,
             'x-admin-steam-id': this.currentAdminSteamId
           };
-          const res = await App.mutate(ST25API.routes.adminAssignRoleSlots, {
+          const res = await fetch(ST25API.routes.adminAssignRoleSlots, {
             method: 'POST',
             headers: hdrs,
             body: JSON.stringify({
@@ -406,7 +406,7 @@
             'x-steam-id': this.currentAdminSteamId,
             'x-admin-steam-id': this.currentAdminSteamId
           };
-          const res = await App.mutate(ST25API.routes.adminRemoveRoleSlots, {
+          const res = await fetch(ST25API.routes.adminRemoveRoleSlots, {
             method: 'POST',
             headers: hdrs,
             body: JSON.stringify({
@@ -502,7 +502,7 @@
             'x-steam-id': this.currentAdminSteamId,
             'x-admin-steam-id': this.currentAdminSteamId
           };
-          const res = await App.mutate(ST25API.routes.adminAssignRoleSlots, {
+          const res = await fetch(ST25API.routes.adminAssignRoleSlots, {
             method: 'POST',
             headers: hdrs,
             body: JSON.stringify({
@@ -767,7 +767,7 @@
             'x-steam-id': this.currentAdminSteamId,
             'x-admin-steam-id': this.currentAdminSteamId
           };
-          const res = await App.mutate(ST25API.routes.adminAssignRoleSlots, {
+          const res = await fetch(ST25API.routes.adminAssignRoleSlots, {
             method: 'POST',
             headers: hdrs,
             body: JSON.stringify({
@@ -1269,7 +1269,7 @@
             'x-steam-id': this.adminSteamId || AdminPanel.currentAdminSteamId,
             'x-admin-steam-id': this.adminSteamId || AdminPanel.currentAdminSteamId
           };
-          const res = await App.mutate(ST25API.routes.adminCombatAction, {
+          const res = await fetch(ST25API.routes.adminCombatAction, {
             method: 'POST',
             headers: hdrs,
             body: JSON.stringify({

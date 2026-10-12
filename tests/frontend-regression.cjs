@@ -13,7 +13,7 @@ module.exports = async function run(root = path.resolve(__dirname, '..')) {
     let timerId = 0;
     const clock = { now: 1000 };
     const context = {
-      console, AbortController, URLSearchParams, Response, Headers,
+      console, AbortController, URLSearchParams,
       ST25API: require('../src/api/endpoints'), ST25Core: require('../src/core/web'),
       Date: class extends Date { static now() { return clock.now; } },
       setTimeout: f => { timers.set(++timerId, f); return timerId; },
@@ -24,7 +24,7 @@ module.exports = async function run(root = path.resolve(__dirname, '..')) {
       document: { hidden: false, readyState: 'loading', querySelector: () => null, querySelectorAll: () => [], getElementById: () => null, addEventListener: (n,f) => listeners.push([n,f]) },
       window: { location: { search: '', pathname: '/index.html' }, addEventListener: (n,f) => listeners.push([n,f]) },
       confirm: () => true,
-      fetch: async () => new Response('{}')
+      fetch: async () => ({ ok: true, json: async () => ({}) })
     };
     vm.createContext(context);
     return { context, timers, listeners, storage, clock };
@@ -47,7 +47,7 @@ module.exports = async function run(root = path.resolve(__dirname, '..')) {
     e.context.fetch = () => { calls++; return gate.promise; };
     const a = app.readJSON('/api/test'); const b = app.readJSON('/api/test');
     assert.equal(a,b); assert.equal(calls,1);
-    gate.resolve(new Response('{"balance":0}')); await a;
+    gate.resolve({ok:true,json:async()=>({balance:0})}); await a;
     assert.equal(app.readRequests.size,0);
   });
   await test('Timeout aborts a stuck read; a retry can start afterwards', async () => {
@@ -56,7 +56,7 @@ module.exports = async function run(root = path.resolve(__dirname, '..')) {
     const request = app.readJSON('/api/test'); const rejection = assert.rejects(request,/aborted/);
     [...e.timers.values()][0](); await rejection;
     assert.equal(app.readRequests.size,0);
-    e.context.fetch = async()=>new Response('{}'); await app.readJSON('/api/test');
+    e.context.fetch = async()=>({ok:true,json:async()=>({})}); await app.readJSON('/api/test');
   });
   await test('Slow API cannot delay navigation; repeated init cannot add listeners', async () => {
     const e = environment(); const app = script(e, 'assets/js/app.js', 'App');
@@ -88,7 +88,7 @@ module.exports = async function run(root = path.resolve(__dirname, '..')) {
   });
   await test('Blocked local storage cannot discard a valid cookie login', async () => {
     const e=environment(); const app=script(e,'assets/js/app.js','App');
-    e.context.fetch=async()=>new Response('{"linked":true,"steam_id":"76561198000000001"}');
+    e.context.fetch=async()=>({ok:true,json:async()=>({linked:true,steam_id:'76561198000000001'})});
     e.context.localStorage.setItem=()=>{throw new Error('storage disabled');};
     await app.checkAuth(); assert.equal(app.user.steam_id,'76561198000000001');
   });
@@ -122,7 +122,7 @@ module.exports = async function run(root = path.resolve(__dirname, '..')) {
   await test('Concurrent park/restore is blocked; cancel during preparation prevents countdown', async () => {
     const e=environment(); const garage=script(e,'assets/js/gara.js','Garage');
     const gate=deferred(); let requests=0;
-    e.context.App={showToast:()=>{},mutate:(...args)=>e.context.fetch(...args)}; e.context.fetch=()=>{requests++;return gate.promise;};
+    e.context.App={showToast:()=>{}}; e.context.fetch=()=>{requests++;return gate.promise;};
     const a=garage.startRestoreChanneling('1','Tyrannosaurus',100);
     await garage.startRestoreChanneling('2','Triceratops',100); await garage.parkActiveDino(); assert.equal(requests,1);
     garage.cancelRestoreChanneling(); gate.resolve({ok:true}); await a;
@@ -130,13 +130,13 @@ module.exports = async function run(root = path.resolve(__dirname, '..')) {
   });
   await test('Preparation failure never sends a final garage mutation', async () => {
     const e=environment(); const garage=script(e,'assets/js/gara.js','Garage');
-    e.context.App={showToast:()=>{},mutate:(...args)=>e.context.fetch(...args)}; e.context.fetch=async()=>({ok:false});
+    e.context.App={showToast:()=>{}}; e.context.fetch=async()=>({ok:false});
     await garage.startRestoreChanneling('1','Tyrannosaurus',100);
     assert.equal(garage.actionBusy,false); assert.equal(garage.pendingRestoreDino,null); assert.equal(e.timers.size,0);
   });
   await test('Garage countdown follows elapsed time instead of the number of timer ticks', async () => {
     const e=environment(); const garage=script(e,'assets/js/gara.js','Garage'); let final=0;
-    e.context.App={showToast:()=>{},mutate:(...args)=>e.context.fetch(...args)}; garage.executeFinalRestore=async()=>final++;
+    e.context.App={showToast:()=>{}}; garage.executeFinalRestore=async()=>final++;
     await garage.startRestoreChanneling('1','Tyrannosaurus',100);
     const tick=e.timers.get(garage.restoreChannelingTimer); e.clock.now+=31000; await tick();
     assert.equal(final,1); assert.equal(garage.restoreRemainingSeconds,0); assert.equal(garage.restoreChannelingTimer,null);
@@ -149,7 +149,7 @@ module.exports = async function run(root = path.resolve(__dirname, '..')) {
     e.clock.now+=10000; tick(); assert.equal(loads,2);
   });
   await test('A double click cannot send two crate purchases', async () => {
-    const e=environment(); e.context.App={showToast:()=>{},mutate:(...args)=>e.context.fetch(...args)};
+    const e=environment(); e.context.App={showToast:()=>{}};
     inline(e,'hom-qua.html','openHalloweenGacha');
     vm.runInContext("myBalance=100; getActiveSteamId=()=> '76561198000000001';",e.context);
     const gate=deferred(); let calls=0; e.context.fetch=()=>{calls++;return gate.promise;};

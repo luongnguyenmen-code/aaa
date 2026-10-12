@@ -29,7 +29,7 @@
         if (!sid) return;
         App.showToast(`Đang chuyển sang tài khoản ${sid}...`, 'info');
         try {
-          const res = await App.mutate(ST25API.routes.playerLoginManual, {
+          const res = await fetch(ST25API.routes.playerLoginManual, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ steamId: sid })
@@ -426,7 +426,7 @@
         }
 
         try {
-          const res = await App.mutate(ST25API.routes.tradeCreate, {
+          const res = await fetch(ST25API.routes.tradeCreate, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -471,7 +471,7 @@
 
         App.showToast("Đang xử lý giao dịch...", "info");
         try {
-          const res = await App.mutate(ST25API.routes.tradeAccept, {
+          const res = await fetch(ST25API.routes.tradeAccept, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -502,7 +502,7 @@
         }
 
         try {
-          const res = await App.mutate(ST25API.routes.tradeDecline, {
+          const res = await fetch(ST25API.routes.tradeDecline, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -533,7 +533,7 @@
         }
 
         try {
-          const res = await App.mutate(ST25API.routes.tradeCancel, {
+          const res = await fetch(ST25API.routes.tradeCancel, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

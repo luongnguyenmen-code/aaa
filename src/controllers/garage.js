@@ -46,9 +46,8 @@ app.get(ST25API.routes.playerGarage, async (req, res) => {
     });
   }
 
-  const pilotPlayer = await callIslePilot(PilotAPI.player(effectiveSteamId));
-  if (!pilotPlayer || pilotPlayer.error || pilotPlayer._status) return res.status(503).json({ error: 'Không thể cập nhật nhân vật IslePilot.' });
-  const garageStatus = await getPlayerGarageStatus(effectiveSteamId, { player: pilotPlayer, fresh: false });
+  const garageStatus = await getPlayerGarageStatus(effectiveSteamId);
+  const pilotPlayer = await callIslePilot(PilotAPI.player(effectiveSteamId), 'GET', null, true);
 
   let active = null;
   if (pilotPlayer && pilotPlayer.species) {
@@ -229,26 +228,20 @@ app.post(ST25API.routes.playerGarageRestore, async (req, res) => {
   const { garageDinoId, mutations } = req.body;
   const steamId = getRequestSteamId(req);
   if (!steamId) return res.status(401).json({ error: "Vui lòng đăng nhập Steam!" });
-  if (typeof garageDinoId !== 'string' || !garageDinoId) return res.status(400).json({ error: "Thiếu mã khủng long trong Gara!" });
-  const availableGarage = await getPlayerGarageStatus(steamId);
-  if (!availableGarage.dinos.some(d => String(d.id) === garageDinoId)) return res.status(409).json({ error: 'Khủng long không còn khả dụng trong Gara hoặc đang được giao dịch.' });
+  if (!garageDinoId) return res.status(400).json({ error: "Thiếu mã khủng long trong Gara!" });
 
   // Nếu là khủng long trúng từ Hòm Quà (id bắt đầu bằng dino-)
-  if (garageDinoId.startsWith('dino-') || (getPortalData().userGarage?.[steamId] || []).some(d => String(d.id) === garageDinoId)) {
+  if (garageDinoId.startsWith('dino-')) {
     const data = getPortalData();
     const dIdx = (data.userGarage && data.userGarage[steamId]) ? data.userGarage[steamId].findIndex(d => d.id === garageDinoId) : -1;
     if (dIdx !== -1) {
       const dino = data.userGarage[steamId][dIdx];
-      const swapResult = await callIslePilot(PilotAPI.paths.commands, 'POST', {
+      await callIslePilot(PilotAPI.paths.commands, 'POST', {
         action: 'swap',
         steamId: steamId,
         species: dino.species,
-        growth: (dino.growth ?? 100) / 100
+        growth: (dino.growth || 100) / 100
       });
-      clearPlayerCache(steamId);
-      if (!swapResult || swapResult.error || swapResult._status || swapResult.ok === false || swapResult.success === false) {
-        return res.status(swapResult?._status || 503).json({ error: swapResult?.error || 'Chưa nhận được xác nhận đưa khủng long ra đảo. Khủng long vẫn được giữ trong Gara; hãy kiểm tra trong game trước khi gửi lại.' });
-      }
       data.userGarage[steamId].splice(dIdx, 1);
       savePortalData(data);
       clearPlayerCache(steamId);
@@ -289,9 +282,7 @@ app.post(ST25API.routes.playerGarageSell, async (req, res) => {
   const { garageDinoId } = req.body;
   const steamId = getRequestSteamId(req);
   if (!steamId) return res.status(401).json({ error: "Vui lòng đăng nhập Steam!" });
-  if (typeof garageDinoId !== 'string' || !garageDinoId) return res.status(400).json({ error: "Thiếu mã khủng long cần bán!" });
-  const availableGarage = await getPlayerGarageStatus(steamId);
-  if (!availableGarage.dinos.some(d => String(d.id) === garageDinoId)) return res.status(409).json({ error: 'Khủng long không còn khả dụng trong Gara hoặc đang được giao dịch.' });
+  if (!garageDinoId) return res.status(400).json({ error: "Thiếu mã khủng long cần bán!" });
 
   if (!acquirePlayerLock(steamId, 'garage')) {
     return res.status(429).json({ error: "Giao dịch đang được xử lý, vui lòng không bấm bán liên tục!" });
@@ -299,7 +290,7 @@ app.post(ST25API.routes.playerGarageSell, async (req, res) => {
 
   try {
     // Nếu là khủng long trúng từ Hòm Quà (id bắt đầu bằng dino-)
-    if (garageDinoId.startsWith('dino-') || (getPortalData().userGarage?.[steamId] || []).some(d => String(d.id) === garageDinoId)) {
+    if (garageDinoId.startsWith('dino-')) {
       const data = getPortalData();
       const dIdx = (data.userGarage && data.userGarage[steamId]) ? data.userGarage[steamId].findIndex(d => d.id === garageDinoId) : -1;
       if (dIdx !== -1) {
