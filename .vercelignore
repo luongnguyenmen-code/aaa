@@ -1,0 +1,11 @@
+node_modules/
+.git/
+.build-cache/
+.env
+.env.*
+tests/
+research/
+reference/
+.merge-backup/
+aaa-local-before-merge-fix.zip
+debug.log

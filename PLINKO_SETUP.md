@@ -1,5 +1,21 @@
 # Plinko ST25
 
+## Cập nhật setup database — 12/10/2026
+
+- Kiểm tra tiếp: `PLINKO_DATABASE_URL` đã có trên Production; chưa xác minh kết nối/khóa DB. `ISLEPILOT_API_TOKEN` vẫn chưa có. API công khai trả `ready:false`.
+- API key IslePilot đã được gửi vào chat: cần thu hồi key đó và tạo key mới, lưu trực tiếp trên Vercel; không dùng lại key đã lộ.
+- Bản redeploy dashboard ngày 12/10 chạy `iad1` dù bản trước chạy `sin1`; đang triển khai lại từ cấu hình local để khôi phục Singapore. Cần kiểm tra vùng sau mỗi redeploy.
+
+- Đã đăng nhập Vercel CLI và tạo project `st-25-vietnam-game/st25-vietnam`, triển khai trực tiếp từ máy do liên kết GitHub thất bại.
+- Production alias đã xác minh: `https://st25-vietnam.vercel.app`; function `api/index` chạy ở `sin1`. `/plinko.html` và `/api/plinko/state` trả HTTP 200, Plinko `ready:false`.
+- Đã lưu production `SESSION_SECRET` ngẫu nhiên, `PLINKO_ENABLED=false`, `PUBLIC_ORIGIN=https://st25-vietnam.vercel.app`. Chưa có `PLINKO_DATABASE_URL` hoặc `ISLEPILOT_API_TOKEN` trên project mới; chưa gắn domain `www.st25.io.vn`.
+- Người dùng đã tạo Neon project `ST25 VIETNAM GAME` tại Singapore (ảnh xác nhận). Cần lưu chuỗi Neon trực tiếp vào biến production `PLINKO_DATABASE_URL` và kiểm tra database/khóa trước khi bật giao dịch.
+
+- Đã cấu hình `regions: ["sin1"]` trong `vercel.json` để backend chạy ở Singapore khi triển khai cấu hình này.
+- Phương án đề xuất: Neon Free, vùng Singapore, kết nối PostgreSQL trực tiếp (không endpoint `-pooler`). Chưa tạo database hoặc lưu `PLINKO_DATABASE_URL` trên hosting.
+- Phiên điều khiển máy tính hiện không có trình duyệt kết nối; thao tác mở Chrome báo `Browser is not available: chrome`. Cần kết nối trình duyệt hoặc Neon/Vercel để tiếp tục setup trên tài khoản người dùng.
+- `PLINKO_ENABLED` vẫn phải giữ `false` cho đến khi kiểm tra database và ví hoàn tất. Chưa triển khai thay đổi vùng lên Vercel.
+
 ## Trạng thái tiếp tục — 12/10/2026
 
 - Đã hoàn tất mã Plinko, menu, chơi thử, tự động thả bóng, xác minh HMAC và phần tích hợp ví Lúa miễn phí. User xác nhận Lúa không mua bán hoặc quy đổi tài sản có giá trị.

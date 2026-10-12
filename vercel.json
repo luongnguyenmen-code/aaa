@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "regions": ["sin1"],
   "buildCommand": "node tools/build-vercel.cjs",
   "outputDirectory": "public",
   "functions": {
