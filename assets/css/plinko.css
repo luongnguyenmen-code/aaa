@@ -6,6 +6,7 @@
 }
 
 /* Plinko visual refresh is scoped to this page. */
+.plinko-active{grid-column:1/-1;text-align:center;margin:10px 0 0;font-size:11px;font-variant-numeric:tabular-nums;color:#9a87a7}.plinko-active.is-active{color:#f6b1d1}
 @layer st25-redesign {
   body.portal-plinko #plinko-play{background:linear-gradient(110deg,#ce4788,#ef83b3)!important;color:#fff!important;border:0!important;border-radius:10px!important;box-shadow:0 6px 24px #d653932b!important}
   body.portal-plinko #plinko-play:hover:not(:disabled){background:linear-gradient(110deg,#db5195,#f493bd)!important;color:#fff!important;transform:translateY(-1px)!important}

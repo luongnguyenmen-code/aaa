@@ -2,7 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),crypto=require('node:crypto'),assert=require('node:assert/strict'),{spawn}=require('node:child_process');
 const {renderPage,readPublicAsset}=require('./helpers/source.cjs'),engine=require('../src/services/plinko-engine');
 const root=path.resolve(__dirname,'..'),out=path.join(root,'.build-cache/plinko-browser');fs.mkdirSync(out,{recursive:true});
-const steam='76561198000000001',games=new Map();let balance=202,prepareCount=0,playCount=0;
+const steam='76561198000000001',games=new Map();let balance=2000,prepareCount=0,playCount=0,activeWalletRequests=0,maxWalletRequests=0,failNextPlay=false;
 const tables=Array.from({length:9},(_,i)=>engine.risks.map(risk=>engine.table(i+8,risk))).flat();
 const user=()=>({linked:true,isLoggedIn:true,steam_id:steam,persona_name:'Offline QA',avatar:'/assets/imges/st25-favicon.png',balance,coins:balance,lua:balance,notifications:[]});
 const server=http.createServer(async(req,res)=>{
@@ -10,11 +10,12 @@ const server=http.createServer(async(req,res)=>{
   if(url.pathname.startsWith('/api/')){
     res.setHeader('Content-Type','application/json');let result={success:true,items:[],data:[],players:[],quests:[],trades:[],incomingTrades:[],outgoingTrades:[],listings:[],inventory:[],garage:[],dinos:[],tickets:[]};
     if(url.pathname==='/api/player/me')result=user();
-    if(url.pathname==='/api/plinko/state')result={ready:true,authenticated:true,balance,tables,history:[...games.values()].filter(g=>g.status==='settled'),message:'Offline fixtures only'};
+    if(url.pathname==='/api/plinko/state')result={ready:true,authenticated:true,walletAvailable:true,blocked:false,balance,tables,history:[...games.values()].filter(g=>g.status!=='prepared'),message:'Offline fixtures only'};
     if(req.method!=='GET'){
       if(!['/api/plinko/prepare','/api/plinko/play'].includes(url.pathname)){res.writeHead(403);return res.end(JSON.stringify({error:'All other mutations blocked'}));}
+      activeWalletRequests++;maxWalletRequests=Math.max(maxWalletRequests,activeWalletRequests);res.once('finish',()=>activeWalletRequests--);await new Promise(resolve=>setTimeout(resolve,25));
       if(url.pathname.endsWith('/prepare')){prepareCount++;const id=crypto.randomUUID(),serverSeed=crypto.randomBytes(32).toString('hex');games.set(id,{id,serverSeed,commitment:engine.commitment(serverSeed),status:'prepared'});const g=games.get(id);result={id,commitment:g.commitment};}
-      else{playCount++;let raw='';for await(const chunk of req)raw+=chunk;const body=JSON.parse(raw);engine.validate(body);const g=games.get(body.gameId),draw=engine.draw(g.serverSeed,body.clientSeed,body.rows),multiplier=engine.table(body.rows,body.risk).multipliers[draw.slot],payout=Math.floor(body.amount*multiplier);balance+=payout-body.amount;Object.assign(g,body,draw,{multiplier,payout,balance,status:'settled',algorithm:'hmac-sha256-row-v1'});result={game:g,balance};}
+      else{playCount++;let raw='';for await(const chunk of req)raw+=chunk;const body=JSON.parse(raw);engine.validate(body);if(failNextPlay){failNextPlay=false;Object.assign(games.get(body.gameId),body,{status:'review'});res.writeHead(503);return res.end(JSON.stringify({error:'Offline uncertain wallet reply'}));}const g=games.get(body.gameId),draw=engine.draw(g.serverSeed,body.clientSeed,body.rows),multiplier=engine.table(body.rows,body.risk).multipliers[draw.slot],payout=Math.floor(body.amount*multiplier);balance+=payout-body.amount;Object.assign(g,body,draw,{multiplier,payout,balance,status:'settled',algorithm:'hmac-sha256-row-v1'});result={game:g,balance};}
     }
     return res.end(JSON.stringify(result));
   }
@@ -39,7 +40,7 @@ const server=http.createServer(async(req,res)=>{
     }
     await evaluate('window.boardPaints=0;const boardCtx=document.getElementById("plinko-board").getContext("2d");const drawImage=boardCtx.drawImage.bind(boardCtx);boardCtx.drawImage=(...args)=>{window.boardPaints++;return drawImage(...args)}');
     await pause(150);assert.equal(await evaluate('window.boardPaints'),0,'Idle board must not redraw');
-    await evaluate('document.getElementById("plinko-form").requestSubmit()');await until('document.querySelector("#plinko-history [data-proof]")!==null');assert.equal(playCount,0,'Demo must never call game wallet');
+    await evaluate('document.getElementById("plinko-form").requestSubmit()');await until('document.querySelector("#plinko-history [data-proof]")!==null');assert.equal(playCount,1,'Every ball must use the server wallet');assert.equal(await evaluate('document.querySelectorAll("#plinko-mode option").length'),1);assert.equal(await evaluate('document.getElementById("plinko-mode").value'),'wallet');
     assert(await evaluate('window.boardPaints')>10,'Animated ball must render frames');
     await evaluate('document.getElementById("plinko-motion").click();window.boardPaints=0;document.getElementById("plinko-form").requestSubmit()');
     await until('document.querySelectorAll("#plinko-history [data-proof]").length===2');assert(await evaluate('window.boardPaints')<=3,'Motion disabled must settle without animation loop');
@@ -53,9 +54,24 @@ const server=http.createServer(async(req,res)=>{
 
     await evaluate('document.querySelector("#plinko-history [data-proof]").click()');await until('document.getElementById("plinko-proof").textContent.includes(String.fromCharCode(34)+"verified"+String.fromCharCode(34)+": true")');
     for(const rows of [8,12,16])for(const risk of engine.risks){await evaluate(`document.getElementById('plinko-rows').value='${rows}';document.getElementById('plinko-risk').value='${risk}';document.getElementById('plinko-rows').dispatchEvent(new Event('change'))`);assert.equal(await evaluate('document.querySelectorAll("#plinko-slots button").length'),rows+1);}
-    await evaluate('document.getElementById("plinko-mode").value="wallet";document.getElementById("plinko-mode").dispatchEvent(new Event("change"));document.getElementById("plinko-form").requestSubmit()');await until('document.getElementById("plinko-feedback").textContent.startsWith("\u0110\u00e3 tr\u1eeb")');assert.equal(playCount,1);assert.equal(prepareCount,1);await until('!document.getElementById("plinko-play").disabled && !document.getElementById("plinko-auto").disabled');
-    await evaluate('document.getElementById("plinko-auto").click();document.getElementById("plinko-count").value="2";document.getElementById("plinko-form").requestSubmit()');await until('!document.getElementById("plinko-play").disabled');assert.equal(playCount,3,'Auto mode must finish both balls: '+await evaluate('JSON.stringify({feedback:document.getElementById("plinko-feedback").textContent,auto:document.getElementById("plinko-auto").getAttribute("aria-pressed"),valid:document.getElementById("plinko-form").checkValidity(),count:document.getElementById("plinko-count").value})')); 
+    await evaluate('document.getElementById("plinko-motion").setAttribute("data-qa","burst");window.beforeBurst=document.querySelectorAll("#plinko-history [data-proof]").length;for(let i=0;i<21;i++)document.getElementById("plinko-form").requestSubmit()');
+    assert.equal(await evaluate('document.getElementById("plinko-active").textContent'),'20 / 20 '+String.fromCharCode(98,243,110,103));
+    assert.equal(await evaluate('document.getElementById("plinko-play").disabled'),true,'21st rapid click must not enqueue');
+    await until('Number(document.getElementById("plinko-board").dataset.flying)>=2');
+    const multiShot=await call('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(out,'plinko-multi20.png'),Buffer.from(multiShot.data,'base64'));
+    await until('document.getElementById("plinko-active").textContent.startsWith("0 / 20")');
+    assert.equal(await evaluate('document.querySelectorAll("#plinko-history [data-proof]").length'),23,'Exactly 20 new wallet rounds');assert.equal(playCount,23);
+    await evaluate('document.getElementById("plinko-mode").value="wallet";document.getElementById("plinko-mode").dispatchEvent(new Event("change"));document.getElementById("plinko-form").requestSubmit()');await until('document.getElementById("plinko-active").textContent.startsWith("0 / 20") && document.getElementById("plinko-feedback").textContent.startsWith("\u0110\u00e3 tr\u1eeb")');assert.equal(playCount,24);assert.equal(prepareCount,24);await until('!document.getElementById("plinko-play").disabled && !document.getElementById("plinko-auto").disabled');
+    await evaluate('document.getElementById("plinko-auto").click();document.getElementById("plinko-count").value="2";document.getElementById("plinko-form").requestSubmit()');await until('!document.getElementById("plinko-play").disabled');assert.equal(playCount,26,'Auto mode must finish both balls: '+await evaluate('JSON.stringify({feedback:document.getElementById("plinko-feedback").textContent,auto:document.getElementById("plinko-auto").getAttribute("aria-pressed"),valid:document.getElementById("plinko-form").checkValidity(),count:document.getElementById("plinko-count").value})'));
+    await evaluate('document.getElementById("plinko-manual").click();for(let i=0;i<5;i++)document.getElementById("plinko-form").requestSubmit()');
+    await until('document.getElementById("plinko-active").textContent.startsWith("0 / 20")');
+    assert.equal(playCount,31);assert.equal(prepareCount,31);assert.equal(maxWalletRequests,1,'Queued wallet mutations must run serially while animations overlap');
     await evaluate('document.querySelector("#plinko-history [data-proof]").click()');await until('document.getElementById("plinko-proof").textContent.includes(String.fromCharCode(34)+"verified"+String.fromCharCode(34)+": true")');assert.deepEqual(errors,[]);
-    fs.writeFileSync(path.join(out,'results.json'),JSON.stringify({scope:'offline fixtures; no real wallet operations',metrics,prepareCount,playCount,errors},null,2));console.log('PASS Plinko browser: four responsive widths, demo has zero wallet calls, 12 risk/row switches, HMAC proofs, wallet UI, two-ball auto sequence, no JS errors');await call('Browser.close');
+    failNextPlay=true;
+    await evaluate('for(let i=0;i<5;i++)document.getElementById("plinko-form").requestSubmit()');
+    await until('document.getElementById("plinko-active").textContent.startsWith("0 / 20") && document.getElementById("plinko-feedback").textContent.includes("Offline uncertain wallet reply")');
+    await until('document.getElementById("plinko-play").disabled');
+    assert.equal(playCount,32,'Wallet failure must cancel all four unissued rounds');assert.equal(prepareCount,32);assert.equal(maxWalletRequests,1);assert.deepEqual(errors,[]);
+    fs.writeFileSync(path.join(out,'results.json'),JSON.stringify({scope:'offline fixtures; no real wallet operations',metrics,prepareCount,playCount,maxWalletRequests,errors},null,2));console.log('PASS Plinko browser (20 overlapping wallet balls, 21st rejected, queue stops on wallet failure): four responsive widths, wallet-only, no demo option, 12 risk/row switches, HMAC proofs, wallet UI, two-ball auto sequence, no JS errors');await call('Browser.close');
   }finally{if(errors.length)console.log(JSON.stringify(errors));socket?.close();child.kill();server.close();}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});
