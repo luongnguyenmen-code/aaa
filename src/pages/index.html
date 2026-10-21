@@ -16,6 +16,8 @@
   <link rel="stylesheet" href="assets/css/portal-layout.css?v=20261009-spacing1">
   <link rel="stylesheet" href="assets/css/logo.css?v=20261009-stable1">
   <link rel="stylesheet" href="assets/css/redesign.css?v=20261009-ui1">
+  <link rel="stylesheet" href="assets/css/hero-gaze.css?v=20261021">
+  <script src="assets/js/hero-gaze.js?v=20261021" defer></script>
   <script src="assets/js/ui.js?v=20261009-ui1" defer></script>
 </head>
 <body class="st25-portal portal-home">
@@ -37,7 +39,33 @@
   <!-- include:header -->
 
   <!-- Hero Section -->
-  <main class="portal-dashboard container"><div class="home-page-heading"><div><span class="portal-eyebrow">ST25 VIETNAM · GATEWAY</span><h1>Trạm sinh tồn của bạn</h1><p>Theo dõi khủng long, quản lý gara và khám phá cộng đồng.</p></div><div class="home-page-actions"><a class="btn btn-secondary" href="bando.html">Mở bản đồ</a><a class="btn btn-primary" href="gara.html">Gara của tôi</a></div></div><div class="portal-dashboard-grid"><div class="portal-primary"><section class="portal-banners" aria-label="Chào mừng và truy cập nhanh"><article class="portal-banner"><img class="portal-banner-art" src="assets/imges/thumbs/Triceratops.png" alt="" width="224" height="224" decoding="async"><div class="portal-banner-copy"><span class="portal-eyebrow">THE ISLE: EVRIMA · VIETNAM</span><h1>Chào mừng<br>đến ST25</h1><p>Sinh tồn cùng cộng đồng. Quản lý khủng long và tích lũy Lúa tại một nơi.</p><a class="btn btn-primary" href="lien-ket-steam.html">Liên kết Steam →</a></div></article><article class="portal-banner portal-banner--garage"><img class="portal-banner-art" src="assets/imges/thumbs/Tyrannosaurus.png" alt="" width="224" height="224" decoding="async"><div class="portal-banner-copy"><span class="portal-eyebrow">GARA KHỦNG LONG</span><h2>Sẵn sàng<br>trở lại đảo</h2><p>Cất giữ Dino, giữ tiến trình và chọn loài cho lần sinh tồn tiếp theo.</p><a class="btn btn-secondary" href="gara.html">Mở Gara →</a></div></article></section><section aria-labelledby="portal-features-title"><div class="portal-section-heading"><h2 id="portal-features-title">Khám phá ST25</h2><span>Sinh tồn · Kinh tế · Cộng đồng</span></div><div class="portal-feature-grid"><a class="portal-feature" href="gara.html"><span class="portal-feature-tag">DINO CLOUD</span><div class="portal-feature-art" aria-hidden="true"><img src="assets/imges/thumbs/Tyrannosaurus.png" alt="" width="224" height="224" loading="lazy" decoding="async"></div><div class="portal-feature-copy"><h3>Gara Khủng Long</h3><p>Lưu giữ và quản lý khủng long của bạn.</p></div></a>
+  <main class="portal-dashboard container">
+    <section class="st25-hero" aria-labelledby="st25-hero-title">
+      <div class="st25-hero-scene" data-hero-gaze>
+        <img src="assets/imges/st25-trex-hero.jpg" alt="Khủng long Tyrannosaurus tại ST25" width="1920" height="1080" fetchpriority="high" decoding="async">
+        <svg class="st25-hero-eye" viewBox="0 0 1920 1080" aria-hidden="true" focusable="false">
+          <defs>
+            <radialGradient id="st25-iris"><stop stop-color="#ead78a"/><stop offset=".65" stop-color="#b68b43"/><stop offset="1" stop-color="#634629"/></radialGradient>
+            <clipPath id="st25-eye-clip"><ellipse rx="15" ry="10.5"/></clipPath>
+          </defs>
+          <g transform="translate(530 166) rotate(20)">
+            <g clip-path="url(#st25-eye-clip)">
+              <ellipse rx="16" ry="12" fill="url(#st25-iris)"/>
+              <path d="M-13-5-8-3M-8-9-5-5M1-10 1-6M10-7 7-4M14 1 10 1M9 8 6 5M-8 8-5 5M-14 2-10 2" stroke="#71502b" stroke-width="1" opacity=".6"/>
+              <g data-gaze-pupil><ellipse rx="3.2" ry="7.3" fill="#171a13"/><ellipse cx="-1" cy="-3" rx="1.2" ry="1.8" fill="#fff2c4" opacity=".8"/></g>
+              <ellipse rx="15" ry="10.5" fill="none" stroke="#32291e" stroke-width="3"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="st25-hero-copy">
+        <span class="portal-eyebrow">THE ISLE: EVRIMA · ST25 VIETNAM</span>
+        <h2 id="st25-hero-title">Bản năng sinh tồn.<br>Dấu ấn của bạn.</h2>
+        <p>Bước vào thế giới hoang dã, tìm đồng đội và viết tiếp hành trình của bạn trên đảo ST25.</p>
+        <div class="st25-hero-actions"><a class="btn btn-primary" href="lien-ket-steam.html">Tham gia ST25 →</a><a class="btn btn-secondary" href="noi-quy.html">Nội quy sinh tồn</a></div>
+      </div>
+    </section>
+<div class="home-page-heading"><div><span class="portal-eyebrow">ST25 VIETNAM · GATEWAY</span><h1>Trạm sinh tồn của bạn</h1><p>Theo dõi khủng long, quản lý gara và khám phá cộng đồng.</p></div><div class="home-page-actions"><a class="btn btn-secondary" href="bando.html">Mở bản đồ</a><a class="btn btn-primary" href="gara.html">Gara của tôi</a></div></div><div class="portal-dashboard-grid"><div class="portal-primary"><section class="portal-banners" aria-label="Chào mừng và truy cập nhanh"><article class="portal-banner"><img class="portal-banner-art" src="assets/imges/thumbs/Triceratops.png" alt="" width="224" height="224" decoding="async"><div class="portal-banner-copy"><span class="portal-eyebrow">THE ISLE: EVRIMA · VIETNAM</span><h1>Chào mừng<br>đến ST25</h1><p>Sinh tồn cùng cộng đồng. Quản lý khủng long và tích lũy Lúa tại một nơi.</p><a class="btn btn-primary" href="lien-ket-steam.html">Liên kết Steam →</a></div></article><article class="portal-banner portal-banner--garage"><img class="portal-banner-art" src="assets/imges/thumbs/Tyrannosaurus.png" alt="" width="224" height="224" decoding="async"><div class="portal-banner-copy"><span class="portal-eyebrow">GARA KHỦNG LONG</span><h2>Sẵn sàng<br>trở lại đảo</h2><p>Cất giữ Dino, giữ tiến trình và chọn loài cho lần sinh tồn tiếp theo.</p><a class="btn btn-secondary" href="gara.html">Mở Gara →</a></div></article></section><section aria-labelledby="portal-features-title"><div class="portal-section-heading"><h2 id="portal-features-title">Khám phá ST25</h2><span>Sinh tồn · Kinh tế · Cộng đồng</span></div><div class="portal-feature-grid"><a class="portal-feature" href="gara.html"><span class="portal-feature-tag">DINO CLOUD</span><div class="portal-feature-art" aria-hidden="true"><img src="assets/imges/thumbs/Tyrannosaurus.png" alt="" width="224" height="224" loading="lazy" decoding="async"></div><div class="portal-feature-copy"><h3>Gara Khủng Long</h3><p>Lưu giữ và quản lý khủng long của bạn.</p></div></a>
 <a class="portal-feature" href="bando.html"><span class="portal-feature-tag">BẢN ĐỒ</span><div class="portal-feature-art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Zm6-3v15M15 6v15"/></svg></div><div class="portal-feature-copy"><h3>Bản Đồ Gateway</h3><p>Theo dõi vị trí và vùng sinh tồn.</p></div></a>
 <a class="portal-feature" href="nhiem-vu.html"><span class="portal-feature-tag">LÚA & XP</span><div class="portal-feature-art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M9 10l2 2 4-4M9 17h6"/></svg></div><div class="portal-feature-copy"><h3>Kho Lúa & Nhiệm Vụ</h3><p>Tích lũy Lúa và tiến trình mỗi ngày.</p></div></a>
 <a class="portal-feature" href="giao-dich.html"><span class="portal-feature-tag">GIAO DỊCH</span><div class="portal-feature-art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14m-4-4 4 4-4 4M19 17H5m4-4-4 4 4 4"/></svg></div><div class="portal-feature-copy"><h3>Chợ Giao Dịch</h3><p>Trao đổi Lúa và khủng long.</p></div></a>
