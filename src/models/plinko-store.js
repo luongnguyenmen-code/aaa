@@ -1,10 +1,11 @@
 const crypto=require('node:crypto');
 let pool,initialization;
+const databaseURL=()=>process.env.PLINKO_DATABASE_URL||process.env.PORTAL_DATABASE_URL;
 async function database(){
-  if(!process.env.PLINKO_DATABASE_URL)throw Object.assign(Error('Plinko chưa kết nối kho giao dịch.'),{status:503});
-  const address=new URL(process.env.PLINKO_DATABASE_URL);
+  if(!databaseURL())throw Object.assign(Error('Plinko chưa kết nối kho giao dịch.'),{status:503});
+  const address=new URL(databaseURL());
   if(/pooler|pgbouncer/i.test(address.hostname)||address.port==='6543')throw Object.assign(Error('Plinko cần PostgreSQL trực tiếp, không dùng transaction pooler.'),{status:503});
-  if(!pool){const {Pool}=require('pg');pool=new Pool({connectionString:process.env.PLINKO_DATABASE_URL,max:3,connectionTimeoutMillis:5000,query_timeout:10000});pool.on('error',()=>console.error('Plinko database unavailable'));}
+  if(!pool){const {Pool}=require('pg');pool=new Pool({connectionString:databaseURL(),max:3,connectionTimeoutMillis:5000,query_timeout:10000});pool.on('error',()=>console.error('Plinko database unavailable'));}
   if(!initialization)initialization=pool.query(`CREATE TABLE IF NOT EXISTS st25_plinko_games (
     id uuid PRIMARY KEY, steam_id varchar(17) NOT NULL, seed text NOT NULL,
     status text NOT NULL CHECK(status IN ('prepared','debit_pending','credit_pending','settled','review')),

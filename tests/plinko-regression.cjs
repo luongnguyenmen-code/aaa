@@ -1,6 +1,7 @@
 const assert=require('node:assert/strict'),crypto=require('node:crypto');
 const engine=require('../src/services/plinko-engine'),create=require('../src/services/plinko');
-const previous={enabled:process.env.PLINKO_ENABLED,url:process.env.PLINKO_DATABASE_URL};
+const previous={enabled:process.env.PLINKO_ENABLED,url:process.env.PLINKO_DATABASE_URL,testIds:process.env.PLINKO_TEST_STEAM_IDS};
+delete process.env.PLINKO_TEST_STEAM_IDS;
 process.env.PLINKO_ENABLED='true';process.env.PLINKO_DATABASE_URL='postgres://offline.invalid/test';
 function fixture(failKind){
   const rows=new Map(),locks=new Set(),balances=new Map([['A',500],['B',900]]),calls=[];
@@ -23,12 +24,20 @@ const input=g=>({gameId:g.id,amount:10,rows:16,risk:'low',clientSeed:'offline-se
   for(const edit of [{amount:0},{amount:501},{amount:1.5},{rows:17},{risk:'fake'},{clientSeed:''},{gameId:'invalid'}])assert.throws(()=>engine.validate({...input(g),...edit}));
   await assert.rejects(f.service.play('B',input(g)),e=>e.status===404);
   await assert.rejects(f.service.play(null,input(g)),e=>e.status===401);
-  const played=await f.service.play('A',input(g));assert.equal(played.game.status,'settled');assert.equal(engine.commitment(played.game.serverSeed),g.commitment);assert.deepEqual(engine.draw(played.game.serverSeed,'offline-seed',16).path,played.game.path);assert.equal(f.balances.get('A'),500-10+played.game.payout);
+  const played=await f.service.play('A',{...input(g),commitment:'forged',status:'review',payout:999999,balance:999999,serverSeed:'forged'});assert.equal(played.game.status,'settled');assert.equal(played.game.commitment,g.commitment);assert.equal(engine.commitment(played.game.serverSeed),g.commitment);assert.deepEqual(engine.draw(played.game.serverSeed,'offline-seed',16).path,played.game.path);assert.equal(f.balances.get('A'),500-10+played.game.payout);assert.notEqual(played.game.payout,999999);
   const callCount=f.calls.length;const replay=await f.service.play('A',input(g));assert(replay.replayed);assert.equal(f.calls.length,callCount);
   process.env.PLINKO_ENABLED='false';assert((await f.service.play('A',input(g))).replayed);await assert.rejects(f.service.prepare('A'),e=>e.status===503);process.env.PLINKO_ENABLED='true';
   assert.equal((await f.service.state('B')).balance,900);assert.equal((await f.service.state('B')).history.length,0);assert.equal((await f.service.state(null)).tables.length,36);
+  const offline=create({balance:async()=>{throw Error('offline');}}, {database:async()=>{throw Error('offline');},history:async()=>[]});
+  const offlineState=await offline.state('A');assert.equal(offlineState.ready,false);assert.equal(offlineState.walletAvailable,false);assert.equal(offlineState.tables.length,36);
+  const walletOffline=create({balance:async()=>{throw Error('offline');}}, {database:async()=>{},history:async()=>[]});assert.equal((await walletOffline.state('A')).walletAvailable,false);
   const poor=await f.service.prepare('A');f.balances.set('A',0);await assert.rejects(f.service.play('A',input(poor)),e=>e.status===400);assert.equal(f.calls.length,callCount);
   for(const kind of ['debit','payout']){const failed=fixture(kind),pending=await failed.service.prepare('A');const row=failed.rows.get(pending.id);let seed='winning';while(engine.payout(10,engine.table(16,'low').multipliers[engine.draw(seed,'offline-seed',16).slot])===0)seed+='x';row.seed=seed;
-    await assert.rejects(failed.service.play('A',input(pending)),e=>e.status===503);assert.equal(failed.rows.get(pending.id).status,'review');const count=failed.calls.length;await assert.rejects(failed.service.play('A',input(pending)),e=>e.status===409);await assert.rejects(failed.service.prepare('A'),e=>e.status===409);assert.equal(failed.calls.length,count);assert(!('serverSeed' in (await failed.service.state('A')).history[0]));}
-  console.log('PASS Plinko: 36 probability/payout tables, deterministic HMAC, commitment, validation, private history, wallet balance isolation, unique-game replay, insufficient points, uncertain debit/payout blocks, disabled mode; no live transactions');
-})().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>{for(const [key,value] of [['PLINKO_ENABLED',previous.enabled],['PLINKO_DATABASE_URL',previous.url]])if(value===undefined)delete process.env[key];else process.env[key]=value;});
+    await assert.rejects(failed.service.play('A',input(pending)),e=>e.status===503);assert.equal(failed.rows.get(pending.id).status,'review');const count=failed.calls.length;await assert.rejects(failed.service.play('A',input(pending)),e=>e.status===409);await assert.rejects(failed.service.prepare('A'),e=>e.status===409);assert.equal(failed.calls.length,count);const failedState=await failed.service.state('A');assert(failedState.blocked);assert(!('serverSeed' in failedState.history[0]));}
+  process.env.PLINKO_ENABLED='false';process.env.PLINKO_TEST_STEAM_IDS='76561198682056372';
+  assert.equal((await f.service.state(null)).ready,false);assert.equal((await f.service.state('76561198000000002')).ready,false);
+  assert.equal((await f.service.state('76561198682056372')).ready,true);
+  await assert.rejects(f.service.prepare('B'),e=>e.status===503);
+  process.env.PLINKO_TEST_STEAM_IDS='invalid';assert.equal((await f.service.state('76561198682056372')).ready,false);
+  console.log('PASS Plinko: 36 probability/payout tables, deterministic HMAC, commitment, validation, private history, wallet balance isolation, unique-game replay, insufficient points, uncertain debit/payout blocks, disabled mode, private test-account gate; no live transactions');
+})().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>{for(const [key,value] of [['PLINKO_ENABLED',previous.enabled],['PLINKO_DATABASE_URL',previous.url],['PLINKO_TEST_STEAM_IDS',previous.testIds]])if(value===undefined)delete process.env[key];else process.env[key]=value;});

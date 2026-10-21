@@ -9,3 +9,4 @@ reference/
 .merge-backup/
 aaa-local-before-merge-fix.zip
 debug.log
+src/models/data/mutation-journal.json
