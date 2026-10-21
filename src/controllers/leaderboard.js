@@ -71,7 +71,7 @@ app.get(ST25API.routes.leaderboard, async (req, res) => {
         rank: index + 1,
         name: h.name,
         steamId: h.steamId,
-        species: speciesMap.get(h.steamId) || "Sát Thủ Đỉnh Cao",
+        species: h.species || speciesMap.get(h.steamId) || "Chưa xác định",
         kills,
         deaths,
         kd: kdRatio,
@@ -111,6 +111,7 @@ app.get(ST25API.routes.leaderboard, async (req, res) => {
       return {
         steamId: sId,
         name: p.name,
+        species: p.species || "Chưa xác định",
         balance,
         luaBalance: balance,
         role,

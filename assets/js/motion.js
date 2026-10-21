@@ -48,7 +48,7 @@
       }
     }, { threshold: .12, rootMargin: '0px 0px -24px 0px' });
     for (const element of root.querySelectorAll('main .hero-title, main .hero-desc, main h1, main h2, main .cards-grid > .card, main .portal-feature, [data-st25-reveal]')) {
-      if (observed.has(element) || revealed.has(element) || element.closest('.leaflet-container, [hidden], .modal, .tab-content')) continue;
+      if (observed.has(element) || revealed.has(element) || element.closest('.leaflet-container, [hidden], .modal, .tab-content, [data-home-scroll-reveal]')) continue;
       observed.add(element);
       observer.observe(element);
     }

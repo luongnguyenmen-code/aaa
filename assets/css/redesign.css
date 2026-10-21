@@ -1,6 +1,6 @@
 /* ST25 visual system: La Isla Nublar-inspired structure, original orange identity. */
 @layer st25-redesign {
-  body.st25-portal, body.st25-portal :is(h1,h2,h3,h4,p,span,a,button,input,select,textarea,label,strong,small,li):not(.fa):not([class*="fa-"]):not([class*="material-"]) { font-family: Arial, sans-serif !important; }
+  body.st25-portal, body.st25-portal :is(h1,h2,h3,h4,p,span,a,button,input,select,textarea,label,strong,small,li):not(.fa):not([class*="fa-"]):not([class*="material-"]) { font-family: var(--font-body) !important; }
   body.st25-portal :is(button,.btn):where(:not(.leaflet-container *):not(.btn-danger):not(.tab-danger)) { background: #17191d !important; border: 1px solid #363b44 !important; color: #d9dfe7 !important; border-radius: 6px !important; box-shadow: none !important; text-shadow: none !important; }
   body.st25-portal :is(.btn-primary,.btn-steam-big,.quest-claim.is-ready):not(:disabled) { background: #f2a43a !important; border-color: #f2a43a !important; color: #15100a !important; }
   body.st25-portal :is(button,.btn):not(.leaflet-container *)::before, body.st25-portal :is(button,.btn):not(.leaflet-container *)::after { display: none !important; }

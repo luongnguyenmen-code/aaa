@@ -92,17 +92,19 @@
     }
   </style>
   <link rel="stylesheet" href="assets/css/buttons.css?v=20261009-stable1">
-  <link rel="stylesheet" href="assets/css/fonts.css?v=20261009-audit">
+  <link rel="stylesheet" href="assets/css/fonts.css?v=20261021-tracking20">
   <link rel="stylesheet" href="assets/css/garage-dino-glow.css?v=20261009-stable1">
   <link rel="stylesheet" href="assets/css/garage-storage.css?v=20261009-compact-active1">
   <link rel="stylesheet" href="assets/css/motion.css?v=20261009-stable1">
-  <script src="assets/js/motion.js?v=20261009-stable1" defer></script>
+  <script src="assets/js/motion.js?v=20261021-parallax" defer></script>
   <link rel="stylesheet" href="assets/css/portal-layout.css?v=20261009-spacing1">
   <link rel="stylesheet" href="assets/css/logo.css?v=20261009-stable1">
   <link rel="icon" type="image/png" href="assets/imges/st25-favicon.png?v=20261009-stable1">
-  <link rel="stylesheet" href="assets/css/redesign.css?v=20261009-ui1">
+  <link rel="stylesheet" href="assets/css/redesign.css?v=20261021-ember">
   <script src="assets/js/ui.js?v=20261009-ui1" defer></script>
   <script src="assets/js/title-scramble.js?v=20261021-1" defer></script>
+  <link rel="stylesheet" href="assets/css/ember-theme.css?v=20261021-title-left">
+  <link rel="stylesheet" href="assets/css/glass.css?v=20261021-1">
 </head>
 <body class="st25-garage st25-portal">
 
@@ -141,7 +143,7 @@
     </div>
 
     <!-- Admin Quick Switcher Bar (CHỈ ADMIN MỚI THẤY) -->
-    <div id="admin-quick-bar" style="display: none; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(234, 179, 8, 0.4); border-radius: var(--radius-md); padding: 12px 18px; margin-bottom: 20px; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+    <div id="admin-quick-bar" style="display: none; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(234, 179, 8, 0.4); border-radius: var(--radius-md); padding: 12px 18px; margin-bottom: 20px; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;" data-glass-surface>
       <div style="display: flex; align-items: center; gap: 10px;">
         <span style="font-size: 1.2rem;">🔍</span>
         <span style="color: #facc15; font-weight: 700; font-size: 0.9rem;">Admin Soi Gara Người Chơi:</span>
@@ -162,7 +164,7 @@
     </div>
 
     <!-- Màn hình yêu cầu Đăng Nhập Steam khi chưa login -->
-    <div id="login-required-panel" style="display: none; background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-lg); padding: 50px 30px; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
+    <div id="login-required-panel" style="display: none; background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-lg); padding: 50px 30px; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" data-glass-surface>
       <span style="font-size: 3.5rem; display: block; margin-bottom: 14px;">🔒</span>
       <h2 style="color: #fff; font-size: 1.8rem; font-weight: 800; margin-bottom: 10px;">Vui Lòng Đăng Nhập Tài Khoản Steam</h2>
       <p style="color: #94a3b8; max-width: 600px; margin: 0 auto 24px; line-height: 1.6; font-size: 0.95rem;">
@@ -210,7 +212,7 @@
     </div>
 
     <!-- Quy Định An Toàn Cất & Lấy Gara (100m Khoảng Cách & 30s Không Sát Thương) -->
-    <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+    <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);" data-glass-surface>
       <span style="font-size: 1.8rem; line-height: 1;">🛡️</span>
       <div style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.6; flex: 1;">
         <strong style="color: #38bdf8; font-size: 0.98rem; display: block; margin-bottom: 4px;">
@@ -234,7 +236,7 @@
     </div>
 
     <!-- Dynamic Action Error Alert Banner (Hiển thị nổi bật khi gặp lỗi 100m hoặc Combat) -->
-    <div id="garage-action-alert" style="display: none; background: rgba(239, 68, 68, 0.15); border: 2px solid #ef4444; border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 22px; box-shadow: 0 8px 30px rgba(239, 68, 68, 0.25);">
+    <div id="garage-action-alert" style="display: none; background: rgba(239, 68, 68, 0.15); border: 2px solid #ef4444; border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 22px; box-shadow: 0 8px 30px rgba(239, 68, 68, 0.25);" data-glass-surface>
       <div style="display: flex; gap: 14px; align-items: flex-start;">
         <span style="font-size: 2rem; line-height: 1;" id="garage-action-alert-icon">⚠️</span>
         <div style="flex: 1;">
@@ -250,7 +252,7 @@
     </div>
 
     <!-- Cooldown Alert (if any) -->
-    <div id="cooldown-alert" style="display: none; background: rgba(234, 88, 12, 0.15); border: 1px solid #f97316; border-radius: var(--radius-md); padding: 14px 20px; margin-bottom: 24px; align-items: center; justify-content: space-between;">
+    <div id="cooldown-alert" style="display: none; background: rgba(234, 88, 12, 0.15); border: 1px solid #f97316; border-radius: var(--radius-md); padding: 14px 20px; margin-bottom: 24px; align-items: center; justify-content: space-between;" data-glass-surface>
       <span style="color: #fdba74; font-weight: 600;">
         ⏳ Thời gian chờ đồng bộ game server: <strong id="cooldown-timer-text" style="color: #fff; font-size: 1.1rem;">00:30</strong>
       </span>
@@ -296,10 +298,10 @@
 
     <!-- MODAL ĐẾM NGƯỢC 30S CẤT VÀO GARA (PARK CHANNELING & BẮT BUỘC ĐỨNG YÊN) -->
     <div id="park-channeling-modal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(10px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
-      <div style="background: linear-gradient(145deg, #1e293b, #0f172a); border: 2px solid #10b981; border-radius: 20px; max-width: 520px; width: 100%; padding: 32px; box-shadow: 0 20px 60px rgba(16, 185, 129, 0.35); text-align: center; position: relative;">
+      <div style="background: linear-gradient(145deg, #1e293b, #0f172a); border: 2px solid #10b981; border-radius: 20px; max-width: 520px; width: 100%; padding: 32px; box-shadow: 0 20px 60px rgba(16, 185, 129, 0.35); text-align: center; position: relative;" data-glass-surface>
         
         <!-- Animated Pulse Icon -->
-        <div style="position: relative; width: 84px; height: 84px; margin: 0 auto 18px; display: flex; align-items: center; justify-content: center; background: rgba(16, 185, 129, 0.15); border: 2px dashed #10b981; border-radius: 50%;">
+        <div style="position: relative; width: 84px; height: 84px; margin: 0 auto 18px; display: flex; align-items: center; justify-content: center; background: rgba(16, 185, 129, 0.15); border: 2px dashed #10b981; border-radius: 50%;" data-glass-surface>
           <span class="garage-dino-visual garage-dino-visual--red" style="width:60px;height:60px;"><img id="park-modal-dino-icon" src="assets/imges/thumbs/Tyrannosaurus.png" decoding="async" onerror="this.onerror=null;this.src='assets/imges/Tyrannosaurus.png';" alt="Dino"
             style="width:60px;height:60px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(16,185,129,0.5));"></span>
         </div>
@@ -312,7 +314,7 @@
         </p>
 
         <!-- Big 30-Second Countdown Clock -->
-        <div style="background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 18px; margin-bottom: 20px;">
+        <div style="background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 18px; margin-bottom: 20px;" data-glass-surface>
           <div style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px; margin-bottom: 4px;">Thời Gian Chờ Cất Vào Gara</div>
           <div id="park-countdown-big" style="font-size: 3.5rem; font-weight: 900; color: #34d399; font-family: monospace; line-height: 1; text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);">
             30s
@@ -325,7 +327,7 @@
         </div>
 
         <!-- Stand Still Warning Banner -->
-        <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; border-radius: 10px; padding: 12px 16px; margin-bottom: 24px; text-align: left; display: flex; gap: 12px; align-items: center;">
+        <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; border-radius: 10px; padding: 12px 16px; margin-bottom: 24px; text-align: left; display: flex; gap: 12px; align-items: center;" data-glass-surface>
           <span style="font-size: 1.8rem; line-height: 1;">🧍</span>
           <div style="font-size: 0.86rem; color: #fef08a; line-height: 1.5;">
             <strong style="color: #fbbf24; display: block;">⚠️ BẮT BUỘC ĐỨNG YÊN HOÀN TOÀN IN-GAME:</strong>
@@ -345,10 +347,10 @@
 
     <!-- MODAL ĐẾM NGƯỢC 30S ĐƯA RA ĐẢO (RESTORE CHANNELING & CẢNH BÁO 500M) -->
     <div id="restore-channeling-modal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(10px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
-      <div style="background: linear-gradient(145deg, #1e293b, #0f172a); border: 2px solid #f59e0b; border-radius: 20px; max-width: 520px; width: 100%; padding: 32px; box-shadow: 0 20px 60px rgba(245, 158, 11, 0.35); text-align: center; position: relative;">
+      <div style="background: linear-gradient(145deg, #1e293b, #0f172a); border: 2px solid #f59e0b; border-radius: 20px; max-width: 520px; width: 100%; padding: 32px; box-shadow: 0 20px 60px rgba(245, 158, 11, 0.35); text-align: center; position: relative;" data-glass-surface>
         
         <!-- Animated Pulse Icon -->
-        <div style="position: relative; width: 84px; height: 84px; margin: 0 auto 18px; display: flex; align-items: center; justify-content: center; background: rgba(245, 158, 11, 0.15); border: 2px dashed #f59e0b; border-radius: 50%;">
+        <div style="position: relative; width: 84px; height: 84px; margin: 0 auto 18px; display: flex; align-items: center; justify-content: center; background: rgba(245, 158, 11, 0.15); border: 2px dashed #f59e0b; border-radius: 50%;" data-glass-surface>
           <span class="garage-dino-visual garage-dino-visual--red" style="width:60px;height:60px;"><img id="restore-modal-dino-icon" src="assets/imges/thumbs/Tyrannosaurus.png" decoding="async" onerror="this.onerror=null;this.src='assets/imges/Tyrannosaurus.png';" alt="Dino"
             style="width:60px;height:60px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(245,158,11,0.5));"></span>
         </div>
@@ -361,7 +363,7 @@
         </p>
 
         <!-- Big 30-Second Countdown Clock -->
-        <div style="background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 18px; margin-bottom: 20px;">
+        <div style="background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 18px; margin-bottom: 20px;" data-glass-surface>
           <div style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px; margin-bottom: 4px;">Thời Gian Chờ Xuất Hiện In-Game</div>
           <div id="restore-countdown-big" style="font-size: 3.5rem; font-weight: 900; color: #fbbf24; font-family: monospace; line-height: 1; text-shadow: 0 0 20px rgba(245, 158, 11, 0.5);">
             30s
@@ -374,7 +376,7 @@
         </div>
 
         <!-- 500m Warning Radar Alert Banner -->
-        <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; border-radius: 10px; padding: 12px 16px; margin-bottom: 24px; text-align: left; display: flex; gap: 12px; align-items: center;">
+        <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; border-radius: 10px; padding: 12px 16px; margin-bottom: 24px; text-align: left; display: flex; gap: 12px; align-items: center;" data-glass-surface>
           <span style="font-size: 1.8rem; line-height: 1;">📡</span>
           <div style="font-size: 0.86rem; color: #fca5a5; line-height: 1.5;">
             <strong style="color: #f87171; display: block;">📢 CẢNH BÁO BÁN KÍNH 500 MÉT:</strong>
@@ -397,7 +399,7 @@
   <!-- Footer -->
   <!-- include:footer -->
 
-  <script src="assets/js/app.js?v=20261010-roll1"></script>
+  <script src="assets/js/app.js?v=20261021-roll-removed"></script>
   <script src="assets/js/gara.js?v=20261009-compact-active1"></script>
 </body>
 </html>

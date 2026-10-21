@@ -3,9 +3,11 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Plinko — ST25 VIETNAM</title><meta name="description" content="Plinko ST25: thả bóng, xem xác suất và chơi bằng điểm Lúa miễn phí.">
 <link rel="icon" href="assets/imges/st25-favicon.png">
-<link rel="stylesheet" href="assets/css/style.css"><link rel="stylesheet" href="assets/css/redesign.css"><link rel="stylesheet" href="assets/css/portal-layout.css"><link rel="stylesheet" href="assets/css/fonts.css"><link rel="stylesheet" href="assets/css/plinko.css">
+<link rel="stylesheet" href="assets/css/style.css"><link rel="stylesheet" href="assets/css/redesign.css?v=20261021-ember"><link rel="stylesheet" href="assets/css/portal-layout.css"><link rel="stylesheet" href="assets/css/fonts.css?v=20261021-tracking20"><link rel="stylesheet" href="assets/css/plinko.css">
 <script src="assets/js/core.js"></script><script src="assets/js/api/endpoints.js"></script><script src="assets/js/ui.js" defer></script>
   <script src="assets/js/title-scramble.js?v=20261021-1" defer></script>
+  <link rel="stylesheet" href="assets/css/ember-theme.css?v=20261021-title-left">
+  <link rel="stylesheet" href="assets/css/glass.css?v=20261021-1">
 </head><body class="st25-portal portal-plinko">
 <!-- include:header -->
 <main class="container plinko-page">
@@ -31,5 +33,5 @@
 <details class="plinko-fair"><summary>◇ Xác suất & xác minh kết quả</summary><p>Bảng thưởng ST25 được tính riêng, không phải bảng thưởng Clash.gg. RTP xấp xỉ 91,4% trước khi làm tròn Lúa; phần thưởng lấy số nguyên xuống nên RTP thực tế tùy mức gửi. Hệ số bao gồm vốn. Lúa chỉ là điểm miễn phí, không mua bán hoặc quy đổi tiền.</p><label for="plinko-seed">Client seed</label><input id="plinko-seed" maxlength="128" autocomplete="off"><p>Server công bố SHA-256 của seed trước khi gửi Lúa. Kết quả dùng HMAC-SHA256(serverSeed, clientSeed:hàng), 32 bit đầu dưới 2³¹ đi trái, còn lại đi phải. Seed được tiết lộ khi giao dịch kết thúc.</p><pre id="plinko-proof">Chưa có lượt xác minh.</pre><div class="plinko-table-scroll"><table><thead><tr><th>Ô</th><th>Xác suất</th><th>Hệ số</th><th>Nhận với mức gửi hiện tại</th></tr></thead><tbody id="plinko-odds"></tbody></table></div></details>
 </main>
 <!-- include:footer -->
-<script src="assets/js/app.js?v=20261012-plinko1"></script><script src="assets/js/features/plinko.js?v=20261013-live20"></script>
+<script src="assets/js/app.js?v=20261021-roll-removed"></script><script src="assets/js/features/plinko.js?v=20261013-live20"></script>
 </body></html>

@@ -1,0 +1,144 @@
+/* ST25 / Ember: editorial white typography, black surfaces and vermilion light. */
+:root, html.dark, body.st25-portal {
+  --bg-primary: #080605; --bg-secondary: #100b09; --bg-tertiary: #21120d;
+  --bg-card: #110d0b; --bg-card-hover: #21120c;
+  --border-color: #38251d; --border-focus: #ff713d;
+  --text-primary: #fff9f5; --text-secondary: #d4c7bf; --text-muted: #b3a39b;
+  --accent-gold: #ff6326; --accent-gold-light: #ff956b; --accent-gold-rich: #d33b13;
+  --accent-gold-glow: #ff5b2433; --accent-amber: #ff742e; --accent-orange: #ff5c1b;
+  --background: #080605; --foreground: #fff9f5; --card: #110d0b; --card-foreground: #fff9f5;
+  --popover: #19100c; --popover-foreground: #fff9f5;
+  --primary: #ff6326; --primary-foreground: #180700;
+  --secondary: #25140d; --secondary-foreground: #fff9f5;
+  --muted: #251b15; --muted-foreground: #b3a39b;
+  --accent: #3a170b; --accent-foreground: #ffa47b;
+  --border: #38251d; --input: #493026; --ring: #ff713d;
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 8px;
+  color-scheme: dark;
+}
+body.st25-portal {
+  background: radial-gradient(ellipse at 80% 0%, #6c190c30, transparent 46rem), #080605;
+  color: var(--text-primary); line-height: 1.7;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+::selection { background: #ff6326; color: #130700; }
+/* Reuse the established priority layer so legacy button rules cannot override the theme. */
+@layer st25-redesign {
+  body.st25-portal :is(button,.btn):where(:not(.leaflet-container *):not(.btn-danger):not(.tab-danger)) {
+    background: #1c110d !important; border-color: #65402d !important;
+    color: #fff1e8 !important; border-radius: 5px !important;
+  }
+  body.st25-portal :is(.btn-primary,.btn-steam-big,.quest-claim.is-ready):not(:disabled),
+  body.portal-plinko #plinko-play {
+    background: #ff6326 !important; color: #180700 !important; border-color: #ff6326 !important;
+    box-shadow: none !important;
+  }
+  body.st25-portal :is(button,.btn):where(:not(.leaflet-container *):not(:disabled)):hover {
+    background: #3a190d !important; color: #fff9f5 !important; border-color: #ff8d59 !important;
+  }
+  body.st25-portal .btn-primary:not(:disabled):hover, body.portal-plinko #plinko-play:hover:not(:disabled) {
+    background: #ff8a50 !important; color: #180700 !important;
+  }
+  body.st25-portal :is(button,.btn)[aria-selected="true"],
+  body.portal-plinko .plinko-tabs button.selected {
+    background: #48200f !important; color: #ffba94 !important; border-color: #bd542a !important;
+  }
+  body.st25-portal :is(.btn-danger,.tab-danger) {
+    background: #461914 !important; border-color: #d57362 !important; color: #ffe4dd !important;
+  }
+}
+body.st25-portal :is(.site-header,.site-footer,.mobile-bottom-nav,.mobile-drawer-content,.nav-dropdown-menu) {
+  background: #100907; border-color: #3b2218;
+}
+body.st25-portal .ticker-bar { background: #2a1007; border-color: #4f2111; color: #edc4b1; }
+body.st25-portal .ticker-badge { color: #ffac7a; border-color: #9b4d28; }
+body.st25-portal .site-header .nav-link { color: #c9b6aa; }
+body.st25-portal .site-header .nav-link.active {
+  color: #ff9862; background: #34160b; border-bottom-color: #ff6326;
+}
+body.st25-portal :is(.nav-dropdown-item,.site-header .nav-link):hover { background: #29150c; color: #fff9f5; }
+body.st25-portal .site-header :is(.header-weather,.hud-pill,.hud-profile-pill) {
+  background: #1a100c !important; border-color: #51301f !important;
+}
+body.st25-portal :is(.card,.glass-panel,.garage-header-box,.personal-profile-banner,.portal-player-panel,.portal-info-panel,
+.portal-feature,.plinko-shell,.plinko-wallet,.plinko-history,.plinko-fair,.skin-fee,
+.trade-card,.dino-preview-card,.active-dino-panel,.wallet-box,.table-container) {
+  background: #110d0b !important; border: 1px solid #38251d !important;
+  border-radius: 6px; box-shadow: none !important;
+}
+body.st25-portal :is(.portal-feature,.card):hover { border-color: #a94a26 !important; }
+body.st25-portal :is(.portal-banner,.portal-banner--garage) {
+  background: linear-gradient(115deg, #50190c, #170b07 68%, #090706); border-color: #63301b;
+}
+body.st25-portal .trade-banner {
+  background: linear-gradient(110deg, #541b0d, #180b07) !important; border-color: #71321b;
+}
+body.st25-portal :is(.portal-banner,.portal-banner--garage)::before {
+  background: linear-gradient(90deg, #210c06e8, transparent);
+}
+body.st25-portal .portal-feature-art { background: radial-gradient(ellipse, #ff602621, transparent 73%); }
+body.st25-portal .portal-feature-art svg { color: #ff8350; }
+body.st25-portal .portal-feature-tag { background: #2b160c; border-color: #60301c; color: #ffb892; }
+body.st25-portal :is(.home-dino-summary,.plinko-controls,.plinko-tabs,.plinko-arena,.plinko-stats,.plinko-stats>div) {
+  background: #160d09; border-color: #42271a;
+}
+body.st25-portal :is(.plinko-notice,.plinko-recent,.plinko-result) { background: #251309; border-color: #b4542a; color: #e7c5b3; }
+body.st25-portal :is(.portal-eyebrow,.plinko-eyebrow,.quest-page-label,.footer-col h4,.hud-pill-lua,
+.plinko-wallet strong,.plinko-wallet a,.skin-fee strong) { color: #ff9c69; }
+body.st25-portal .plinko-eyebrow i { background: #ff6326; box-shadow: 0 0 10px #ff632644; }
+body.st25-portal :is(.plinko-heading h1 span,.portal-info-link) { color: #ff9862; }
+body.st25-portal :is(.home-page-heading p,.portal-feature p,.portal-banner p,.skin-heading p,.plinko-heading p) { color: #beaba0; }
+body.st25-portal :is(input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=color]),select,textarea) {
+  background-color: #130c09 !important; border-color: #67412d !important; color: #fff5ee !important;
+}
+body.st25-portal :is(input,select,textarea) { accent-color: #ff6326; }
+body.st25-portal :is(a,button,input,select,textarea):focus-visible { outline-color: #ff9862; }
+body.st25-portal :is(th,td) { border-color: #38251d; }
+body.st25-portal thead { background: #211108; color: #edcebb; }
+body.st25-portal :is(.st25-live-dock,.map-sidebar) { background: #130c09; border-color: #593522; }
+body.st25-portal .st25-live-dock [data-live-state] { color: #ff9862; }
+body.st25-portal .st25-live-dock[data-online="true"] .live-dot { background: #ff6326; }
+/* Large, open headings; comfortable line-height leaves room for Vietnamese accents. */
+body.st25-portal [data-title-scramble] {
+  font-family: var(--font-heading) !important; font-weight: 700 !important;
+  font-size: clamp(28px, 3.6vw, 52px) !important; line-height: 1.3 !important;
+  letter-spacing: .02em !important; color: #fff9f5 !important;
+  text-transform: none; text-shadow: none; overflow-wrap: anywhere;
+}
+body.st25-portal :is(h2,h3,h4) { line-height: 1.4; }
+body.st25-map .map-sidebar [data-title-scramble] { font-size: 21px !important; letter-spacing: .02em !important; }
+body.portal-home .st25-hero {
+  min-height: 100vh;
+  min-height: 100svh;
+  background: #030405;
+}
+/* Deep black above, saturated ember below; screen blending keeps highlights crisp. */
+body.portal-home .st25-hero::before {
+  content: ''; position: absolute; inset: auto 0 0; height: 61.667%;
+  z-index: 0; pointer-events: none;
+  background: linear-gradient(to top, #bd350b 0%, #762007 24%, #300b02 52%, transparent 84%);
+}
+body.portal-home .st25-hero-visual { z-index: 1; mix-blend-mode: screen; }
+body.portal-home .st25-hero-scene img { filter: contrast(1.12) brightness(.98) saturate(1.08); }
+body.portal-home .st25-hero-copy { z-index: 2; }
+body.portal-home #st25-hero-title {
+  font-size: clamp(40px, 4.6vw, 88px) !important; line-height: 1.24 !important;
+  letter-spacing: .02em !important; overflow-wrap: normal; text-wrap: balance;
+  margin: 12px 0 18px;
+}
+body.portal-home .st25-hero-title-line { white-space: nowrap; }
+body.portal-home .st25-hero-copy p { color: #edcdbb; }
+body.portal-home .st25-hero-copy .portal-eyebrow { color: #ffba91; }
+/* The skin editor runs in its own document; theme UI surfaces, never material swatches. */
+html.dark body { background: #080605; color: #fff9f5; }
+html.dark .st25-editor :is(.skin-panel,.skin-species-card,.skin-colour-list>div) { background: #130d09; border-color: #41291e; }
+html.dark .st25-editor :is(.skin-section-heading h2,.skin-panel h2,.skin-panel h3,.skin-designer-tab) { color: #ff9c69; }
+html.dark .st25-editor .skin-species-card[aria-pressed=true] { background: #34170c; border-color: #ff6326; color: #ffc6a6; }
+html.dark .st25-editor input[type=range] { accent-color: #ff6326; }
+body.quests-page .quest-section-plaque { background: #261108; border-color: #a04b25; }
+body.quests-page .quest-section-plaque :is(h2,span) { color: #ffae7d; border-color: #7c3b20; }
+@media (max-width: 700px) {
+  body.portal-home #st25-hero-title { font-size: clamp(36px, 10vw, 60px) !important; }
+  body.st25-portal [data-title-scramble] { font-size: clamp(27px, 7vw, 38px) !important; letter-spacing: .02em !important; }
+  body.st25-portal .site-header .nav-link { font-size: 12px; }
+}

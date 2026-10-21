@@ -31,6 +31,8 @@
   function refreshBounds() { bounds = scene.getBoundingClientRect(); }
   window.addEventListener('pointermove', event => {
     if (event.pointerType === 'touch' || !fine.matches || reduced.matches || !visible || document.hidden) return;
+    // Scroll parallax moves the scene after the scroll event; read its current position.
+    refreshBounds();
     if (!bounds.width || !bounds.height) return;
     const dx = event.clientX - (bounds.left + bounds.width * 530 / 1920);
     const dy = event.clientY - (bounds.top + bounds.height * 166 / 1080);

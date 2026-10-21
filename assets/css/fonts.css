@@ -1,57 +1,19 @@
-@font-face {
-  font-family: 'ST25 Phudu';
-  src: url('../font/Phudu-Light.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 300;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'ST25 Phudu';
-  src: url('../font/Phudu-Regular.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'ST25 Phudu';
-  src: url('../font/Phudu-Medium.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'ST25 Phudu';
-  src: url('../font/Phudu-SemiBold.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'ST25 Phudu';
-  src: url('../font/Phudu-Bold.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'ST25 Phudu';
-  src: url('../font/Phudu-ExtraBold.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 800;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'ST25 Phudu';
-  src: url('../font/Phudu-Black.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 900;
-  font-display: swap;
-}
-:root {
-  --font-body: 'ST25 Phudu', Arial, sans-serif;
-  --font-heading: 'ST25 Phudu', Arial, sans-serif;
-}
-/* Include inline styles and dynamically rendered text; preserve icon glyph fonts. */
-:where(html, body, body *):not(.fa):not(.fas):not(.far):not(.fab):not(.fal):not(.fad):not(.fa-solid):not(.fa-regular):not(.fa-brands):not([class*="material-icons"]):not([class*="material-symbols"]):not([class*="glyphicon"]):not([class*="fa-"]) {
-  font-family: var(--font-body) !important;
+/* Local Nohemi faces. Be Vietnam Pro supplies Vietnamese glyphs absent from the supplied Nohemi files. */
+@font-face { font-family: 'ST25 Nohemi'; src: url('../font/Nohemi-Regular.woff2') format('woff2'); font-style: normal; font-weight: 400; font-display: swap; }
+@font-face { font-family: 'ST25 Nohemi'; src: url('../font/Nohemi-Medium.woff2') format('woff2'); font-style: normal; font-weight: 500; font-display: swap; }
+@font-face { font-family: 'ST25 Nohemi'; src: url('../font/Nohemi-Bold.woff2') format('woff2'); font-style: normal; font-weight: 700; font-display: swap; }
+@font-face { font-family: 'ST25 Be Vietnam Pro'; src: url('../font/BeVietnamPro-400.ttf') format('truetype'); font-style: normal; font-weight: 400; font-display: swap; }
+@font-face { font-family: 'ST25 Be Vietnam Pro'; src: url('../font/BeVietnamPro-500.ttf') format('truetype'); font-style: normal; font-weight: 500; font-display: swap; }
+@font-face { font-family: 'ST25 Be Vietnam Pro'; src: url('../font/BeVietnamPro-700.ttf') format('truetype'); font-style: normal; font-weight: 700; font-display: swap; }
+:root { --font-body: 'ST25 Nohemi', 'ST25 Be Vietnam Pro', 'Segoe UI', Arial, sans-serif; --font-heading: var(--font-body); }
+:where(html, body, body *):not(.fa):not(.fas):not(.far):not(.fab):not(.fal):not(.fad):not(.fa-solid):not(.fa-regular):not(.fa-brands):not([class*="material-icons"]):not([class*="material-symbols"]):not([class*="glyphicon"]):not([class*="fa-"]) { font-family: var(--font-body) !important; }
+/* Design tracking +20 = 20/1000 em; exclude dedicated icon fonts. */
+@layer st25-redesign {
+body :where(*):not(.fa):not(.fas):not(.far):not(.fab):not([class*="fa-"]):not([class*="material-icons"]):not([class*="material-symbols"]):not([class*="glyphicon"]) { letter-spacing: .02em !important; }
+body { letter-spacing: .02em !important; }
+body { font-weight: 400; }
+body :is(p,li,td,input,select,textarea,label,small) { font-weight: 400 !important; }
+body :is(h2,h3,h4,h5,h6) { font-weight: 500 !important; }
+body :is(h1,[data-title-scramble]) { font-weight: 700 !important; }
+body :is(button,.btn,.nav-link,.nav-dropdown-item) { font-weight: 500 !important; }
 }

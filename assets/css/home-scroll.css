@@ -1,0 +1,12 @@
+/* The artwork and its SVG eye move together to preserve alignment. */
+.portal-home .st25-hero { clip-path: inset(0); }
+.portal-home .st25-hero-visual {
+  transform: translate3d(0, var(--scroll-art-y, 0px), 0);
+}
+.portal-home .st25-hero-copy {
+  transform: translate3d(0, var(--scroll-copy-y, 0px), 0);
+  opacity: var(--scroll-copy-opacity, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .portal-home .st25-hero-visual, .portal-home .st25-hero-copy { transform: none; opacity: 1; }
+}
