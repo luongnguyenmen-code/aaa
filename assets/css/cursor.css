@@ -1,0 +1,19 @@
+/* Native cursor: no animation loop or pointer-following DOM element. */
+@media (hover: hover) and (pointer: fine) {
+  html, body, body * {
+    cursor: url('../imges/rice-cursor.png?v=size27') 3 2, auto !important;
+  }
+
+  input:not([type='button']):not([type='submit']):not([type='reset']):not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']),
+  textarea, [contenteditable='true'], [contenteditable='true'] * {
+    cursor: text !important;
+  }
+
+  :disabled, [aria-disabled='true'], [aria-disabled='true'] * {
+    cursor: not-allowed !important;
+  }
+
+  .leaflet-dragging, .leaflet-dragging *, canvas:active {
+    cursor: grabbing !important;
+  }
+}

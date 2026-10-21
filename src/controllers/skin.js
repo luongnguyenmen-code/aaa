@@ -85,8 +85,8 @@ app.post(ST25API.routes.skinApply, async (req, res) => {
     try{importedPayload=validateSkinPayload(req.body.payload);}catch(error){return res.status(400).json({error:error.message});}
   }
 
-  // 1. Kiểm tra số dư Lúa (Phí 10 Lúa để đổi màu da trực tiếp)
-  const SKIN_APPLY_COST = 10;
+  // 1. Kiểm tra số dư Lúa (Phí 100 Lúa để đổi màu da trực tiếp)
+  const SKIN_APPLY_COST = 100;
   const curBal = await getLivePlayerBalance(steamId);
   if (curBal < SKIN_APPLY_COST) {
     return res.status(400).json({
@@ -131,7 +131,7 @@ app.post(ST25API.routes.skinApply, async (req, res) => {
   const applyRes = await callIslePilot(PilotAPI.playerSkinApply(steamId), 'POST', { payload });
 
   if (applyRes && (applyRes.ok || applyRes.jobId || !applyRes.error)) {
-    // Trừ 10 Lúa qua hệ thống Currency của IslePilot
+    // Trừ 100 Lúa qua hệ thống Currency của IslePilot
     const deduct = await modifyLivePlayerBalance(steamId, -SKIN_APPLY_COST, `Đổi màu skin in-game cho ${activeSpecies}`);
     
     // Xóa cache để cập nhật ngay

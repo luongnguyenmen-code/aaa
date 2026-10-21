@@ -49,7 +49,7 @@ window.ST25SkinLayout=function createSkinLayout(React){
         h('aside',{className:'skin-sidebar','aria-label':'Áp dụng và lưu skin'},
           settingsPanel,
           clone(actions,'skin-panel skin-actions',[
-            h('div',{key:'fee',className:'st25-apply-fee'},h('span',null,'Phí mỗi lần áp dụng'),h('strong',null,'10 Lúa')),
+            h('div',{key:'fee',className:'st25-apply-fee'},h('span',null,'Phí mỗi lần áp dụng'),h('strong',null,'100 Lúa')),
             ...React.Children.toArray(actions.props.children).map(decorateAction)
           ]),
           clone(presets,'skin-panel skin-presets'))));

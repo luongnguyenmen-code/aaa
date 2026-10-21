@@ -41,20 +41,31 @@ assert.match(page,/islepilot-skin-frame/);assert.doesNotMatch(page,/skin-illustr
 console.log(`PASS imported editor: 10 channels, original linear export/import, invalid payload rejection, ${models} GLB models, ${manifest.length} complete assets`);
 // A real controller with fake upstream responses must preserve every linear channel.
 const handlers=new Map(),calls=[];
+const charges=[];
+let walletBalance=100,failApply=false;
 require('../src/controllers/skin')({get(){},post:(route,handler)=>handlers.set(route,handler)},{
-  getRequestSteamId:()=> '76561198000000001',getLivePlayerBalance:async()=>100,
-  callIslePilot:async(url,method,body)=>{calls.push({url,method,body});return method==='POST'?{ok:true,jobId:'offline-job'}:{species:'Tyrannosaurus',online:true};},
-  modifyLivePlayerBalance:async()=>({balance:90}),clearPlayerCache:()=>{},apiCache:new Map()
+  getRequestSteamId:()=> '76561198000000001',getLivePlayerBalance:async()=>walletBalance,
+  callIslePilot:async(url,method,body)=>{calls.push({url,method,body});return method==='POST'?(failApply?{error:'Offline rejection'}:{ok:true,jobId:'offline-job'}):{species:'Tyrannosaurus',online:true};},
+  modifyLivePlayerBalance:async(steamId,amount)=>{charges.push({steamId,amount});walletBalance+=amount;return {balance:walletBalance};},clearPlayerCache:()=>{},apiCache:new Map()
 });
 (async()=>{
   const handler=handlers.get('/api/skin/apply');
   const response={code:200,status(code){this.code=code;return this;},json(data){this.data=data;return this;}};
   await handler({body:{payload}},response);
   assert.equal(response.code,200);assert.equal(response.data.success,true);
+  assert.equal(charges.length,1);assert.equal(charges[0].amount,-100);assert.equal(response.data.newBalance,0);
   assert.deepEqual(calls.find(call=>call.method==='POST').body,{payload});
   const before=calls.length;await handler({body:{payload:{...payload,eyes:[NaN,0,0,1]}}},response);
   assert.equal(response.code,400);assert.equal(calls.length,before);
   await handler({body:{payload:glitch}},response);
   assert.equal(response.code,400);assert.match(response.data.error,/Glitch/);assert.equal(calls.length,before);
+  walletBalance=99;
+  await handler({body:{payload}},response);
+  assert.equal(response.code,400);assert.match(response.data.error,/100/);assert.equal(calls.length,before);assert.equal(charges.length,1);
+  walletBalance=100;failApply=true;
+  await handler({body:{payload}},response);
+  assert.equal(response.code,400);assert.equal(charges.length,1);
+  assert.ok(page.includes('100 Lúa'));
+  assert.ok(fs.readFileSync(path.join(root,'src/features/skin-layout.js'),'utf8').includes('100 Lúa'));
   console.log('PASS skin API: original payload forwarded unchanged; invalid input makes no upstream call; no live mutations');
 })().catch(error=>{console.error(error);process.exitCode=1;});
